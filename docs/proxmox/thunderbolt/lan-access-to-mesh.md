@@ -32,7 +32,7 @@ REMEMBER ceph clients want to access the MONSs / OSDs / MGRs and MDSs on the `lo
 |:-----------------:|:-----------------------:|:-----------------------:|:-----------------------:|
 | BGP Router-ID     | `192.168.1.81`            | `192.168.1.82`            | `192.168.1.83`            |
 | BGP ASN           | `65001`                 | `65001`                 | `65001`                 |  
-| IPv6 Neighbors<br>(Node LAN IP)    | `2001:db8:1000:1::82`<br> `2001:db8:1000:1::83`<br>`2001:db8:1000:1::1` |`2001:db8:1000:1::81`<br> `2001:db8:1000:1::83`<br>`2001:db8:1000:1::1` | `2001:db8:1000d:1::81`<br> `2001:db8:1000:1::82`<br>`d2001:db8:1000:1::1` | 
+| IPv6 Neighbors<br>(Node LAN IP)    | `2001:db8:1000:1::82`<br> `2001:db8:1000:1::83`<br>`2001:db8:1000:1::1` |`2001:db8:1000:1::81`<br> `2001:db8:1000:1::83`<br>`2001:db8:1000:1::1` | `2001:db8:1000:1::81`<br> `2001:db8:1000:1::82`<br>`2001:db8:1000:1::1` | 
 | IPv4 Neighbors<br>(Node LAN IP)    | `192.168.1.82`<br>`192.168.1.83`<br>`192.168.1.1`|`192.168.1.81`<br>`192.168.1.83`<br> `192.168.1.1`|`192.168.1.81`<br>`192.168.1.82`<br>`192.168.1.1`|
 | IPv6 Routes<br>(mesh network)       |`fc00::81/128`<br>`fc00:81::/64`|`fc00::82/128`<br>`fc00:82::/64`|`fc00::83/128`<br>`fc00:83::/64`     |
 | IPv4 Routes<br>(mesh network)| `10.0.0.81/32`<br>`10.0.81.0/24`| `10.0.0.82/32`<br>`10.0.82.0/24`| `10.0.0.83/32`<br>`10.0.83.0/24` |
@@ -137,18 +137,18 @@ router bgp 65001
  neighbor 192.168.1.83 next-hop-self
 
  neighbor 2001:db8:1000:1::81 remote-as 65001
- neighbor 22001:db8:1000:1::81 update-source 2001:db8:1000:1::1
+ neighbor 2001:db8:1000:1::81 update-source 2001:db8:1000:1::1
 
  neighbor 2001:db8:1000:1::82 remote-as 65001
- neighbor 22001:db8:1000:1::82 update-source 2001:db8:1000:1::1
+ neighbor 2001:db8:1000:1::82 update-source 2001:db8:1000:1::1
 
  neighbor 2001:db8:1000:1::83 remote-as 65001
- neighbor2001:db8:1000:1::83 update-source 2001:db8:1000:1::1
+ neighbor 2001:db8:1000:1::83 update-source 2001:db8:1000:1::1
 
  address-family ipv6 unicast
-  neighbor 2001:db8:1000::81 activate
+  neighbor 2001:db8:1000:1::81 activate
   neighbor 2001:db8:1000:1::81 next-hop-self
-  neighbor 22001:db8:1000:1::82 activate
+  neighbor 2001:db8:1000:1::82 activate
   neighbor 2001:db8:1000:1::82 next-hop-self
   neighbor 2001:db8:1000:1::83 activate
   neighbor 2001:db8:1000:1::83 next-hop-self
@@ -329,9 +329,9 @@ exit
 router bgp 65001
  bgp router-id 192.168.1.81
  no bgp ebgp-requires-policy
- neighbor 2600:a801:830:1::82 remote-as 65001
- neighbor 2600:a801:830:1::83 remote-as 65001
- neighbor 2600:a801:830:1::1 remote-as 65001
+ neighbor 2001:db8:1000:1::82 remote-as 65001
+ neighbor 2001:db8:1000:1::83 remote-as 65001
+ neighbor 2001:db8:1000:1::1 remote-as 65001
  neighbor 192.168.1.82 remote-as 65001
  neighbor 192.168.1.83 remote-as 65001
  neighbor 192.168.1.1 remote-as 65001
@@ -339,9 +339,9 @@ router bgp 65001
  address-family ipv6 unicast
   network fc00::81/128
   network fc00:81::/64
-  neighbor 2600:a801:830:1::82 activate
-  neighbor 2600:a801:830:1::83 activate
-  neighbor 2600:a801:830:1::1 activate
+  neighbor 2001:db8:1000:1::82 activate
+  neighbor 2001:db8:1000:1::83 activate
+  neighbor 2001:db8:1000:1::1 activate
  exit-address-family
 
  address-family ipv4 unicast

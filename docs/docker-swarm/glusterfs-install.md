@@ -79,7 +79,7 @@ sudo systemctl enable glusterd
 ### On the master node (docker01) - note you must run sudo -s and not sudo for each command
 ```
 sudo -s
-gluster peer probe docker02.alexbal.com; gluster peer probe docker03.alexbal.com;
+gluster peer probe docker02.yourdomain.com; gluster peer probe docker03.yourdomain.com;
 gluster pool list
 gluster volume create gluster-vol1 disperse 3 redundancy 1 docker01.yourdomain.com:/mnt/glusterfs/vol1-brick1 docker02.yourdomain.com:/mnt/glusterfs/vol1-brick2 docker03.yourdomain.com:/mnt/glusterfs/vol1-brick3
 gluster volume start gluster-vol1

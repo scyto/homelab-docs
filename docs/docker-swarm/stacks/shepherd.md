@@ -1,7 +1,23 @@
 ---
-title: "- APPRISE_SIDECAR_URL=apprise-microservice:5000"
+title: "shepherd swarm image updater"
 source_gist: https://gist.github.com/scyto/1091c492fa0c8353be4cbfa3874c7f54
 ---
+
+!!! warning "Deprecated: I no longer run this"
+
+    Shepherd did the thing watchtower could not, which is update swarm
+    *services*. It served me well for years.
+
+    Two reasons it is gone. The image is from 2023 and cannot read OCI image
+    manifests, so for a growing number of registries it silently could not tell
+    whether an update existed. And like watchtower it changed what was running
+    without touching the compose in git, which stopped making sense once the
+    compose became the source of truth.
+
+    Replaced by [Renovate](../image-updates-renovate.md).
+
+    Kept for reference, and because the placement notes below are still a decent
+    illustration of pinning a service to a manager node.
 
 ## Update Swarm Images ##
 i wanted to update swarm images whenever there is a new image available (even at the risk of breaking something)

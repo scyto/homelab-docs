@@ -11,12 +11,16 @@ Each major task has its own gist, this is to help with maitainability long term.
 1. [Install Debian VM for each docker host](debian-vm-install.md)
 2. [install Docker](install-docker.md)
 3. [Configure Docker Swarm](configure-swarm.md)
-4. [Install Portainer](portainer.md) 
+4. [Install Portainer](portainer.md)
 5. [Install KeepaliveD](keepalived.md)
 6. [Using VirtioFS backed by CephFS for bind mounts (migrating from glsuterFS - WIP)](../proxmox/cephfs-virtiofs-passthrough.md)
-7. ~~[glusterFS disk prep, install & config ](glusterfs-install.md)~~
-8. ~~[gluster FS plugin for docker (optional )](glusterfs-docker-plugin.md)~~
-9. example stack templates:
+7. [Move your stacks into git](gitops-with-portainer.md)
+8. [Get secrets out of your stack definitions](secrets.md)
+9. [Keep images updated with Renovate](image-updates-renovate.md)
+10. [Random notes and troubleshooting](troubleshooting.md)
+11. ~~[glusterFS disk prep, install & config ](glusterfs-install.md)~~
+12. ~~[gluster FS plugin for docker (optional )](glusterfs-docker-plugin.md)~~
+13. example stack templates:
     - [adguard 2 node + adguard settings sync](stacks/adguard.md)
     - [cloudflare Dynamic DNS Updater](stacks/cloudflare-ddns.md)
     - [infinitude carrier infinity thermostat control](stacks/infinitude.md)
@@ -24,13 +28,14 @@ Each major task has its own gist, this is to help with maitainability long term.
     - [Nginx Proxy Manager (NPM)](stacks/nginx-proxy-manager.md)
     - [ouath2-proxy manager](stacks/oauth2-proxy.md)
     - [migrate portainer agent to be managed by portainer **not recommeded**](stacks/portainer-agent.md)
-    - [shepherd to update swarm images](stacks/shepherd.md)
-    - [traefik](stacks/traefik.md)
-    - [uPoller (unifi poller)](stacks/unifi-poller.md)
-    - [watchtower](stacks/watchtower.md)
     - wordpress - todo
     - [portception (portainer deployed by portainer - do not attempt)](stacks/portception.md)
     - [auto lable nodes with name of running containers](stacks/auto-label-nodes.md)
+    - [unifi poller / UnPoller](stacks/unifi-poller.md)
+    - no longer used, kept for reference:
+        - [watchtower](stacks/watchtower.md)
+        - [shepherd](stacks/shepherd.md)
+        - [traefik](stacks/traefik.md)
 
 # More Details on What and Why
 
@@ -40,6 +45,16 @@ Each major task has its own gist, this is to help with maitainability long term.
   - enable the use of replicated state so any container can start on any single docker swarm node and fail between nodes and see the data it needs to
   - enable safe replicated shared volume across all nodes that allow state to be replicated and accessible from all nodes and allows for use of datatbases like mariadb which will corrupt if placed on NFS or CIFS/SMB shares across the network
   - make it easy to backup with my synology (this model enabled me to easily backup using active backup for business)
+
+## current state 8/24/2026
+- all stacks now deploy [from git](gitops-with-portainer.md), not the portainer web editor
+  - each stack watches its own branch, so a commit only redeploys the stacks it touched
+  - point them all at `main` and every commit redeploys everything, don't do that
+- [passwords are out of the service specs](secrets.md) - they were env vars, which anything that could reach the docker API could read, and i had an unauthenticated docker socket proxy on the LAN at the time. both fixed
+- watchtower and shepherd are gone, replaced by [renovate](image-updates-renovate.md) opening PRs against the compose files
+- also retired: traefik (NPM does the job), and a docker management UI i was running on an eight month old dev build off a fork
+- two stacks had been broken for a while and nobody noticed, because nothing was checking
+- new: [troubleshooting notes](troubleshooting.md), including why a container can't reach a macvlan container on the same host, which had my uptime monitoring lying to me for a long time
 
 ## current state 4/14/2025
 - VMs updated to debian bookworm using apt, and latest docker version

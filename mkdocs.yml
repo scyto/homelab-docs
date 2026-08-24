@@ -1,10 +1,10 @@
 site_name: scyto's homelab docs
-site_description: Proxmox cluster and Docker Swarm build notes — soup to nutz.
+site_description: Proxmox cluster and Docker Swarm build notes, soup to nutz.
 site_url: https://scyto.github.io/homelab-docs/
 repo_url: https://github.com/scyto/homelab-docs
 repo_name: scyto/homelab-docs
 edit_uri: edit/main/docs/
-copyright: These are my own re-install notes — don't take any of it on blind faith.
+copyright: These are my own re-install notes, don't take any of it on blind faith.
 
 theme:
   name: material
@@ -65,6 +65,11 @@ markdown_extensions:
   - pymdownx.tilde
   - pymdownx.caret
   - pymdownx.keys
+  # Required for :material-*: / :octicons-*: icon shortcodes. Without it they
+  # render as literal text, e.g. ":material-docker:" on the home page cards.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra:
   social:
@@ -117,6 +122,10 @@ nav:
       - Install Docker: docker-swarm/install-docker.md
       - Configure Swarm: docker-swarm/configure-swarm.md
       - Portainer: docker-swarm/portainer.md
+      - Stacks in Git: docker-swarm/gitops-with-portainer.md
+      - Secrets: docker-swarm/secrets.md
+      - Image Updates with Renovate: docker-swarm/image-updates-renovate.md
+      - Troubleshooting: docker-swarm/troubleshooting.md
       - KeepaliveD: docker-swarm/keepalived.md
       - "Deprecated: GlusterFS Install": docker-swarm/glusterfs-install.md
       - "Deprecated: GlusterFS Docker Plugin": docker-swarm/glusterfs-docker-plugin.md
@@ -127,10 +136,11 @@ nav:
           - Mosquitto MQTT: docker-swarm/stacks/mosquitto-mqtt.md
           - Nginx Proxy Manager: docker-swarm/stacks/nginx-proxy-manager.md
           - oauth2-proxy: docker-swarm/stacks/oauth2-proxy.md
-          - Shepherd: docker-swarm/stacks/shepherd.md
-          - Traefik: docker-swarm/stacks/traefik.md
-          - UniFi Poller: docker-swarm/stacks/unifi-poller.md
-          - Watchtower: docker-swarm/stacks/watchtower.md
           - Auto-label Nodes: docker-swarm/stacks/auto-label-nodes.md
-          - "Not Recommended: Portainer Agent": docker-swarm/stacks/portainer-agent.md
-          - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md
+          - UniFi Poller / UnPoller: docker-swarm/stacks/unifi-poller.md
+          - No Longer Used:
+              - Watchtower: docker-swarm/stacks/watchtower.md
+              - Shepherd: docker-swarm/stacks/shepherd.md
+              - Traefik: docker-swarm/stacks/traefik.md
+              - "Not Recommended: Portainer Agent": docker-swarm/stacks/portainer-agent.md
+              - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md

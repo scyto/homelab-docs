@@ -5,6 +5,13 @@ source_gist: https://gist.github.com/scyto/87c2f8fcca1c6c693bab7d68f1e6835e
 
 # unifi poller swarm template
 
+!!! note
+
+    the project is called **UnPoller** now,
+    [unpoller/unpoller](https://github.com/unpoller/unpoller). the old
+    `unifi-poller` name still redirects. i still run this and i maintain the
+    image for the project.
+
 ## Description
 This is my most complex stack to date.  It runs the unifi-poller (uPoller) application consisting of an influx database, grafana dashboard and the uPoller collector.
 
