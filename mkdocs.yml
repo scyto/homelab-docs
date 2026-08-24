@@ -1,0 +1,131 @@
+site_name: scyto's homelab docs
+site_description: Proxmox cluster and Docker Swarm build notes — soup to nutz.
+site_url: https://scyto.github.io/homelab-docs/
+repo_url: https://github.com/scyto/homelab-docs
+repo_name: scyto/homelab-docs
+edit_uri: edit/main/docs/
+copyright: These are my own re-install notes — don't take any of it on blind faith.
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Follow system theme
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tilde
+  - pymdownx.caret
+  - pymdownx.keys
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/scyto
+
+nav:
+  - Home: index.md
+  - Proxmox Cluster:
+      - proxmox/index.md
+      - Hardware & Base Install: proxmox/hardware-and-base-install.md
+      - Thunderbolt Networking:
+          - Cables & Interface Setup: proxmox/thunderbolt/cables-and-interfaces.md
+          - Openfabric Routing Mesh: proxmox/thunderbolt/openfabric-mesh.md
+          - VM Access to the Mesh: proxmox/thunderbolt/vm-access-to-mesh.md
+          - LAN Access to the Mesh: proxmox/thunderbolt/lan-access-to-mesh.md
+          - CephFS Client Mount: proxmox/thunderbolt/cephfs-client-mount.md
+          - "Deprecated: Openfabric Mesh (v1)": proxmox/thunderbolt/openfabric-mesh-legacy.md
+          - "Deprecated: OSPF6d Mesh": proxmox/thunderbolt/ospf6d-mesh-legacy.md
+      - Cluster Setup: proxmox/cluster-setup.md
+      - Ceph & High Availability: proxmox/ceph-and-ha.md
+      - CephFS & ISO/Template Storage: proxmox/cephfs-and-storage.md
+      - CephFS via VirtioFS: proxmox/cephfs-virtiofs-passthrough.md
+      - HA Windows VM + TPM: proxmox/ha-windows-vm-tpm.md
+      - Migrating from Hyper-V:
+          - Windows Gen2 VMs: proxmox/migration/windows-gen2-from-hyperv.md
+          - "Domain Controller 1 (FSMO/CA)": proxmox/migration/domain-controller-1.md
+          - Domain Controller 2: proxmox/migration/domain-controller-2.md
+          - Windows Admin Center VM: proxmox/migration/admin-center-vm.md
+          - Home Assistant: proxmox/migration/home-assistant.md
+          - Docker Swarm VMs: proxmox/migration/docker-swarm-vms.md
+          - EFI / BIOS Changes: proxmox/migration/docker-swarm-vms-efi-bios.md
+      - Extra Credit:
+          - vGPU Passthrough:
+              - proxmox/extras/vgpu/index.md
+              - Privileged Container Guest: proxmox/extras/vgpu/privileged-container.md
+              - Windows VM Guest: proxmox/extras/vgpu/windows-vm.md
+          - "Let's Encrypt via Cloudflare": proxmox/extras/lets-encrypt-cloudflare.md
+          - Azure AD Auth: proxmox/extras/azure-ad-auth.md
+          - Proxmox Backup Server: proxmox/extras/proxmox-backup-server.md
+          - Postfix O365 Mail Relay: proxmox/extras/postfix-o365-relay.md
+      - Troubleshooting: proxmox/troubleshooting.md
+  - Docker Swarm:
+      - docker-swarm/index.md
+      - Debian VM Install: docker-swarm/debian-vm-install.md
+      - Install Docker: docker-swarm/install-docker.md
+      - Configure Swarm: docker-swarm/configure-swarm.md
+      - Portainer: docker-swarm/portainer.md
+      - KeepaliveD: docker-swarm/keepalived.md
+      - "Deprecated: GlusterFS Install": docker-swarm/glusterfs-install.md
+      - "Deprecated: GlusterFS Docker Plugin": docker-swarm/glusterfs-docker-plugin.md
+      - Stack Templates:
+          - AdGuard: docker-swarm/stacks/adguard.md
+          - Cloudflare DDNS: docker-swarm/stacks/cloudflare-ddns.md
+          - Infinitude: docker-swarm/stacks/infinitude.md
+          - Mosquitto MQTT: docker-swarm/stacks/mosquitto-mqtt.md
+          - Nginx Proxy Manager: docker-swarm/stacks/nginx-proxy-manager.md
+          - oauth2-proxy: docker-swarm/stacks/oauth2-proxy.md
+          - Shepherd: docker-swarm/stacks/shepherd.md
+          - Traefik: docker-swarm/stacks/traefik.md
+          - UniFi Poller: docker-swarm/stacks/unifi-poller.md
+          - Watchtower: docker-swarm/stacks/watchtower.md
+          - Auto-label Nodes: docker-swarm/stacks/auto-label-nodes.md
+          - "Not Recommended: Portainer Agent": docker-swarm/stacks/portainer-agent.md
+          - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md
