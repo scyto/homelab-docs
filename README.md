@@ -34,3 +34,8 @@ Then open <http://127.0.0.1:8000>.
 Typo fixes and corrections are welcome — use the edit icon on any page, or open
 a PR directly. CI builds the site with `--strict`, so a broken internal link
 will fail the build.
+
+## Unmigrated gists
+
+16 of my gists were not part of the migrated tree. See
+[UNMIGRATED-GISTS.md](UNMIGRATED-GISTS.md) for the review list.
