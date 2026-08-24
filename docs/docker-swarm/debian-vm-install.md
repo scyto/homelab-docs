@@ -104,7 +104,7 @@ sudo nano /etc/network/interfaces
 ```
 sudo systemctl start NetworkManager
 sudo systemctl enable NetworkManager
-``
+```
 - Reboot now
 
 ## Network Manager configuration - Second Login

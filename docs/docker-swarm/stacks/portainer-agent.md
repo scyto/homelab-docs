@@ -61,3 +61,4 @@ None, by default this template will result in the agent being deployed to all no
 networks:
   portainer:
     external: true
+```

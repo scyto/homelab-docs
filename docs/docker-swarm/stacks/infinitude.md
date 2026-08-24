@@ -29,7 +29,7 @@ services:
       - LANG=en_US.UTF-8
       - LANGUAGE=en_US:en
       - LC_ALL=en_US.UTF-8
-      - APP_SECRET=Pogotudinal
+      - APP_SECRET=redacted
       - PASS_REQS=600
       - MODE=Production
       - SERIAL_TTY=

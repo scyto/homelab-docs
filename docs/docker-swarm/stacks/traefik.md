@@ -3,6 +3,18 @@ title: "certificatesDuration: 72    # only use a short duration like this for te
 source_gist: https://gist.github.com/scyto/1932a9e21c9b8030e8325ab3b380bdf7
 ---
 
+!!! warning "No longer used"
+
+    I do not run Traefik any more. Reverse proxying is handled by
+    [Nginx Proxy Manager](nginx-proxy-manager.md), with swag alongside it for
+    certificates, and running two reverse proxies was solving a problem I did not
+    have.
+
+    Left up because the config-as-swarm-config pattern in here is still a useful
+    example, and because the versioned config names show why you end up with
+    `_v2` and `_v3` suffixes: a swarm config is immutable, so changing one means
+    creating a new one under a new name.
+
 ## Description
 This template runs my experimental traefik server for evaluating if i move to it from handcrafted nginx proxy.
 
