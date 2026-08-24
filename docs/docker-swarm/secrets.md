@@ -38,11 +38,22 @@ set". four ways to do that, and one case with no way at all.
 
 ## Create a secret
 
-mind your shell history, a leading space keeps it out of most shells, or pipe a
-file in instead:
+keep the value off the command line entirely, `docker secret create` reads a
+file:
 
 ```
-printf '%s' 'the-actual-value' | docker secret create my_secret -
+docker secret create my_secret /path/to/value-file
+```
+
+nothing sensitive in your history, nothing in the process list, and you can
+shred the file after.
+
+if you do type it inline, note the **leading space** below. that keeps it out of
+history only if you have asked for it, `HISTCONTROL=ignorespace` in bash or
+`setopt HIST_IGNORE_SPACE` in zsh, neither of which is on by default everywhere:
+
+```
+ printf '%s' 'the-actual-value' | docker secret create my_secret -
 ```
 
 then in the stack you need **both** halves:
