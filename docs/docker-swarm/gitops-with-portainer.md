@@ -175,6 +175,25 @@ jobs:
 up `stacks/<env>/<stack>` and nothing else, so adding a stack needs no edit here.
 add the directory, create its deploy branch, point portainer at it.
 
+**deleting a stack directory retires nothing.** the `find` only sees directories
+that still exist, so if a commit deletes `stacks/swarm/adguard/` the workflow
+matches nothing, promotes nothing, and prints "no stack directories changed" even
+though a stack file clearly did change. `deploy/swarm/adguard` stays where it is
+and portainer carries on serving the last commit it saw, indefinitely.
+
+promoting the deletion would not help either, portainer would just fetch a commit
+with no compose file at the configured path and error. retiring a stack is a
+manual sequence and worth writing on your own runbook:
+
+1. delete the stack in portainer
+2. delete `deploy/<env>/<stack>` — which the ruleset blocks, so this needs the
+   break-glass in [step 7](#7-rolling-back-a-compose)
+3. then remove the directory from git
+
+renaming has the mirror problem: the new directory looks like a change so the
+push creates `deploy/<env>/<newname>`, which nothing polls, and the old branch is
+left stale.
+
 **`--atomic` is not optional.** i first wrote this as a plain `git push` with
 several refs and told myself that was all or nothing. it isn't. refuse one ref,
 say a deploy branch is somehow non fast forward, and the others still land, so a
