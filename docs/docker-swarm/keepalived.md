@@ -1,6 +1,7 @@
 ---
 title: "debian-keepalived"
 source_gist: https://gist.github.com/scyto/cfe4f1645cb2cd820134238bd3c2596a
+comments: true
 ---
 
 # debian-keepalived

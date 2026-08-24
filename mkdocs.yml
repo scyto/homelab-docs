@@ -8,6 +8,7 @@ copyright: These are my own re-install notes — don't take any of it on blind f
 
 theme:
   name: material
+  custom_dir: overrides
   icon:
     repo: fontawesome/brands/github
   features:
@@ -69,6 +70,10 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/scyto
+      name: scyto on GitHub
+    - icon: material/forum
+      link: https://github.com/scyto/homelab-docs/discussions
+      name: Ask a question in Discussions
 
 nav:
   - Home: index.md

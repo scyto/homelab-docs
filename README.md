@@ -29,6 +29,12 @@ mkdocs serve
 
 Then open <http://127.0.0.1:8000>.
 
+## Questions
+
+Ask in [Discussions](https://github.com/scyto/homelab-docs/discussions). The ten
+busiest pages have an in-page comment box wired to the matching Q&A thread; the
+original gists link to the same threads.
+
 ## Contributing
 
 Typo fixes and corrections are welcome — use the edit icon on any page, or open

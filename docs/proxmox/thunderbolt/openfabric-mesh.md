@@ -1,6 +1,7 @@
 ---
 title: "Enable Dual Stack (IPv4 and IPv6) OpenFabric Routing"
 source_gist: https://gist.github.com/scyto/58b5cd9a18e1f5846048aabd4b152564
+comments: true
 ---
 
 #  Enable Dual Stack (IPv4 and IPv6) OpenFabric Routing

@@ -1,6 +1,7 @@
 ---
 title: "ProxMox Cluster - Soup-to-Nutz"
 source_gist: https://gist.github.com/scyto/76e94832927a89d977ea989da157e9dc
+comments: true
 ---
 
 # ProxMox Cluster - Soup-to-Nutz

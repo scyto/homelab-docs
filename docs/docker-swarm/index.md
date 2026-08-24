@@ -1,6 +1,7 @@
 ---
 title: "Installation Step-by-Step"
 source_gist: https://gist.github.com/scyto/f4624361c4e8c3be2aad9b3f0073c7f9
+comments: true
 ---
 
 This (and related gists) captures how i created my docker swarm architecture.  This is intended mostly for my own notes incase i need to re-creeate anything later! As such expect some typos and possibly even an error...

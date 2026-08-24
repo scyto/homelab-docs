@@ -42,6 +42,16 @@ Notably: [Thunderbolt Networking Setup](https://gist.github.com/scyto/67fdc9a517
 and [vGPU Passthrough](https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3)
 have accumulated hundreds of comments between them.
 
+## Questions and troubleshooting
+
+The busiest pages have a comment box at the bottom, backed by
+[GitHub Discussions](https://github.com/scyto/homelab-docs/discussions). Replies
+thread properly, answers can be marked, and everything is searchable — none of
+which gist comments could do.
+
+Anything not covered by a specific page belongs in
+[Q&A](https://github.com/scyto/homelab-docs/discussions/categories/q-a).
+
 ## Contributing
 
 Found a typo, a broken command, or something that's gone stale? There's an

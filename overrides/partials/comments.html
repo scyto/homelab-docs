@@ -1,0 +1,79 @@
+{% if page.meta.comments %}
+  <h2 id="__comments">{{ lang.t("meta.comments") }}</h2>
+
+  <script src="https://giscus.app/client.js"
+          data-repo="scyto/homelab-docs"
+          data-repo-id="R_kgDOUCH1vw"
+          data-category="Q&A"
+          data-category-id="DIC_kwDOUCH1v84DEDEQ"
+          data-mapping="pathname"
+          data-strict="1"
+          data-reactions-enabled="1"
+          data-emit-metadata="0"
+          data-input-position="top"
+          data-theme="light"
+          data-lang="en"
+          data-loading="lazy"
+          crossorigin="anonymous"
+          async>
+  </script>
+
+  <script>
+    // Resolve the giscus theme from the Material palette.
+    //
+    // The palette has three states: explicit light (scheme "default"), explicit
+    // dark (scheme "slate"), and "follow system", which sets no scheme at all --
+    // so that case has to fall back to the media query, or system-dark readers
+    // get a light comment box on a dark page.
+    function __giscusTheme() {
+      var palette = __md_get("__palette")
+      var scheme = palette && palette.color && palette.color.scheme
+      if (scheme === "slate")   return "transparent_dark"
+      if (scheme === "default") return "light"
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "transparent_dark"
+        : "light"
+    }
+
+    function __giscusApply() {
+      var theme = __giscusTheme()
+
+      // Before the iframe exists, the theme has to go on the script tag; after
+      // it loads, only postMessage will change it.
+      var frame = document.querySelector("iframe.giscus-frame")
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage(
+          { giscus: { setConfig: { theme: theme } } },
+          "https://giscus.app"
+        )
+      } else {
+        var script = document.querySelector("script[src*='giscus.app/client.js']")
+        if (script) script.setAttribute("data-theme", theme)
+      }
+    }
+
+    __giscusApply()
+
+    // document$ fires on every page load including instant navigation, where
+    // DOMContentLoaded fires only once for the whole session.
+    if (typeof document$ !== "undefined") {
+      document$.subscribe(function() {
+        __giscusApply()
+        var ref = document.querySelector("[data-md-component=palette]")
+        if (ref && !ref.__giscusBound) {
+          ref.__giscusBound = true
+          ref.addEventListener("change", __giscusApply)
+        }
+      })
+    } else {
+      document.addEventListener("DOMContentLoaded", function() {
+        var ref = document.querySelector("[data-md-component=palette]")
+        if (ref) ref.addEventListener("change", __giscusApply)
+      })
+    }
+
+    // "Follow system" means the OS can flip the theme with no page interaction.
+    window.matchMedia("(prefers-color-scheme: dark)")
+          .addEventListener("change", __giscusApply)
+  </script>
+{% endif %}

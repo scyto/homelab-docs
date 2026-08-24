@@ -1,6 +1,7 @@
 ---
 title: "Thunderbolt Networking"
 source_gist: https://gist.github.com/scyto/67fdc9a517faefa68f730f82d7fa3570
+comments: true
 ---
 
 # Thunderbolt Networking

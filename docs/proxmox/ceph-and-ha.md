@@ -1,6 +1,7 @@
 ---
 title: "CEPH HA Setup"
 source_gist: https://gist.github.com/scyto/8c652f3eab61ed1fa2f980d02a484c35
+comments: true
 ---
 
 # CEPH HA Setup

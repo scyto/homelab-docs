@@ -1,6 +1,7 @@
 ---
 title: "Hypervisor Host Based CephFS pass through with VirtioFS"
 source_gist: https://gist.github.com/scyto/1b526c38b9c7f7dca58ca71052653820
+comments: true
 ---
 
 # Hypervisor Host Based CephFS pass through with VirtioFS

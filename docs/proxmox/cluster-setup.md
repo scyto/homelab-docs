@@ -1,6 +1,7 @@
 ---
 title: "Proxmox cluster Setup"
 source_gist: https://gist.github.com/scyto/645193291b9a81eb3cb6ebefe68274ae
+comments: true
 ---
 
 # Proxmox cluster Setup

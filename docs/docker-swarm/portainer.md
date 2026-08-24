@@ -1,6 +1,7 @@
 ---
 title: "Installing Portainer on a swarm"
 source_gist: https://gist.github.com/scyto/a57d63a3b905b24e9eb25618848c8e80
+comments: true
 ---
 
 # Installing Portainer on a swarm

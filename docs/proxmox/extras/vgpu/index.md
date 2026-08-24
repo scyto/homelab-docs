@@ -1,6 +1,7 @@
 ---
 title: "Enable & Using vGPU Passthrough"
 source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
+comments: true
 ---
 
 # Enable & Using vGPU Passthrough
