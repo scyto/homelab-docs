@@ -166,14 +166,27 @@ jobs:
 
           [ -z "$refs" ] && { echo "no stack dirs changed"; exit 0; }
 
-          # ONE push, all refs. a runner killed mid job promotes everything or
-          # nothing, never half
-          git push origin $refs
+          # ONE push, all refs, --atomic. a plain multi ref push is NOT all or
+          # nothing: refuse one ref and the others still land
+          git push --atomic origin $refs
 ```
 
 `find stacks -mindepth 2 -maxdepth 2 -type d` is what makes it generic, it picks
 up `stacks/<env>/<stack>` and nothing else, so adding a stack needs no edit here.
 add the directory, create its deploy branch, point portainer at it.
+
+**`--atomic` is not optional.** i first wrote this as a plain `git push` with
+several refs and told myself that was all or nothing. it isn't. refuse one ref,
+say a deploy branch is somehow non fast forward, and the others still land, so a
+commit touching two stacks gets half of itself into production and then reports
+failure, which reads like nothing happened. with `--atomic` either every branch
+moves or none do.
+
+easy to check against a local bare repo with an `update` hook that refuses one
+ref. without the flag the survivor shows `* [new branch]`, with it both report
+`atomic push failure` and the remote is untouched. use an `update` hook not
+`pre-receive`, exiting non zero in `pre-receive` rejects the whole push either
+way and makes a non atomic push look atomic.
 
 worked example, a commit that edits `stacks/swarm/npm/compose.yml` and
 `stacks/pi-zwave01/ser2net/compose.yml` and a readme:
