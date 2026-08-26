@@ -8,6 +8,7 @@ This (and related gists) captures how i created my docker swarm architecture.  T
 
 # Installation Step-by-Step
 Each major task has its own gist, this is to help with maitainability long term.
+
 1. [Install Debian VM for each docker host](debian-vm-install.md)
 2. [install Docker](install-docker.md)
 3. [Configure Docker Swarm](configure-swarm.md)
