@@ -90,7 +90,7 @@ nav:
           - Openfabric Routing Mesh: proxmox/thunderbolt/openfabric-mesh.md
           - VM Access to the Mesh: proxmox/thunderbolt/vm-access-to-mesh.md
           - LAN Access to the Mesh: proxmox/thunderbolt/lan-access-to-mesh.md
-          - CephFS Client Mount: proxmox/thunderbolt/cephfs-client-mount.md
+          - CephFS on a LAN Client: proxmox/thunderbolt/cephfs-client-mount.md
           - "Deprecated: Openfabric Mesh (v1)": proxmox/thunderbolt/openfabric-mesh-legacy.md
           - "Deprecated: OSPF6d Mesh": proxmox/thunderbolt/ospf6d-mesh-legacy.md
       - Cluster Setup: proxmox/cluster-setup.md
@@ -113,7 +113,7 @@ nav:
               - Windows VM Guest: proxmox/extras/vgpu/windows-vm.md
           - "Let's Encrypt via Cloudflare": proxmox/extras/lets-encrypt-cloudflare.md
           - Azure AD Auth: proxmox/extras/azure-ad-auth.md
-          - Proxmox Backup Server: proxmox/extras/proxmox-backup-server.md
+          - "Deprecated: PBS on Synology": proxmox/extras/proxmox-backup-server.md
           - Postfix O365 Mail Relay: proxmox/extras/postfix-o365-relay.md
       - Troubleshooting: proxmox/troubleshooting.md
   - Docker Swarm:
@@ -144,3 +144,17 @@ nav:
               - Traefik: docker-swarm/stacks/traefik.md
               - "Not Recommended: Portainer Agent": docker-swarm/stacks/portainer-agent.md
               - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md
+  - TrueNAS:
+      - truenas/index.md
+      - S3 with Versity Gateway: truenas/s3-versity-gateway.md
+  - Raspberry Pi:
+      - raspberry-pi/index.md
+  - Thread:
+      - thread/index.md
+  - Backups:
+      - backups/index.md
+      - Proxmox Backup Server: backups/pbs-server.md
+      - VM Backups to PBS: backups/vm-backups-pbs.md
+      - CephFS Backups: backups/cephfs.md
+      - Raspberry Pi to PBS: backups/pi-host-backup.md
+      - Portainer to S3: backups/portainer-s3.md

@@ -1,162 +1,184 @@
 ---
-title: "CephFS Mounting for Docker VMs (first draft)"
+title: "Mounting CephFS on a LAN client"
 source_gist: https://gist.github.com/scyto/61b38c47cb2c79db279ee1cbb6f31772
 ---
 
-# CephFS Mounting for Docker VMs (first draft)
+# mounting cephFS on a LAN client
 
-2025.04.27 - currently untested e2e this was made from my raw notes by chatgpt, so erros and hallucianation may have crept in :-)
+how a machine that is not a Proxmox node mounts a cephFS filesystem with the
+kernel client: a VM, another linux box, a pi. my docker VMs do not do this any
+more, they get cephFS through [virtiofs](../cephfs-virtiofs-passthrough.md). this
+is for anything else on the LAN that needs the cluster.
 
-This document describes the clean, final method to mount a CephFS filesystem for Docker VMs across your cluster.
+the examples mount the filesystem `docker` on a client called `lan01`. checked
+against the Ceph docs and Proxmox VE's own source, and tested read only against
+Ceph 20.2 from a Debian 12 VM (kernel 6.1, `ceph-common` 16.2).
 
-Assumptions:
-- you have a working cephFS volume called **docker** (out of scope)
-- that you can see this volume just fine mounted on all 3 pve nodes (if you can't then this is never going to work)
-- that you are using the IPv6 version of my ceph proxmox setup (not critical, just sawp out IPv6 for IPv4 address below)
-- it assume you have full connectivity from within the VM to the internet and the ceph network - this relies on my new routed mesh network setup i haven't yet published (should be ok if you are in normal VM environment, but the requirement remains)
+## what the client needs
 
----
+- **a route to the mesh**, to the monitors, the MDS **and every OSD**. the kernel
+  client reads and writes file data on the OSDs itself, so reaching only the
+  monitors is not enough. [LAN access to the mesh](lan-access-to-mesh.md) is how
+  mine get there
+- **`ceph-common`**, for the mount helper
+- **`/etc/ceph/ceph.conf`**, a minimal config so it can find the monitors
+- **`/etc/ceph/ceph.client.lan01.keyring`**, its own Ceph user
 
-## 🛠️ Proxmox Node Setup (one-time, performed on any node)
+## 1. a user for the client
 
-### 1. Create a restricted CephFS client
+on any Proxmox node. one user per client, never a shared one and never
+`client.admin`, so taking one client away is one command and a lost key only
+opens what that client could reach.
 
-```bash
-ceph auth get-or-create client.docker-cephfs \
-  mon 'allow r' \
-  mds 'allow rw path=/' \
-  osd 'allow rw pool=cephfs.docker.meta, allow rw pool=cephfs.docker.data'
-  -o /etc/pve/priv/ceph/ceph.client.docker-cephfs.keyring
+```
+umask 077
+ceph fs ls
+ceph fs authorize docker client.lan01 / rw > /root/ceph.client.lan01.keyring
+ceph config generate-minimal-conf > /root/ceph.conf
+ceph auth get client.lan01 | grep caps
 ```
 
+- `umask 077` makes both files readable by root only. `scp` keeps a file's mode,
+  and without this the keyring lands in the client's home directory readable by
+  every user on it
+- `ceph fs ls` lists the filesystem names. `docker` is mine
+- `ceph fs authorize` works out the capabilities itself, including the data
+  pools, so there are no pool names to get wrong. it prints the keyring, which is
+  the key, so it goes to a file, not the screen
+- `/ rw` is the path and the access. `/ r` is read only. `/backups rw` gives one
+  directory, and the client can then only mount that directory. `rwp` also
+  allows layouts and quotas, `rws` snapshots. `root_squash` after the access
+  stops root on the client changing anything
+- the last line shows the caps it made. for `/ rw` on Ceph 20.2:
 
-### 2. Extract the raw secret
+    ```
+    caps mds = "allow rw fsname=docker"
+    caps mon = "allow r fsname=docker"
+    caps osd = "allow rw tag cephfs data=docker"
+    ```
 
-```bash
-grep 'key =' /etc/pve/priv/ceph/ceph.client.docker-cephfs.keyring | awk '{print $3}' > /etc/pve/priv/ceph/docker-cephFS.secret
-chmod 600 /etc/pve/priv/ceph/docker-cephFS.secret
+    a read only user gets `allow r` on the `mds` and `osd` lines
+
+**not in `/etc/pve/priv/ceph/`.** Proxmox reads `<storage id>.secret`,
+`<storage id>.keyring` and `<storage id>.conf` from there for its own Ceph and
+cephFS storages. a client's file that happens to have a storage's name replaces
+that storage's credentials, and the storage stops mounting the next time it
+mounts. my first version of this page did exactly that.
+
+## 2. copy the files to the client
+
+from your own machine, which can reach both. the client never gets SSH to a
+Proxmox node:
+
+```
+scp -3 root@pve1:/root/ceph.client.lan01.keyring root@pve1:/root/ceph.conf alex@lan01:
+ssh root@pve1 rm /root/ceph.client.lan01.keyring /root/ceph.conf
 ```
 
-### 3. Generate a minimal Ceph config
+`-3` sends the copy through your machine rather than from one host to the other.
 
-```bash
-ceph config generate-minimal-conf -o /etc/pve/priv/ceph/minimal-ceph.conf
-chmod 644 /etc/pve/priv/ceph/minimal-ceph.conf
+on the client, as the user the files were copied to. in a root shell `~` is
+`/root` and the files are not there:
+
+```
+sudo apt install ceph-common
+ls -l /etc/ceph/
+sudo install -d -m 755 /etc/ceph
+sudo install -m 644 -o root -g root ~/ceph.conf /etc/ceph/ceph.conf
+sudo install -m 600 -o root -g root ~/ceph.client.lan01.keyring /etc/ceph/ceph.client.lan01.keyring
+rm ~/ceph.conf ~/ceph.client.lan01.keyring
 ```
 
----
+look at the `ls` before installing. an existing `ceph.conf` may belong to
+something else, move it aside rather than overwrite it.
 
-## 🛠️ VM Setup Instructions (done within VM)
+## 3. mount it
 
-### 1. Install necessary packages
-
-```bash
-apt update
-apt install ceph-common
+```
+sudo mkdir -p /mnt/cephfs
+sudo mount -t ceph :/ /mnt/cephfs -o name=lan01,fs=docker
 ```
 
-### 2. Retrieve secret and config from Proxmox
+- `name=lan01` is the user without `client.`, `fs=docker` the filesystem, and
+  `:/` the path inside it, which has to be within what step 1 allowed. the monitors
+  come from `ceph.conf`, which is what the empty part before the `:` means
+- the helper reads the key from `/etc/ceph/ceph.client.lan01.keyring`, so it never
+  goes on the command line
+- for a read only user add `ro`: `-o name=lan01,fs=docker,ro`
+- `findmnt -t ceph` afterwards shows `mds_namespace=docker`. the kernel's older
+  name for `fs=`
 
-```bash
-sftp root@[fc00::81]
-lcd ~
-get /etc/pve/priv/ceph/docker-cephFS.secret
-get /etc/pve/priv/ceph/minimal-ceph.conf
-get /etc/pve/priv/ceph/ceph.client.docker-cephfs.keyring
-exit
+**the newer form**, `sudo mount -t ceph lan01@.docker=/ /mnt/cephfs`, is what the
+Ceph docs show now. the mount helper in Debian 12's `ceph-common` 16.2 does not
+understand it and fails with:
+
+```
+source mount path was not specified
+unable to parse mount source: -22
 ```
 
-### 3. Move files into place
+the form above worked there. i have not tried the newer form with a newer helper.
 
-```bash
-mkdir -p /etc/ceph
-mv ~/docker-cephFS.secret /etc/ceph/
-mv ~/minimal-ceph.conf /etc/ceph/ceph.conf
-mv ~/ceph.client.docker-cephfs.keyring /etc/ceph/ceph.client.docker-cephfs.keyring
-chmod 600 /etc/ceph/ceph.client.docker-cephfs.keyring
-chmod 600 /etc/ceph/docker-cephFS.secretget 
-chmod 644 /etc/ceph/ceph.conf
+then check it can read **file contents**, not just list them. a listing only
+needs the MDS. contents need the OSDs, so a missing route to an OSD, or caps that
+name the wrong pools, only shows up here:
+
+```
+ls /mnt/cephfs
+f=$(sudo find /mnt/cephfs -maxdepth 2 -type f -size +0 -print -quit); echo "$f"
+sudo head -c 1 "$f" > /dev/null && echo contents ok
 ```
 
-### 4. Create mount point
+for a read write client, check it can **write** as well. reading proves nothing
+about that: a mount that came up read only, or caps without write, still prints
+`contents ok`. an empty file only touches the MDS, so this writes a block and
+forces it out to the OSDs before removing it:
 
-```bash
-mkdir -p /mnt/docker-cephFS
+```
+t=$(sudo mktemp -p /mnt/cephfs .write-test.XXXXXX) && sudo dd if=/dev/zero of="$t" bs=4k count=1 conv=fsync status=none && sudo rm "$t" && echo writes ok
 ```
 
-### 5. Test manual mount
+on a read only mount it stops at `mktemp` with `Read-only file system` and
+writes nothing. with `root_squash`, root cannot write, so run it as a user who can,
+without `sudo`.
 
-```bash
-mount -t ceph :/ /mnt/docker-cephFS \
-    -o name=docker-cephfs,secretfile=/etc/ceph/docker-cephFS.secret,conf=/etc/ceph/ceph.conf,fs=docker
+## 4. mount at boot
+
+`/etc/fstab`:
+
+```
+:/ /mnt/cephfs ceph name=lan01,fs=docker,noatime,_netdev 0 0
 ```
 
-### 6. Configure permanent mount in `/etc/fstab`
+- `_netdev` makes it wait for the network
+- `0 0` because there is nothing for fsck to check on a network filesystem
 
-Add this line to `/etc/fstab`:
+check the line before a reboot finds a mistake for you:
 
-```bash
-:/ /mnt/docker-cephFS ceph name=docker-cephfs,secretfile=/etc/ceph/docker-cephFS.secret,conf=/etc/ceph/ceph.conf,fs=docker,_netdev 0 2
+```
+sudo findmnt --verify --verbose
+sudo umount /mnt/cephfs
+sudo mount /mnt/cephfs
 ```
 
----
+`findmnt` warns `unreachable source: :/` and `cannot detect on-disk filesystem
+type` for this line. both are expected, there is no local device to check. what
+matters is `0 parse errors, 0 errors`, and that the `mount` works.
 
-## 🔥 Optional: Automated Bootstrap Script for New VMs
+## removing a client
 
-Create a file `/root/cephfs-bootstrap.sh` with the following contents:
+unmount it on the client, then on a Proxmox node:
 
-```bash
-#!/bin/bash
-
-apt update
-apt install -y ceph-common
-
-mkdir -p /etc/ceph
-mkdir -p /mnt/docker-cephFS
-
-sftp root@[fc00::81] <<EOF
-lcd /etc/ceph
-get /etc/pve/priv/ceph/docker-cephFS.secret
-get /etc/pve/priv/ceph/minimal-ceph.conf
-bye
-EOF
-
-chmod 600 /etc/ceph/docker-cephFS.secret
-chmod 644 /etc/ceph/minimal-ceph.conf
-mv /etc/ceph/minimal-ceph.conf /etc/ceph/ceph.conf
-
-mount -t ceph :/ /mnt/docker-cephFS \
-    -o name=docker-cephfs,secretfile=/etc/ceph/docker-cephFS.secret,conf=/etc/ceph/ceph.conf,fs=docker
+```
+ceph auth rm client.lan01
 ```
 
-Make it executable:
+and delete its keyring and fstab line on the client.
 
-```bash
-chmod +x /root/cephfs-bootstrap.sh
-```
+## files
 
-Run it:
-
-```bash
-/root/cephfs-bootstrap.sh
-```
-
-✅ This script will install packages, pull configs, set permissions, and mount automatically!
-
----
-
-## 🔒 Files Overview
-
-| File | Purpose |
-|:-----|:--------|
-| `/etc/pve/priv/ceph/ceph.client.docker-cephfs.keyring` | Full Ceph client keyring (admin level) |
-| `/etc/pve/priv/ceph/docker-cephFS.secret` | Raw base64 secret for kernel mounting |
-| `/etc/pve/priv/ceph/minimal-ceph.conf` | Clean minimal Ceph config |
-
----
-
-## 🚀 TL;DR
-
-> **Pull secret + minimal conf from `/etc/pve/priv/ceph/`, mount `:/` with `fs=docker` into `/mnt/docker-cephFS`. Use fstab for permanent mount.**
-
-This procedure is safe, clean, Proxmox-cluster aware, and scales easily across VMs.
+| where | file | mode | holds |
+| --- | --- | --- | --- |
+| client | `/etc/ceph/ceph.conf` | 644 | the cluster's fsid and monitor addresses, no keys |
+| client | `/etc/ceph/ceph.client.lan01.keyring` | 600 | this client's key |
+| Proxmox node | nothing kept | | the copies in `/root` are deleted in step 2 |

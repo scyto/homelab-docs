@@ -41,7 +41,7 @@ Also made ceph take a hard dependecy on frr service being started - this may hel
    - ~Enable Dual Stack (IPv4 and IPv6) Openfabric Routing Mesh (old)~ deprecated - [Old gist here](thunderbolt/openfabric-mesh-legacy.md)
    - Optional: [Enable VMs to access ceph mesh](thunderbolt/vm-access-to-mesh.md)
    - Optional: [Enable LAN clients to access mesh](thunderbolt/lan-access-to-mesh.md)
-   - Optional: [cephFS Clients - mount remote cephFS volume](thunderbolt/cephfs-client-mount.md)
+   - Optional: [mount cephFS on a LAN client](thunderbolt/cephfs-client-mount.md)
 4. [Setup Cluster](cluster-setup.md)
 5. [Setup Ceph and High Availability](ceph-and-ha.md)
 6. [Create CephFS and storage for ISOs and CT Templates](cephfs-and-storage.md)
@@ -57,7 +57,7 @@ Also made ceph take a hard dependecy on frr service being started - this may hel
     1. [Enable vGPU Passthrough (+windows guest, CT guest configs](extras/vgpu/index.md)
     2. [Install Lets Encrypt Cert (CloudFlare as DNS Provder](extras/lets-encrypt-cloudflare.md)
     3. [Azure Active Directory Auth](extras/azure-ad-auth.md)
-    4. [Install Proxmox Backup Server (PBS) on synology with CIFS backend](extras/proxmox-backup-server.md)
+    4. ~~[Install Proxmox Backup Server (PBS) on synology with CIFS backend](extras/proxmox-backup-server.md)~~ deprecated, PBS now runs on TrueNAS, see [Backups](../backups/index.md)
     5. [Send email alerts via O365 using Postfix HA Container](extras/postfix-o365-relay.md)
 12. [Random Notes & Troubleshootig](troubleshooting.md)
 
