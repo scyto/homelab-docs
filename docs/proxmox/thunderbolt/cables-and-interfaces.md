@@ -141,7 +141,7 @@ and save the file
 # Slow Thunderbolt Performance? Too Many Retries? No traffic? Try this!
 
 ## verify neighbors can see each other (connectivity troubleshooting)
-##3 Install LLDP - this is great to see what nodes can see which.
+Install LLDP - this is great to see what nodes can see which.
 -  install lldpctl with `apt install lldpd` on all 3 nodes
 -  execute `lldpctl` you should info 
 

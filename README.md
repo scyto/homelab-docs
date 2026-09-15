@@ -9,6 +9,17 @@ Two projects live here:
 - **[Docker Swarm](docs/docker-swarm/index.md)**: 3-node Debian swarm with
   Portainer, KeepaliveD, VirtioFS/CephFS shared storage, and stack templates.
 
+Plus a section per major topic:
+
+- **[TrueNAS](docs/truenas/index.md)**: the NAS outside the cluster, PBS as a
+  container and S3 with Versity Gateway.
+- **[Backups](docs/backups/index.md)**: VMs and CephFS to PBS, Portainer to S3,
+  and databases.
+- **[Raspberry Pi](docs/raspberry-pi/index.md)**: the home automation radio host,
+  with its GPS time source.
+- **[Thread](docs/thread/index.md)**: the Thread network, its two border routers,
+  and recovering the Home Assistant add-on after the Pi has been off.
+
 These are primarily re-install notes for myself. Don't take any of it on blind
 faith, some parts are well tested, some much less so.
 

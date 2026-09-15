@@ -8,7 +8,6 @@ This (and related gists) captures how i created my docker swarm architecture.  T
 
 # Installation Step-by-Step
 Each major task has its own gist, this is to help with maitainability long term.
-
 1. [Install Debian VM for each docker host](debian-vm-install.md)
 2. [install Docker](install-docker.md)
 3. [Configure Docker Swarm](configure-swarm.md)
@@ -117,8 +116,8 @@ In a swarm where you want a container to run on any node you need to find a way 
 If you have a simple container that only needs environment variables to be cofigure you can do that directly when you deploy the portainer template as a portaineer stack.  See this [cloudflare dynamic dns updater](https://gist.github.com/scyto/22d570be47ba4ce52912160878d9495e) as an example.
 
 - Only #4 offers a safe way to make this happen (the 'config' is available to all nodes) - but this is super restrictive and doesn't help with containers that need to store more state and read/write that state. See this [mosquitto mqtt example](https://gist.github.com/scyto/e4098fcd9d35999ecc4f58f4ee42fbc7)
-- #1 this can work and you can mount the shares to multiple nodes via fstab.  Typically databases cannot be placed on these shares and will ultimately corrupt.  You do have to be careful to only have one container writing to any given file to avoid potentials issues.
-- #2 and #3 - thishas the advantage of not being generall mounted to the host OS, but mount on demand by the container, this reduced all the tedious mucking about is ~~hyperspace~~ fstab.  You do need to use the volumes UI in portaine for this.
+- \#1 this can work and you can mount the shares to multiple nodes via fstab.  Typically databases cannot be placed on these shares and will ultimately corrupt.  You do have to be careful to only have one container writing to any given file to avoid potentials issues.
+- \#2 and #3 - thishas the advantage of not being generall mounted to the host OS, but mount on demand by the container, this reduced all the tedious mucking about is ~~hyperspace~~ fstab.  You do need to use the volumes UI in portaine for this.
 
 and for nost folks NFS/CIFS shares are not replicated for high availability.
 

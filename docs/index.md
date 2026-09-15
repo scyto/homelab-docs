@@ -4,8 +4,9 @@ title: "Home"
 
 # scyto's homelab docs
 
-Build notes for two connected projects: a **3-node Proxmox cluster** meshed over
-Thunderbolt with Ceph on top, and the **Docker Swarm** that runs on it.
+Build notes for two connected projects, a **3-node Proxmox cluster** meshed over
+Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
+**TrueNAS** box and the **backups** that keep copies of both off the cluster.
 
 !!! note "A word of warning"
 
@@ -30,6 +31,35 @@ Thunderbolt with Ceph on top, and the **Docker Swarm** that runs on it.
 
     A 3-node Debian swarm with Portainer, KeepaliveD, VirtioFS-backed shared
     storage, stacks in git, and templates for everything I run on it.
+
+-   :material-nas:{ .lg .middle } **[TrueNAS](truenas/index.md)**
+
+    ---
+
+    The NAS outside the cluster: Proxmox Backup Server as a container, S3 with
+    Versity Gateway, and the app gotchas that cost me time.
+
+-   :material-raspberry-pi:{ .lg .middle } **[Raspberry Pi](raspberry-pi/index.md)**
+
+    ---
+
+    The Pi that holds the home automation radios: Docker, the stacks, a GPS
+    time source with PPS, and a PoE HAT OLED.
+
+-   :material-access-point-network:{ .lg .middle } **[Thread](thread/index.md)**
+
+    ---
+
+    One Thread network owned by Home Assistant, two border routers (the add-on
+    over ser2net and an ESP32 board), and getting the add-on back after the Pi
+    has been off.
+
+-   :material-backup-restore:{ .lg .middle } **[Backups](backups/index.md)**
+
+    ---
+
+    What gets backed up, how, and where it lands: VMs and CephFS to PBS,
+    Portainer to S3, and the databases that need more than a file copy.
 
 </div>
 

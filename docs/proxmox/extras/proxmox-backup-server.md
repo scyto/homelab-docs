@@ -3,6 +3,12 @@ title: "Proxmox Backup"
 source_gist: https://gist.github.com/scyto/61dcfff1d0128d9df85cf57b756c599c
 ---
 
+!!! warning "Deprecated: I no longer run this"
+
+    The Synology PBS is gone. PBS now runs as a container on my TrueNAS box, see
+    [Proxmox Backup Server](../../backups/pbs-server.md) and
+    [VM backups to PBS](../../backups/vm-backups-pbs.md). Kept for reference.
+
 # Proxmox Backup
 At this time proxmox backup only backs up VM and Containers - ths guide covers that.
 

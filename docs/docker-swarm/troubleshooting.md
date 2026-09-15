@@ -118,3 +118,55 @@ is why names end up with `_v2` and `_v3` on them.
 two consequences. old versions stick around until you delete them, so check now
 and again which ones nothing references. and a config named after its content
 rather than its version, like `mqtt_config`, ends up wrong.
+
+## a volume moved to cephFS is still on local disk
+
+**symptom:** changed a stack's volume to a `driver_opts` bind onto cephFS,
+redeployed, no errors. but the container doesn't see what's on cephFS, and what
+it writes doesn't show up there or on the other nodes.
+
+**cause:** a volume with that name already existed on the node. docker reuses an
+existing volume of the same name and driver and ignores the new `driver_opts`, so
+the container carried on using `/var/lib/docker/volumes/<name>/_data` on that
+node's own disk.
+
+**prove it**, on the node running the task:
+
+```
+docker volume inspect <stack>_<vol> --format '{{json .Options}}'
+findmnt /var/lib/docker/volumes/<stack>_<vol>/_data
+```
+
+good: the options show `device`, `o` and `type`, and findmnt shows
+`docker-cephFS[/<dir>] virtiofs`. bad: options `null` or `{}`, findmnt prints
+nothing.
+
+**fix:**
+
+1. remove the stack
+2. on every node that has the volume (`docker volume ls -q --filter name=<stack>_<vol>`),
+   look in its `_data` first. anything the service wrote since the change is
+   there and nowhere else, copy out what you need
+3. `docker volume rm <stack>_<vol>` on each of those nodes
+4. redeploy and check again
+
+## docker won't start after a reboot or an upgrade
+
+**symptom:** `docker.service` failed, and `systemctl status docker` shows the
+`ExecStartPre` step exiting with status 1.
+
+**cause:** the [data guard](../proxmox/cephfs-virtiofs-passthrough.md#docker-data-guard)
+refused to start docker: the shared mount is missing, the sentinel file is
+missing, or the mount has too few entries to be the real data.
+
+**prove it:**
+
+```
+journalctl -u docker -n 20 --no-pager | grep data-guard
+```
+
+the `REFUSING TO START DOCKER` line says which check failed.
+
+**fix:** fix the mount or the volume, then `sudo systemctl start docker`. don't
+remove the guard to get docker back unless you know the data is where it should
+be, that's the situation it's there to stop.

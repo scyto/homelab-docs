@@ -71,6 +71,19 @@ reason for this approach: deleting the stack removes the volume definition but n
 the data at the device path. my nodes share replicated storage so a delete that
 took the data would take it from all three at once.
 
+two things about it. the `device` directory has to exist before you deploy,
+create it once on the shared storage; if it's missing the task fails to start,
+leave it that way. and if a volume with the same name is already on a node,
+docker reuses it and ignores `driver_opts`. after deploying, on the node running
+the task:
+
+```
+docker volume inspect wordpress_db --format '{{json .Options}}'
+```
+
+it must show `device`, `o` and `type`. `null` or `{}` means the old volume was
+reused, see [troubleshooting](troubleshooting.md#a-volume-moved-to-cephfs-is-still-on-local-disk).
+
 **pin the digest if you want the cutover to change nothing.** no digest in the
 spec means a recreate re-pulls whatever the tag points at today, so your restart
 is also a version bump you didn't ask for.
