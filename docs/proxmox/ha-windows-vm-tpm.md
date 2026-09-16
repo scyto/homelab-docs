@@ -25,9 +25,8 @@ It is beyond this gist to be a deep tutorial.
   - set guest OS to windows and the latest date
   - click next
 4. For the system page it is imperative you pick the pool you created ealier for EFI and TPM storage as follows:
-<p align="center">
-<img width="600" alt="image" src="../../assets/img/c0090a770284.png">
-</p>
+
+    ![image](../assets/img/c0090a770284.png){ width="600" }
 
 5. Set the disk to virtio block storage for max perf
 6. it is also important to select the ceph pool when creating disks for the VM as follows (note my personal preference to use write through for the cache policy - i don't care about loosing reads, i do care about loosing writes; the discard setting is outside the scope of this gist.

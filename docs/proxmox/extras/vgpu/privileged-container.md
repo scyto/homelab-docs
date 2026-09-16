@@ -50,32 +50,32 @@ lxc.mount.entry: /dev/dri/renderD134 dev/dri/renderD128 none bind,optional,creat
 ### Add ID mapping (only needed in unprivileged)
 1. add the following... and here it gets complex as it will vary based on the numbers you recorded earlier - let me try... the aim is to have a continguois block of mappings but the syntax is um difficult...
 
-```
-lxc.idmap: u 0 100000 65536
-lxc.idmap: g 0 100000 CTVGID
-lxc.idmap: g CTVGID HSTVGID 1
-lxc.idmap: g CTVGID+1 1000{CTVGID+1} CTRGID-CTVGID-1
-lxc.idmap: g CTRGID HSTVGID 1
-lxc.idmap: g CTRGID+1 100{CTRGID+1} 65536-{CTRGID+1}
-```
+    ```
+    lxc.idmap: u 0 100000 65536
+    lxc.idmap: g 0 100000 CTVGID
+    lxc.idmap: g CTVGID HSTVGID 1
+    lxc.idmap: g CTVGID+1 1000{CTVGID+1} CTRGID-CTVGID-1
+    lxc.idmap: g CTRGID HSTVGID 1
+    lxc.idmap: g CTRGID+1 100{CTRGID+1} 65536-{CTRGID+1}
+    ```
 
-so as an example, these are my values:
+    so as an example, these are my values:
 
-```
-        host > ct
-video:    44 > 44
-render:  104 > 106
-```
+    ```
+            host > ct
+    video:    44 > 44
+    render:  104 > 106
+    ```
 
-this is what i added to my VMID.conf file (in  my case /etc/pve/lxc/107.conf
-```
-lxc.idmap: u 0 100000 65536
-lxc.idmap: g 0 100000 44
-lxc.idmap: g 44 44 1
-lxc.idmap: g 45 100045 61
-lxc.idmap: g 106 104 1
-lxc.idmap: g 107 100107 65429
-```
+    this is what i added to my VMID.conf file (in  my case /etc/pve/lxc/107.conf
+    ```
+    lxc.idmap: u 0 100000 65536
+    lxc.idmap: g 0 100000 44
+    lxc.idmap: g 44 44 1
+    lxc.idmap: g 45 100045 61
+    lxc.idmap: g 106 104 1
+    lxc.idmap: g 107 100107 65429
+    ```
 
 4. add your two CT values to `nano /etc/subgid`  (only needed in unprivileged)
 

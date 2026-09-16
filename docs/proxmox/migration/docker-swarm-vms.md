@@ -82,15 +82,15 @@ I will give this a couple of days, then start moving nodes 1 and 2 over..
 #### Import and VM creation and boot
 1. import both disks with `qm disk import <vmID> <diskname> <target volume>`  the path for diskname will be the mounted folder
 
-<img width="500" alt="image" src="../../../assets/img/0a81906666cc.png">
+    ![image](../../assets/img/0a81906666cc.png){ width="500" }
 
 2. attach disks as virtio scsi (not block as that causes me weird issues with gluster and mounts - YMMV)
 
-<img width="500" alt="image" src="../../../assets/img/f8579c54d551.png">
+    ![image](../../assets/img/f8579c54d551.png){ width="500" }
 
 3. enable boot  options for the added boot drive (if you don't do this VM will not boot).
 
-<img width="300" alt="image" src="../../../assets/img/8747b58b19d0.png">
+    ![image](../../assets/img/8747b58b19d0.png){ width="300" }
 
 4. boot and enter bios to change [as per this gist](docker-swarm-vms-efi-bios.md).
 5. you should now be booted into your machine
@@ -101,21 +101,21 @@ The networking adapater on my install changes from eth0 to a 'predictable' inter
 
 1. issue `nano /etc/systemd/network/10-rename-to-eth0.link`
 
-With the following content in the file(note the MAC address should be the one you see in proxmox for this VM)
+    With the following content in the file(note the MAC address should be the one you see in proxmox for this VM)
 
-```
-[Match]
-MACAddress=DE:9F:76:12:63:23
-[Link]
-Name=eth0
-```
-save the file
+    ```
+    [Match]
+    MACAddress=DE:9F:76:12:63:23
+    [Link]
+    Name=eth0
+    ```
+    save the file
 
-One could also do this by disabling predictable naming with grub, but this will be less predictable if you are messing with adding others interfaces etc.
+    One could also do this by disabling predictable naming with grub, but this will be less predictable if you are messing with adding others interfaces etc.
 
 2. use fdisk to make sure all you drives are how you expect (note so long as used UUID in fstab you should not have to worry about changing anything).
 
-<img width="200" alt="image" src="../../../assets/img/2a5cd928cbab.png">
+    ![image](../../assets/img/2a5cd928cbab.png){ width="200" }
 
 3. reboot - yes i know one should be able to just run sysctl for this, but call me old fashioned
 4. re-enable glusterd with `systemctl enable glusterd` and `systemctl start glusterd`
@@ -183,17 +183,17 @@ If so now you are good to use the same basic steps we used for node 2 and 3:
 10. boot to os
 11. add rename logic for network card...
 
-issue `nano /etc/systemd/network/10-rename-to-eth0.link`
+    issue `nano /etc/systemd/network/10-rename-to-eth0.link`
 
-With the following content in the file(note the MAC address should be the one you see in proxmox for this VM)
+    With the following content in the file(note the MAC address should be the one you see in proxmox for this VM)
 
-```
-[Match]
-MACAddress=DE:9F:76:12:63:23
-[Link]
-Name=eth0
-```
-save the file, reboot
+    ```
+    [Match]
+    MACAddress=DE:9F:76:12:63:23
+    [Link]
+    Name=eth0
+    ```
+    save the file, reboot
 
 13. enable and start gluster - make sure the gluster volume is absolutely ok before starting docker `gluster pool list` and `gluster volume status` and `gluster perr status`
 14. enable and start docker - let nodes rebalance over time, keep an eye on it. `systemctl enable docker`, `systemctl enable docker.socket`, `systemctl start docker` & `systemctl start docker.socket` 

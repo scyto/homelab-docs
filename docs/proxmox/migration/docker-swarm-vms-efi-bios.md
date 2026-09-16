@@ -11,64 +11,64 @@ Note wether the OS is Debian, Ubuntu, etc or Windows these steps change - the ma
 
 1. boot and entio bios to change UEFI order click in console as it says bootin and mash esc key until you see:
 
-<img width="600" alt="image" src="../../../assets/img/39326eed6869.png">
+    ![image](../../assets/img/39326eed6869.png){ width="600" }
 
 2. select boot maintenace manager above
 
-<img width="600" alt="image" src="../../../assets/img/9b237a7cdc61.png">
+    ![image](../../assets/img/9b237a7cdc61.png){ width="600" }
 
 3. then select boot options.
 
-<img width="600" alt="image" src="../../../assets/img/0fdc4977f52a.png">
+    ![image](../../assets/img/0fdc4977f52a.png){ width="600" }
 
 4. then select add boot option
 
-<img width="600" alt="image" src="../../../assets/img/205052ef11fe.png">
+    ![image](../../assets/img/205052ef11fe.png){ width="600" }
 
 5. then select the boot volume (if you did step 12 right there will be only one)
 
-<img width="600" alt="image" src="../../../assets/img/ee708bbb18ab.png">
+    ![image](../../assets/img/ee708bbb18ab.png){ width="600" }
 
 6. select EFI
 
-<img width="600" alt="image" src="../../../assets/img/ec7ee06b8c08.png">
+    ![image](../../assets/img/ec7ee06b8c08.png){ width="600" }
 
 7. select the OS (in my case debian)
 
-<img width="600" alt="image" src="../../../assets/img/c04b5637b1c2.png">
+    ![image](../../assets/img/c04b5637b1c2.png){ width="600" }
 
 8. select the right EFI file - in my case either grubx64.efi or shimx64.efi will work, i go with grubx64.efi
 
-<img width="600" alt="image" src="../../../assets/img/2bbce62ba75c.png">
+    ![image](../../assets/img/2bbce62ba75c.png){ width="600" }
 
 9. add a description - anything will do, just rememebr it
 
-<img width="600" alt="image" src="../../../assets/img/4c735f4e782f.png">
+    ![image](../../assets/img/4c735f4e782f.png){ width="600" }
 
 10. commit changes and exit
 
-<img width="600" alt="image" src="../../../assets/img/97748e0793ca.png">
+    ![image](../../assets/img/97748e0793ca.png){ width="600" }
 
 11. select change boot order:
 
-<img width="600" alt="image" src="../../../assets/img/97f4ec463e6d.png">
+    ![image](../../assets/img/97f4ec463e6d.png){ width="600" }
 
 12. select what you see here ny default by pressing enter:
 
-<img width="600" alt="image" src="../../../assets/img/d9af985f7d82.png">
+    ![image](../../assets/img/d9af985f7d82.png){ width="600" }
 
 13. now highlught the entry you made:
 
-<img width="574" alt="image" src="../../../assets/img/c2ab256bc0b6.png">
+    ![image](../../assets/img/c2ab256bc0b6.png){ width="574" }
 
 14. and keep pressing + until it looks like this and press enter:
 
-<img width="571" alt="image" src="../../../assets/img/3e9f6cad4cb2.png">
+    ![image](../../assets/img/3e9f6cad4cb2.png){ width="571" }
 
 15. you be back here, press F10 to save, and then esc and esc and   :
 
-<img width="600" alt="image" src="../../../assets/img/fd443b97602b.png">
+    ![image](../../assets/img/fd443b97602b.png){ width="600" }
 
 16. when you are back here choose reset and your new vm will boot
 
-<img width="600" alt="image" src="../../../assets/img/92f22fe3754e.png">
+    ![image](../../assets/img/92f22fe3754e.png){ width="600" }

@@ -58,9 +58,7 @@ NOTE: while the disks might say it is 126 GB in the UI it will be thin prvisione
 5. add it as ide 0, write though, ssd, discard and click `add`
 6. in the gui `VM nane > options` chnage the boot order so IDE 0 is the number one device and check enable
 
-<p align="center">
-<img width="600" alt="image" src="../../../assets/img/446a851b37e9.png">
-</p>
+    ![image](../../assets/img/446a851b37e9.png){ width="600" }
 
 8. now go to the VM conole and click `start now`
 9. logon to the VM once booted
