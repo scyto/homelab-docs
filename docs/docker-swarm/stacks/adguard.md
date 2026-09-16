@@ -10,21 +10,23 @@ source_gist: https://gist.github.com/scyto/ce866ee606ef27fd7c47832005b55d9f
 UPDATED 9/2/2023 - here we are a few years later, adguuard has been stable as heck
 now i wanted to add IPv6 to this mix
 these were the steps
+
 1. stop the stack
 2. delete the 6 adguard config networks and the two deployed macvlans from within portainer
 3. recreate using the instructions below adding the following for IPv6 (note the Ipv6 are the documented subnet examples - don't use them, use ones right for your network) 
 
-```
-node 1
-subnet  2001:db8:830:1::/64
-gateway 2001:db8:830:1::1
-range   2001:db8:830:1::5/128
+    ```
+    node 1
+    subnet  2001:db8:830:1::/64
+    gateway 2001:db8:830:1::1
+    range   2001:db8:830:1::5/128
 
-node 2
-subnet  2001:db8:830:1::/64
-gateway 2001:db8:830:1::1
-range   2001:db8:830:1::6/128
-```
+    node 2
+    subnet  2001:db8:830:1::/64
+    gateway 2001:db8:830:1::1
+    range   2001:db8:830:1::6/128
+    ```
+
 4. assign the actual MVL networks (i actually renamed mine so the 6 config networks are called adguard1/2-config and the two macvlan networks are called adguard1/2-mvl - much easier, i had them the wrong way round when i wrote the original article)  
 5. restart the stack (it really was this easy)
 learning: also the randomness i talk about below when selecting the networks in the UI can be avoided if all your machines are hosts!
@@ -33,6 +35,7 @@ don't forget to add the IPv6 upstream resolvers in adguard
 
 
 I wanted redundant adguard - there are two ways to do this:
+
 1. run single swarm instance and assume swarm will keep the service running (i ahve a template for this at the bottom of this gist)
 2. run two instances so you can specify two DNS servers on client - this is much harder and requires adguard sync too - this is what we are covering in this gist.
 
@@ -44,14 +47,19 @@ Each of the two nodes needs to have their own confgi and worker mounts.  I chose
 
 ## Network Considerations
 Wow, this is the most complex network setup because i need each adguard instance to be able to have its own MAC and IP address and i needed the adguard sync container to be able to sync between the two nodes.  Also macvlan in swarm is a quite complex and a little werid.  We have the following networks in this config:
+
 - **adguard1-mvl-config   
     - public macvlan config for adguard1 and is dsitributed to all 3 docker nodes
+
 - **adguard1              
     - public macvlan network used in the adgaurd1 container
+
 - **adguard2-mvl-config
     - public macvlan config for adguard2 and is dsitributed to all 3 docker nodes
+
 - **adguard2              
   - public macvlan network used in the adgaurd2 container
+
 - **adguard_sync
   - private overlay network to allow all 3 nodes to talk to each other for purpose of sync
 

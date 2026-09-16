@@ -243,22 +243,195 @@ happened, the second is the catch-all.
 | | |
 | --- | --- |
 | hardware | Espressif ESP Thread Border Router/Zigbee Gateway board: ESP32-S3 host, ESP32-H2 radio co-processor, UART between them |
-| backbone | Ethernet, on Espressif's ESP Thread Border Router/Zigbee Gateway Sub-Ethernet daughter board (W5500, 10/100), built with `CONFIG_EXAMPLE_CONNECT_ETHERNET`. the main board alone is Wi-Fi only. i wanted this border router as reliable as i could make it, so no Wi-Fi |
-| power | PoE, through an external splitter that gives an Ethernet link for the daughter board and DC power on a barrel jack. Espressif lists 5 V over either USB-C port as the board's only power input, and neither board has PoE, so use a 5 V splitter and a barrel to USB-C lead |
-| firmware | [esp-thread-br](https://github.com/espressif/esp-thread-br) `basic_thread_border_router`, built from `main` at `46d36d3` (September 2026) on ESP-IDF v5.5.4. until then it ran v1.2 on ESP-IDF v5.4.2. see [firmware updates](#firmware-updates) |
+| backbone | Ethernet, on Espressif's Sub-Ethernet daughter board (W5500, 10/100), built with `CONFIG_EXAMPLE_CONNECT_ETHERNET`. the main board alone is Wi-Fi only. i wanted this border router as reliable as i could make it, so no Wi-Fi |
+| power | PoE, through an external splitter. Espressif lists 5 V over either USB-C port as the board's only power input, and neither board has PoE |
+| firmware | [esp-thread-br](https://github.com/espressif/esp-thread-br) `basic_thread_border_router`, built from `main` at `46d36d3` (September 2026) on ESP-IDF v5.5.4 |
 
-the `sdkconfig` lines for the radio link, all the board's defaults:
+### what you need
 
-```
-CONFIG_PIN_TO_RCP_TX=17
-CONFIG_PIN_TO_RCP_RX=18
-CONFIG_PIN_TO_RCP_RESET=7
-CONFIG_PIN_TO_RCP_BOOT=8
-CONFIG_AUTO_UPDATE_RCP=y
-```
+| part | what for |
+| --- | --- |
+| [ESP Thread Border Router / Zigbee Gateway board](https://www.amazon.com/Thread-Border-Router-Zigbee-Gateway/dp/B0C89H9MJ8) | the border router: ESP32-S3 host, ESP32-H2 radio |
+| [Sub-Ethernet daughter board](https://www.amazon.com/Thread-Border-Router-Gateway-Sub-Ethernet/dp/B0C89J43LN) | the wired backbone. it stacks on the main board's headers |
+| [802.3af PoE splitter with 5 V out](https://www.amazon.com/ANVISION-Gigabit-Splitter-802-3af-Compliant/dp/B08J41JNF8) | one cable to the board: Ethernet for the daughter board, 5 V for the board |
+| a barrel to USB-C lead | the splitter's DC output into a USB-C port |
+| a USB-C **data** cable | flashing, from your computer. charge-only cables will not enumerate |
+| [a printed case](https://www.printables.com/model/1194883-esp-thread-border-router-case-ethernet) | optional. fits the two boards stacked, with the Ethernet socket out the side |
 
-with `AUTO_UPDATE_RCP` the S3 flashes the H2 with the radio firmware it was built
-with, using the reset and boot pins.
+the two USB-C ports are **USB1** (the H2) and **USB2** (the S3). both feed the
+board through diodes, so power on one and your computer on the other at the same
+time is fine. mine keeps power on USB1 and leaves USB2 for flashing.
+
+### build and flash it
+
+the board arrives blank: it does nothing until you flash Espressif's
+`basic_thread_border_router` example onto the S3. the H2 gets its radio firmware
+from the S3 on first boot, so you only flash one of them.
+
+1. install ESP-IDF's prerequisites, from Espressif's
+   [setup guide](https://docs.espressif.com/projects/esp-idf/en/v5.5.4/esp32s3/get-started/linux-macos-setup.html)
+   for your OS. run their commands, not a summary of them:
+
+    - **Linux**, Debian and Ubuntu:
+
+        ```
+        sudo apt-get install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+        ```
+
+        also add yourself to the `dialout` group (`uucp` on some distributions),
+        or flashing fails with a permission error on the port
+
+    - **macOS**: `brew install cmake ninja dfu-util ccache`. ESP-IDF uses the
+      system python3
+    - **Windows**: the
+      [ESP-IDF Windows installer](https://docs.espressif.com/projects/esp-idf/en/v5.5.4/esp32s3/get-started/windows-setup.html),
+      which is the supported path rather than WSL. it creates **ESP-IDF
+      PowerShell** and **ESP-IDF Command Prompt** shortcuts that set the
+      environment up for you, so you never source anything by hand
+
+2. get both trees. `install.sh` is `install.bat` on Windows, and every `idf.py`
+   below runs in a shell where you have sourced `export.sh` (`export.bat`)
+
+    ```
+    git clone -b v5.5.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
+    ./esp-idf/install.sh esp32s3,esp32h2
+    git clone https://github.com/espressif/esp-thread-br.git
+    git -C esp-thread-br checkout 46d36d3
+    ```
+
+3. put your settings in a second defaults file rather than editing anything.
+   mine, `sdkconfig.esp-ot-br` in `esp-thread-br/examples/basic_thread_border_router`:
+
+    ```
+    CONFIG_EXAMPLE_CONNECT_ETHERNET=y
+    # CONFIG_EXAMPLE_CONNECT_WIFI is not set
+    CONFIG_OPENTHREAD_BR_AUTO_START=y
+    CONFIG_OPENTHREAD_BR_START_WEB=y
+    CONFIG_OPENTHREAD_COMMISSIONER=y
+    CONFIG_OPENTHREAD_JOINER=y
+    CONFIG_OPENTHREAD_RADIO_STATS_ENABLE=y
+    CONFIG_OPENTHREAD_TIME_SYNC=y
+    CONFIG_OPENTHREAD_PACKAGE_NAME="openthread-unit1"
+    ```
+
+    the radio link is already the board's defaults, nothing to set:
+
+    ```
+    CONFIG_PIN_TO_RCP_TX=17
+    CONFIG_PIN_TO_RCP_RX=18
+    CONFIG_PIN_TO_RCP_RESET=7
+    CONFIG_PIN_TO_RCP_BOOT=8
+    CONFIG_AUTO_UPDATE_RCP=y
+    ```
+
+    with `AUTO_UPDATE_RCP` the S3 flashes the H2 with the radio firmware it was
+    built with, over the reset and boot pins
+
+4. **optional, but do it now if you might ever own two.** upstream hardcodes the
+   mDNS name `esp-ot-br`, so two boards on one LAN answer to the same name. one
+   line in `main/esp_ot_br.c` makes it per-board, matching how the firmware names
+   the network it forms:
+
+    ```c
+    uint8_t mac[6];
+    char hostname[32];
+    ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_BASE));
+    snprintf(hostname, sizeof(hostname), "esp-ot-br-%02x%02x", mac[4], mac[5]);
+    ESP_ERROR_CHECK(mdns_hostname_set(hostname));
+    ```
+
+    with `#include "esp_mac.h"` at the top, replacing
+    `mdns_hostname_set("esp-ot-br")`. mine is then `esp-ot-br-33f0.local`. it
+    renames the web UI, the REST API and the name Home Assistant shows, and you
+    re-apply it at each firmware update. **the examples below use the upstream
+    name**, so substitute yours
+
+5. build. the radio firmware goes first, the border router build packs it into
+   its `rcp_fw` partition. Linux and macOS:
+
+    ```
+    cd esp-idf/examples/openthread/ot_rcp &&
+      idf.py set-target esp32h2 && idf.py build
+
+    cd ../../../../esp-thread-br/examples/basic_thread_border_router &&
+      export SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.esp-ot-br" &&
+      idf.py set-target esp32s3 && idf.py build
+    ```
+
+    in the ESP-IDF PowerShell, where `export` and `&&` do not exist:
+
+    ```
+    cd esp-idf\examples\openthread\ot_rcp
+    idf.py set-target esp32h2
+    idf.py build
+
+    cd ..\..\..\..\esp-thread-br\examples\basic_thread_border_router
+    $env:SDKCONFIG_DEFAULTS = "sdkconfig.defaults;sdkconfig.esp-ot-br"
+    idf.py set-target esp32s3
+    idf.py build
+    ```
+
+    the chaining is not decoration: `idf.py set-target` clears the build
+    directory, so a `cd` that failed means the next command wipes the radio
+    firmware build. on Windows, check each command worked before the next
+
+6. plug your computer into **USB2** and flash. the S3 appears as a USB serial
+   device: `/dev/ttyACM0` on Linux, `/dev/cu.usbmodemXXXX` on macOS, `COM4` or
+   similar on Windows. no driver needed, it is the chip's own USB
+
+    ```
+    idf.py -p <port> flash
+    ```
+
+7. first boot takes about 15 seconds: the S3 flashes the H2 with the radio
+   firmware, restarts, brings up Ethernet, and serves its web UI at
+   `http://esp-ot-br.local`. `idf.py -p <port> monitor` shows it, and restarts the
+   board when it connects
+
+**it does not join anything by itself.** with no dataset stored it forms its own
+network, `ESP-BR-xxxx` after its MAC, on a random channel, and becomes leader of
+it. that is expected, and the next section moves it onto yours.
+
+### get it onto your network
+
+Home Assistant can push your network onto the board, which is much better than
+copying dataset TLVs around by hand. the panel only offers it for a border router
+it *manages*, so add it to the integration first.
+
+1. **Settings** > **Devices & services** > **Add integration** > **OpenThread
+   Border Router**, URL `http://esp-ot-br.local`. port 80, a standard border
+   router uses 8081
+2. rename both entries, ⋮ > **Rename**. the one you add by URL is always called
+   *Open Thread Border Router*, the add-on's takes the add-on's name, and
+   otherwise they differ by one space. mine say `(ESP32)` and
+   `(add-on + ser2net)`. to tell them apart, ⋮ > **Download diagnostics**, the URL
+   is in the JSON
+3. **Settings** > **Devices & services** > **Thread**. the board shows under its
+   own `ESP-BR-xxxx` network. on **its row**, ⋮ > **Add to preferred network**
+4. the dialog says *Home Assistant will join an existing Thread network. Any
+   devices that are currently joined on this Home Assistant Thread network will
+   need to be re-joined*. it reads backwards: it pushes **your** preferred dataset
+   onto **the board**. the devices it means are the ones on the network the board
+   is leaving, which is its own empty one. **OK**
+5. it attaches as a child and is a router a minute or two later
+
+    ```
+    curl -s http://esp-ot-br.local/node/state; echo
+    ```
+
+6. the empty `ESP-BR-xxxx` network is left behind in the panel. delete it with the
+   bin icon on its card
+
+- **do not press Make preferred network** on the `ESP-BR-xxxx` card. that promotes
+  the board's own network instead of moving the board
+- adding the integration only reads: Home Assistant fetches the active dataset and
+  stores it, and writes nothing to the board until you ask it to
+- **Create network** on a border router factory resets it first. that is the one
+  action never to use on a working one
+- entries are matched on the border agent ID. a firmware update keeps that ID, so
+  the entry survives one, but an erase changes it and you delete and re-add
+- if Home Assistant cannot resolve the name, use the address, and give it a DHCP
+  reservation first
 
 ### web UI and REST API
 
@@ -292,9 +465,12 @@ use the USB console.
 
 ![the ESP web UI scan: the Amazon network on channel 11, and two routers of the Home Assistant network on channel 15](../assets/img/esp-ot-br-scan.png)
 
-### joining it to the network
+### joining it by hand
 
-things that do not work, or not the way you would expect:
+[the panel](#get-it-onto-your-network) does this for you. by hand is for when it
+cannot: no Home Assistant, or a border router it does not manage.
+
+first, things that do not work, or not the way you would expect:
 
 - **the menuconfig dataset** (**Component config** > **OpenThread** > **Thread
   Operational Dataset**) is only used when no dataset is stored, and a normal flash
@@ -349,99 +525,34 @@ characters after `0708` (type 7, length 8). if they differ, push the dataset. fr
 5. after two or three minutes `/node/state` should say `"router"`. if it sits at
    `"detached"`, power cycle the board, it starts from the stored dataset
 
-with the ESP added to the border router integration, below, the Thread panel does
-this for you.
-
-### letting Home Assistant manage it
-
-the Thread panel lists the ESP as soon as it sees its mDNS announcement, but that
-is discovery only. add it to the **OpenThread Border Router** integration and Home
-Assistant can work with its dataset as well:
-
-1. **Settings** > **Devices & services** > **Add integration** > **OpenThread
-   Border Router**, URL `http://esp-ot-br.local`. port 80, a standard border
-   router uses 8081
-2. rename both entries, ⋮ > **Rename**. the one you add by URL is always called
-   *Open Thread Border Router*, the add-on's entry takes the add-on's name, and
-   otherwise they differ by one space. mine say `(ESP32)` and
-   `(add-on + ser2net)`
-3. to be sure which is which, ⋮ > **Download diagnostics**. the URL is in the JSON
-
-- adding it only reads. Home Assistant fetches the active dataset and stores it,
-  and writes nothing to the border router
-- after that the panel can set the network on it, which is [the dataset
-  push](#joining-it-to-the-network) without the `curl`
-- **Create network** factory resets the border router first. that is the one
-  action not to use on a working one
-- entries are matched on the border agent ID, so both border routers can be added.
-  a firmware update keeps that ID, so the entry survives one
-- if Home Assistant cannot resolve `esp-ot-br.local`, use the address, and give it
-  a DHCP reservation first
-
 ### firmware updates
 
-mine runs esp-thread-br `main` at `46d36d3` on ESP-IDF v5.5.4, the version
-Espressif recommends for it. `main` has the web UI Join fix and the web server's
-null check, leak and overflow fixes that v1.3 does not, and my web UI is open on
-the LAN.
+same build as [above](#build-and-flash-it), with three differences. mine went from
+v1.2 on ESP-IDF v5.4.2 to `main` at `46d36d3` on v5.5.4 in September 2026.
 
-`main`'s default partitions need the 8 MB board, its app partitions are 2M each.
-`nvs`, where the dataset is stored, does not move, so a normal flash keeps the
-dataset.
-
-1. put your settings in a second defaults file next to Espressif's, not an old
-   `sdkconfig`. mine, `sdkconfig.esp-ot-br` in
-   `examples/basic_thread_border_router`:
+1. keep the old tree. clone the new ESP-IDF and esp-thread-br into new
+   directories, so the build you are running now is still there
+2. back up the flash before writing anything
 
     ```
-    CONFIG_EXAMPLE_CONNECT_ETHERNET=y
-    # CONFIG_EXAMPLE_CONNECT_WIFI is not set
-    CONFIG_OPENTHREAD_BR_AUTO_START=y
-    CONFIG_OPENTHREAD_BR_START_WEB=y
-    CONFIG_OPENTHREAD_COMMISSIONER=y
-    CONFIG_OPENTHREAD_JOINER=y
-    CONFIG_OPENTHREAD_RADIO_STATS_ENABLE=y
-    CONFIG_OPENTHREAD_TIME_SYNC=y
-    CONFIG_OPENTHREAD_PACKAGE_NAME="openthread-unit1"
-    ```
-
-    the radio pins and radio firmware auto update are already the defaults
-
-2. build, with ESP-IDF's `export.sh` sourced. the radio firmware goes first, the
-   border router build packs it into its `rcp_fw` partition
-
-    ```
-    cd $IDF_PATH/examples/openthread/ot_rcp &&
-      idf.py set-target esp32h2 && idf.py build
-
-    cd ~/esp-thread-br/examples/basic_thread_border_router &&
-      export SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.esp-ot-br" &&
-      idf.py set-target esp32s3 && idf.py build
-    ```
-
-    - `~/esp-thread-br` is wherever you cloned it
-    - keep the `&&`. `idf.py set-target` clears the build directory, so run in
-      the wrong place it wipes the radio firmware build
-
-3. plug the Mac into **USB2**, the S3's port. power can stay on **USB1**, both
-   ports feed the board through diodes
-4. back up, then flash
-
-    ```
-    esptool.py --chip esp32s3 -p /dev/cu.usbmodemXXXX read_flash 0 ALL esp-ot-br-backup.bin &&
-      idf.py -p /dev/cu.usbmodemXXXX flash
+    esptool.py --chip esp32s3 -p <port> read_flash 0 ALL esp-ot-br-backup.bin &&
+      idf.py -p <port> flash
     ```
 
     - the `&&` stops the flash if the backup fails
     - the backup takes about 12 minutes and holds the network key, keep it out of
       git. the way back is `esptool.py write_flash 0` with it, which i have not
       needed
-    - never `idf.py erase-flash`, it wipes the dataset
 
-5. on first boot the S3 reflashes the H2 with the new radio firmware and restarts,
-   about 10 seconds. it then waits at `Waiting for IP(s)` until Ethernet has a link
-6. `/node/state` should say `"router"` within a couple of minutes, and the
-   [dataset check](#joining-it-to-the-network) should match Home Assistant
+3. **never `idf.py erase-flash`.** a normal flash keeps the dataset, the border
+   agent ID and the board's place in the network. an erase loses all three, and
+   you start again at [get it onto your network](#get-it-onto-your-network)
+
+then `/node/state` should say `"router"` within a couple of minutes and the
+[dataset check](#joining-it-by-hand) should still match Home Assistant.
+
+`main`'s default partitions need the 8 MB board, its app partitions are 2M each.
+`nvs`, where the dataset is stored, does not move.
 
 changed from v1.2: `/` serves the web UI, and `/diagnostics` and `/topology` no
 longer return `NetworkData`, `Connectivity`, `MACCounters` or `ChannelPages`.
@@ -631,7 +742,7 @@ what mine did:
 | --- | --- |
 | add-on stopped after the pi was off, with **Watchdog** on | the 10 restarts in 30 minutes were used up. the [automation](#the-automation) starts it again |
 | `No route to host` in the add-on log | the pi is unreachable. `Connection refused` means ser2net is not running |
-| the ESP stays a child | its dataset differs from the network's. [check the mesh-local prefix](#joining-it-to-the-network) |
+| the ESP stays a child | its dataset differs from the network's. [check the mesh-local prefix](#joining-it-by-hand) |
 | the panel shows 2 border routers, the ESP's topology shows 3 routers | routers and border routers are different things, see [above](#border-routers-and-routers) |
 | the ESP still has the prefix and primary backbone router after the add-on came back | expected, they do not move back. see [watching a failover](#watching-a-failover) |
 | an Amazon network under **Other networks** | the Echo's own network. it cannot join this one |

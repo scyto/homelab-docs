@@ -40,22 +40,22 @@ Once again i used one of [Derek Seaman's Awesome Blogs](https://www.derekseaman.
 1. login to PBS and access the shell
 2. create a username and password file using `nano /etc/samba/.syn01` in this example syn01 is the name of my synology
 3. add the following based on the user you made ealier
-```
-username=proxmox
-password=<yourpassword>
-domain=WORKGROUP
-```
+    ```
+    username=proxmox
+    password=<yourpassword>
+    domain=WORKGROUP
+    ```
 4. save the file
 5. create a mount point `mkdir /mnt/syn01`
 6. now add a mount to fstab with the following command
-```
-echo "//192.168.1.30/proxmox /mnt/syn01 cifs rw,auto,uid=34,noforceuid,gid=34,noforcegid,credentials=/etc/samba/.syn01 0 0" >> /etc/fstab
+    ```
+    echo "//192.168.1.30/proxmox /mnt/syn01 cifs rw,auto,uid=34,noforceuid,gid=34,noforcegid,credentials=/etc/samba/.syn01 0 0" >> /etc/fstab
 
-note: in this example use your synology IP not the example above, if you did my other instructions correctly that is all you should need to change.
+    note: in this example use your synology IP not the example above, if you did my other instructions correctly that is all you should need to change.
 
-The uid and gid ensure you have no strnage issues with permission - these map to the backup user and group in proxmox
+    The uid and gid ensure you have no strnage issues with permission - these map to the backup user and group in proxmox
 
-```
+    ```
 7. perform a `systemctl daemon-reload` without this the fstab changed won't be picked up
 8. now mount the share with `umount -a`
 9. create a test fie with `nano /mnt/syn01/test.txt` populate it with some text and save - you should see it appear on the synology in file explorer with no errors

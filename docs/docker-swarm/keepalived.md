@@ -14,6 +14,7 @@ This assumes you have [installed a docker swarm](configure-swarm.md)
 When one has a docker swarm a container running on any node in the swarm can be accesed using any IP address of any swarm memeber.
 
 For example if you had a single web server running on port 80, on one node of a swarm you could access the web server with any of the following IP addresses:
+
 - server1-ip:80
 - server2-ip:80
 - serverN-ip:80  

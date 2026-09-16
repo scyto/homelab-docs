@@ -22,6 +22,7 @@ source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
 **From @rinze24:**
 ----
 If you follow the guide successfully, in Device Manager you will see:
+
 - Microsoft Basic Display Adapter - If you use Display in VM Settings
 - Intel iGPU - passthrough
 

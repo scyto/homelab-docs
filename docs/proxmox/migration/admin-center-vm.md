@@ -19,6 +19,7 @@ I think this is because this was server core 2019 with no gui  as such i had to 
 <img width="368" alt="image" src="../../../assets/img/aefcf8498f3a.png">
 
 I did this for all the following drivers:
+
 - NetKVM for virtio networking
 - vstor for virtio block device etc)
 - Balloon for memory

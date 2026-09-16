@@ -5,6 +5,7 @@ source_gist: https://gist.github.com/scyto/e0755b318ae84103c7c192a7a2dd1101
 
 # Postfix M365 (Office 365) relay as LXC 
 The purposes of this gist:
+
 1. setup an smtp smarthost/relay that can send mail to Exchange Online 365 Office Outlook M365 (they keep renaming it)
 2. setup postfix each proxmox host and backup server to use this relay
 3. require the relay does authentications from devices like pve and pbs - having an open SMTP relay inside the network is not something i can bring myself to do  
@@ -13,6 +14,7 @@ The purposes of this gist:
 Also i am aware i probably over engineered this - after i had done this i realized postfix as shipped in PVE and PBS was attmepting to contact a variety of servers in my network based on DNS - i still haven't figured the logic out for that.... maybe all i needed was a relay and an MX record (and no config on PVE and PBS?)
 
 **TODO**
+
 - switch to TLS to protect creds in transit (this is gonna need certbot in the postfix VM)
 
 [this gist is part of this series](../index.md)
@@ -81,43 +83,43 @@ When you're finished, click Save changes.
 ### Configure Postfix
 1. edit the postifix config file with `nano /etc/postfix/main.cf`
 2. change the following
-```
-mydomain = mydomain.com
-myhostname = postfix.mydomain.com
-relayhost = smtp.office365.com:587
-compatibility_level = 0
-```
+    ```
+    mydomain = mydomain.com
+    myhostname = postfix.mydomain.com
+    relayhost = smtp.office365.com:587
+    compatibility_level = 0
+    ```
 3. add the following
-```
-smtp_use_tls = yes
-smtp_sasl_auth_enable = yes
-smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
-smtp_tls_CApath = /etc/ssl/certs
-smtp_sasl_security_options = noanonymous, noplaintext
-smtp_sasl_tls_security_options = noanonymous
-mynetworks = 127.0.0.0/8, 192.168.1.0/24
-inet_interfaces = all
-smtpd_sasl_auth_enable = yes
-smtpd_sasl_path = smtpd
-smtpd_sasl_security_options = noanonymous
-smtpd_sasl_local_domain = $myhostname
-smtpd_recipient_restrictions = permit_sasl_authenticated,reject_unauth_destination,check_relay_domains  
-```
+    ```
+    smtp_use_tls = yes
+    smtp_sasl_auth_enable = yes
+    smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+    smtp_tls_CApath = /etc/ssl/certs
+    smtp_sasl_security_options = noanonymous, noplaintext
+    smtp_sasl_tls_security_options = noanonymous
+    mynetworks = 127.0.0.0/8, 192.168.1.0/24
+    inet_interfaces = all
+    smtpd_sasl_auth_enable = yes
+    smtpd_sasl_path = smtpd
+    smtpd_sasl_security_options = noanonymous
+    smtpd_sasl_local_domain = $myhostname
+    smtpd_recipient_restrictions = permit_sasl_authenticated,reject_unauth_destination,check_relay_domains  
+    ```
 4. save the file
 5. create a password file with `nano /etc/postfix/sasl_passwd`
 6. Add the following:
-```
-smtp.office365.com system@mydomain.com:mypassword
-```
+    ```
+    smtp.office365.com system@mydomain.com:mypassword
+    ```
 6. save the file
 7. run `postmap /etc/postfix/sasl_passwd`
 8. edit the aliases file with `nano /etc/aliases`
-```
-postmaster: root
-webmaster: root
-root: system@mydomain.com
-system: system@mydomain.com
-```
+    ```
+    postmaster: root
+    webmaster: root
+    root: system@mydomain.com
+    system: system@mydomain.com
+    ```
 8. save the file
 9. run `newaliases`
 10. reload postfix with `postfix reload`
@@ -131,22 +133,22 @@ Replace my placeholders to match your env
 1. `apt install libsasl2-modules`
 2. edit the postifix config with `nano /etc/postfix/main.cf`
 3. change these lines
-```
-relayhost = postfix.mydomain.com:25
-compatibility_level = 3.6
-```
+    ```
+    relayhost = postfix.mydomain.com:25
+    compatibility_level = 3.6
+    ```
 4. add these lines
-```
-smtp_sasl_auth_enable = yes
-smtp_sasl_security_options = 
-smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
-```
+    ```
+    smtp_sasl_auth_enable = yes
+    smtp_sasl_security_options = 
+    smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+    ```
 4. save the file
 5. create the sasl password file `nano /etc/postfix/sasl_passwd`
 7. add the following
-```
-postfix.mydomain.com system:<password>
-```
+    ```
+    postfix.mydomain.com system:<password>
+    ```
 7. save the file
 8. run `postmap /etc/postfix/sasl_passwd` to process the password file
 9. restart postfix service `systemctl restart postfix`

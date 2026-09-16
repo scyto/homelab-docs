@@ -112,13 +112,38 @@ they land on the right device whatever order they enumerate in.
 | Nabu Casa SkyConnect | `usb-Nabu_Casa_SkyConnect_v1.0_` | `ser2net`, for Home Assistant's OpenThread add-on, see [below](#thread-radio-over-the-network) |
 | Sonoff Zigbee 3.0 USB Dongle Plus | `usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_` | `zigbee2mqtt` stack (in git, not running on this pi now) |
 
-| stack | network | ports | data |
-| --- | --- | --- | --- |
-| `zwave-js-ui` | its own bridge | `80` to the UI on 8091, `3000` for the Z-Wave JS websocket | `/docker-data/zwavejs2mqtt/store` |
-| `ser2net` | host | `8000` | `/docker-data/ser2net/data/ser2net.yaml` |
+### stacks, deployed from git
 
-`zwave-js-ui` also mounts `/etc/localtime` and `/etc/timezone` read-only so its
-logs use the pi's time zone.
+three stacks are defined for this pi and two of them are deployed, from git by
+Portainer through the [portainer agent](#portainer-agent) above, exactly as the
+swarm's are. see [moving stacks from the web editor to
+git](../docker-swarm/gitops-with-portainer.md) for the mechanism.
+
+| stack | radio | network | ports | data |
+| --- | --- | --- | --- | --- |
+| `zwave-js-ui` | Zooz 800 | its own bridge | `80` to the UI on 8091, `3000` for the Z-Wave JS websocket | `/docker-data/zwavejs2mqtt/store` |
+| `ser2net` | SkyConnect | host | `8000` | `/docker-data/ser2net/data/ser2net.yaml` |
+| `zigbee2mqtt`, not deployed | Sonoff dongle | bridge | `8080` | `/docker-data/zigbee2mqtt/data` |
+
+- each stack polls **its own** branch, `deploy/pi-zwave01/<stack>`, every five
+  minutes. `main` is not deployed, so a commit only reaches the stack whose
+  directory it changed
+- a **stopped** stack does not poll at all. it stays on the commit it was last
+  deployed from, however far behind that ends up, while looking fine in
+  Portainer's stack list
+- this is a standalone docker host, not a swarm, so the compose keys swarm
+  ignores all work here: `container_name`, `restart`, `devices`, host networking
+- `zwave-js-ui` also mounts `/etc/localtime` and `/etc/timezone` read-only so its
+  logs use the pi's time zone
+- `ser2net`'s healthcheck looks for an established connection on port `8000`, so
+  healthy means a client is attached. unhealthy is usually Home Assistant's
+  add-on being down, but it looks the same when ser2net cannot start, read its
+  config or open the radio, so check the connection first and then its logs. see
+  [thread radio over the network](#thread-radio-over-the-network)
+- `zigbee2mqtt` is defined here but not deployed. its stack was created while the
+  Sonoff dongle was out, and a failed create takes the stack record with it, so
+  nothing polls that branch until the stack is created again. **check the
+  hardware is present before creating a stack that needs it**
 
 ## /docker-data
 

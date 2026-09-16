@@ -13,6 +13,7 @@ Alls the steps in this section *must be performed on each node*
 
 ### Enable IPv6 forwarding
 Using IPv6 to take advantage of not needing to use addresses - does make things simpler 
+
 -  uncomment `#net.ipv6.conf.all.forwarding=1` using `nano /etc/sysctl.conf` (remove the # symbol and save the file)
 
 ### Create Loopback interface
@@ -84,34 +85,35 @@ interface en06
 9. use the command `exit` to leave setup
 10. rpeat steps 1 to 10 on the other 3 nodes
 11. once you have configured all 3 nodes issue the command `show ipv6 ospf6 neighbor` you will see:
-```
-pve2# show ipv6 ospf6 neighbor
-Neighbor ID     Pri    DeadTime    State/IfState         Duration I/F[State]
-0.0.0.3           1    00:00:35     Full/PointToPoint    12:16:08 en05[PointToPoint]
-0.0.0.1           1    00:00:33     Full/PointToPoint    12:16:02 en06[PointToPoint]
-```
+    ```
+    pve2# show ipv6 ospf6 neighbor
+    Neighbor ID     Pri    DeadTime    State/IfState         Duration I/F[State]
+    0.0.0.3           1    00:00:35     Full/PointToPoint    12:16:08 en05[PointToPoint]
+    0.0.0.1           1    00:00:33     Full/PointToPoint    12:16:02 en06[PointToPoint]
+    ```
 10. now issue the command `show ipv6 route` and you will see:
-```
-pve2# show ipv6 ospf6 neighbor
-Neighbor ID     Pri    DeadTime    State/IfState         Duration I/F[State]
-0.0.0.3           1    00:00:35     Full/PointToPoint    12:16:08 en05[PointToPoint]
-0.0.0.1           1    00:00:33     Full/PointToPoint    12:16:02 en06[PointToPoint]
-pve2# show ipv6 route
-Codes: K - kernel route, C - connected, S - static, R - RIPng,
-       O - OSPFv3, I - IS-IS, B - BGP, N - NHRP, T - Table,
-       v - VNC, V - VNC-Direct, A - Babel, F - PBR,
-       f - OpenFabric,
-       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
-       t - trapped, o - offload failure
+    ```
+    pve2# show ipv6 ospf6 neighbor
+    Neighbor ID     Pri    DeadTime    State/IfState         Duration I/F[State]
+    0.0.0.3           1    00:00:35     Full/PointToPoint    12:16:08 en05[PointToPoint]
+    0.0.0.1           1    00:00:33     Full/PointToPoint    12:16:02 en06[PointToPoint]
+    pve2# show ipv6 route
+    Codes: K - kernel route, C - connected, S - static, R - RIPng,
+           O - OSPFv3, I - IS-IS, B - BGP, N - NHRP, T - Table,
+           v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+           f - OpenFabric,
+           > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+           t - trapped, o - offload failure
 
-O>* fc00::1/128 [110/20] via fe80::f0:d6ff:fee3:aef1, en06, weight 1, 12:17:06
-O   fc00::2/128 [110/10] is directly connected, lo, weight 1, 12:17:28
-C>* fc00::2/128 is directly connected, lo, 12:17:28
-O>* fc00::3/128 [110/20] via fe80::d5:6dff:fe74:5a0b, en05, weight 1, 12:17:10
-C * fe80::/64 is directly connected, en06, 12:17:18
-C * fe80::/64 is directly connected, vmbr0, 12:17:22
-C>* fe80::/64 is directly connected, en05, 12:17:24
-```
+    O>* fc00::1/128 [110/20] via fe80::f0:d6ff:fee3:aef1, en06, weight 1, 12:17:06
+    O   fc00::2/128 [110/10] is directly connected, lo, weight 1, 12:17:28
+    C>* fc00::2/128 is directly connected, lo, 12:17:28
+    O>* fc00::3/128 [110/20] via fe80::d5:6dff:fe74:5a0b, en05, weight 1, 12:17:10
+    C * fe80::/64 is directly connected, en06, 12:17:18
+    C * fe80::/64 is directly connected, vmbr0, 12:17:22
+    C>* fe80::/64 is directly connected, en05, 12:17:24
+    ```
+
 10. Exit the shell with `Exit`
 
 Check networking with `lldpctl` you should see something like this, where you will see the two other nodes (note you may also see other devices on your network that are over the 2.5gbe proxmox management interface).

@@ -33,13 +33,13 @@ nav should change to the the proxmox  app reg
 14. click authentication in the left nav
 15. add all the internally and externally accessible node names, in my case this is as follows for my 3 internal node names, the pbs server name and cluster name via internal nginx.
 
-```
-https://pve1.mydomain.com:8006
-https://pve2.mydomain.com:8006
-https://pve2.mydomain.com:8006
-https://pbs.mydomain.com:8007
-https://cluster1.mydomain.com  
-```  
+    ```
+    https://pve1.mydomain.com:8006
+    https://pve2.mydomain.com:8006
+    https://pve2.mydomain.com:8006
+    https://pbs.mydomain.com:8007
+    https://cluster1.mydomain.com  
+    ```  
 
 16. nothing else needs to be changed here so click save once these have been added
 17 navigate to overview > endpoints

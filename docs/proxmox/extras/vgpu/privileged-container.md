@@ -17,10 +17,10 @@ wow this one is hard.... you can avoid the id mapping stuff by not using a privi
 2. apt update, apt upgrade, install non free drivers, vainfo and intel_gpu_top tools
 3. add root to user and video groups (this will mean when we get to ID mapping you don't need to tart about with user mappings - only group ones)
 
-```
-usermod -a -G render root
-usermod -a -G video root
-```
+    ```
+    usermod -a -G render root
+    usermod -a -G video root
+    ```
 4. shutdown container
 
 ## Edit container conf file
