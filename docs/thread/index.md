@@ -372,7 +372,8 @@ from the S3 on first boot, so you only flash one of them.
       idf.py set-target esp32s3 && idf.py build
     ```
 
-    in the ESP-IDF PowerShell, where `export` and `&&` do not exist:
+    in the ESP-IDF PowerShell, where `export` does not exist and `&&` only works
+    in PowerShell 7:
 
     ```
     cd "$env:IDF_PATH\examples\openthread\ot_rcp"
@@ -514,13 +515,23 @@ in Home Assistant's **Active dataset TLVs**, the mesh-local prefix is the 16 hex
 characters after `0708` (type 7, length 8). if they differ, push the dataset.
 
 the point of going through the clipboard is that the network key never lands in
-shell history or a file. step 2 is the only platform-specific part, and i only run
-the macOS one:
+shell history or a file. steps 1, 2 and 4 differ per platform and i only run the
+macOS ones. in Windows PowerShell 5.1, which is what the installer's shortcut
+opens, `curl` is an alias for `Invoke-WebRequest` rather than curl itself, so
+`-s`, `-o`, `-w` and `-X` are not understood: call `curl.exe` for the reads, and
+use the `Invoke-RestMethod` lines below for the writes. PowerShell 7 dropped that
+alias, so there `curl` is the real thing.
 
 1. stop Thread. it only takes a new active dataset while stopped. expect `200`
 
     ```
     curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"disable"' http://esp-ot-br-33f0.local/node/state
+    ```
+
+    PowerShell, which throws on anything but a 2xx rather than printing a code:
+
+    ```
+    Invoke-RestMethod -Method Put -ContentType 'application/json' -Body '"disable"' -Uri http://esp-ot-br-33f0.local/node/state
     ```
 
 2. copy **Active dataset TLVs** from Home Assistant, then send it from the
@@ -531,14 +542,18 @@ the macOS one:
     pbcopy < /dev/null
     ```
 
-    Linux. `-selection clipboard` matters: `xclip` reads the PRIMARY selection by
-    default, which is the text you last highlighted, not what the browser copied.
-    on Wayland use `wl-paste` and `wl-copy --clear`:
+    Linux over ssh, with no desktop and so no clipboard. `read -rs` takes the
+    paste without echoing it, and `read` is a shell builtin, so the key is not in
+    the history, not in a file and not in the process list:
 
     ```
-    xclip -selection clipboard -o | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
-    printf '' | xclip -selection clipboard -i
+    read -rs TLV
+    printf '%s' "$TLV" | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
+    unset TLV
     ```
+
+    paste at the blank line and press Enter. `-s` is bash and zsh; on a shell
+    without it the paste is echoed, which is only a shoulder-surfing problem
 
     PowerShell, where `tr` and `pbcopy` do not exist. `-Raw` matters: without it
     `Get-Clipboard` hands back one string per line, and the PUT then carries an
@@ -558,6 +573,12 @@ the macOS one:
 
     ```
     curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"enable"' http://esp-ot-br-33f0.local/node/state
+    ```
+
+    PowerShell:
+
+    ```
+    Invoke-RestMethod -Method Put -ContentType 'application/json' -Body '"enable"' -Uri http://esp-ot-br-33f0.local/node/state
     ```
 
 5. after two or three minutes `/node/state` should say `"router"`. if it sits at
