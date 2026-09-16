@@ -292,12 +292,19 @@ then per stack:
 5. wait for the overlay network to actually go away, see below
 6. Stacks > Add stack > **same name** > Git repository, then
 
-   | field | value, for adguard |
-   | --- | --- |
-   | Repository URL | your repo |
-   | Repository reference | `refs/heads/deploy/swarm/adguard` |
-   | Compose path | `stacks/swarm/adguard/compose.yml` |
-   | GitOps updates | on, polling, 5m |
+    | field | value, for adguard |
+    | --- | --- |
+    | Repository URL | your repo |
+    | Repository reference | `refs/heads/deploy/swarm/adguard` |
+    | Compose path | `stacks/swarm/adguard/compose.yml` |
+    | GitOps updates | on, polling, 5m |
+
+    the reference dropdown lists every ref on the repo, including a
+    `refs/pull/<n>/head` for every PR ever opened, and github never removes
+    them. type part of the branch name to filter it. it starts on
+    `refs/heads/main`, so check it again just before you deploy. never pick a
+    `refs/pull` ref, it can be a commit nobody reviewed and your ruleset doesn't
+    cover it
 
 7. diff `docker service inspect` against the capture you took above
 

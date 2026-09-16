@@ -33,6 +33,8 @@ Each major task has its own gist, this is to help with maitainability long term.
     - [portception (portainer deployed by portainer - do not attempt)](stacks/portception.md)
     - [auto lable nodes with name of running containers](stacks/auto-label-nodes.md)
     - [unifi poller / UnPoller](stacks/unifi-poller.md)
+    - [omni-tools, file and text tools in the browser](stacks/omni-tools.md)
+    - [bentopdf, pdf toolkit in the browser](stacks/bentopdf.md)
     - no longer used, kept for reference:
         - [watchtower](stacks/watchtower.md)
         - [shepherd](stacks/shepherd.md)

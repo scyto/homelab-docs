@@ -138,6 +138,8 @@ nav:
           - oauth2-proxy: docker-swarm/stacks/oauth2-proxy.md
           - Auto-label Nodes: docker-swarm/stacks/auto-label-nodes.md
           - UniFi Poller / UnPoller: docker-swarm/stacks/unifi-poller.md
+          - omni-tools: docker-swarm/stacks/omni-tools.md
+          - BentoPDF: docker-swarm/stacks/bentopdf.md
           - No Longer Used:
               - Watchtower: docker-swarm/stacks/watchtower.md
               - Shepherd: docker-swarm/stacks/shepherd.md
