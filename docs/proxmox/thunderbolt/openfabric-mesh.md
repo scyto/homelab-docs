@@ -94,33 +94,33 @@ iface lo inet loopback
 1. create a new file with `nano /etc/network/if-up.d/en0x`
 2. add to file the following
 
-```
-#!/bin/bash
-# note the logger entries log to the system journal in the pve UI etc
+    ```
+    #!/bin/bash
+    # note the logger entries log to the system journal in the pve UI etc
 
-INTERFACE=$IFACE
+    INTERFACE=$IFACE
 
-if [ "$INTERFACE" = "en05" ] || [ "$INTERFACE" = "en06" ]; then
-    logger "Checking if frr.service is running for $INTERFACE"
+    if [ "$INTERFACE" = "en05" ] || [ "$INTERFACE" = "en06" ]; then
+        logger "Checking if frr.service is running for $INTERFACE"
     
-    if ! systemctl is-active --quiet frr.service; then
-        logger -t SCYTO "   [SCYTO SCRIPT ] frr.service not running. Starting service."
-        if systemctl start frr.service; then
-            logger -t SCYTO "   [SCYTO SCRIPT ] Successfully started frr.service"
-        else
-            logger -t SCYTO "   [SCYTO SCRIPT ] Failed to start frr.service"
+        if ! systemctl is-active --quiet frr.service; then
+            logger -t SCYTO "   [SCYTO SCRIPT ] frr.service not running. Starting service."
+            if systemctl start frr.service; then
+                logger -t SCYTO "   [SCYTO SCRIPT ] Successfully started frr.service"
+            else
+                logger -t SCYTO "   [SCYTO SCRIPT ] Failed to start frr.service"
+            fi
+            exit 0
         fi
-        exit 0
-    fi
 
-    logger "Attempting to reload frr.service for $INTERFACE"
-    if systemctl reload frr.service; then
-        logger -t SCYTO "   [SCYTO SCRIPT ] Successfully reloaded frr.service for $INTERFACE"
-    else
-        logger -t SCYTO "   [SCYTO SCRIPT ] Failed to reload frr.service for $INTERFACE"
+        logger "Attempting to reload frr.service for $INTERFACE"
+        if systemctl reload frr.service; then
+            logger -t SCYTO "   [SCYTO SCRIPT ] Successfully reloaded frr.service for $INTERFACE"
+        else
+            logger -t SCYTO "   [SCYTO SCRIPT ] Failed to reload frr.service for $INTERFACE"
+        fi
     fi
-fi
-```
+    ```
 
 3. make it executable with `chmod +x /etc/network/if-up.d/en0x`
 

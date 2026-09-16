@@ -12,6 +12,7 @@ you may want to read from the bottom up as later migrations are where i had the 
 
 ## The plan
 So the plan is as follows (and is based on my experience with home assistant oddlye enough)
+
 1. Backup node 1 VM with synology hyper-v backup
 2. use `systemctl stop docker` then `systemctl disable docker` then `systemctl stop glusterd` then `systemctl disable glusterd` this is beecause i don't want these to start until i am 100% sure the VM is up, stable and with the right IP address etc 
 3. shutdown the node on hyper-v and set start policy to 'nothing' - i can't risk this coming back up mid migration!
@@ -21,10 +22,12 @@ So the plan is as follows (and is based on my experience with home assistant odd
     2. tpm disk
     3. uefi disks with keys not enrolled (this is critical)
     4. with virtio networking bound to a dead bridge so it cannot talk to network on first boot (until i have chance to hard set IP etc)
+
 6. import both disks with `qm disk import <vmID> <diskname> <target volume>`
 7. once imported reattach disks process:
     1. attach each disk as virtio block with write through and discard enabled
     2. change boot option to a)enable boot from the new OS disk b) disable all other bootable items
+
 8. boot, setip address etc
 9. reboot to make sure networking connectivity is ok
 10. retart and re-enable gluster service - check running, check consistency etc 

@@ -274,6 +274,7 @@ Total number of neighbors 3
 ```
 
 If you seen nothing or something missing the mostly like issues are:
+
 1. MTU mismatch between br0 on the router and vmbr0 on the proxmox nodes
 2. a firewall blocking BGP packets somehwere
 

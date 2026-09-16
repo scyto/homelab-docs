@@ -45,6 +45,7 @@ The default username is root and you use the password you defined earlier.  Cons
 *Note:* i will not be using enterprise packages as this is a PoC for evaluation / homeLab purposes only
 
 In `node-name > updates > repositories` perform the following:
+
 - add `No-Subscription`
 - add `Ceph Quincy No-Subscription`
 - disable `pve-enterprise`

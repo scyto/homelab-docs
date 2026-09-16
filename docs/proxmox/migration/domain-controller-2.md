@@ -83,6 +83,7 @@ One DC on promox, will let this run for a few days and then see where i am at.
 The hardest part after the disk issues was how to set ipv6 on server core - [this article](https://develmonk.com/2022/11/23/windows-server-core-setting-a-new-ip-address-for-your-dc-including-ipv6-client-dns/) was super helpful.
 
 So what did i learn:
+
 1. make sure DCs are healthy before doing anything
 2. backup the DCs multiple ways before doing anything
 3. don't rely on the virtual disk format to be importable and that conversion to other formats won't fix a disk qm doesn't like

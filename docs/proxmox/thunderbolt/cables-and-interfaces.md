@@ -42,6 +42,7 @@ If you see any thunderbol sections delete them from the file before you save it.
 
 ## Rename Thunderbolt Connections
 This is needed as proxmox doesn't recognize the thunderbolt interface name.  There are various methods to do this. This method was selected after trial and error because:
+
 - the thunderboltX naming is not fixed to a port (it seems to be based on sequence you plug the cables in)
 - the MAC address of the interfaces changes with most cable insertion and removale events
 
@@ -50,14 +51,14 @@ This is needed as proxmox doesn't recognize the thunderbolt interface name.  The
 
 2. create a link file using `nano /etc/systemd/network/00-thunderbolt0.link` and enter the following content:
 
-```
-[Match]
-Path=pci-0000:00:0d.2
-Driver=thunderbolt-net
-[Link]
-MACAddressPolicy=none
-Name=en05
-```
+    ```
+    [Match]
+    Path=pci-0000:00:0d.2
+    Driver=thunderbolt-net
+    [Link]
+    MACAddressPolicy=none
+    Name=en05
+    ```
 3. create a second link file using `nano /etc/systemd/network/00-thunderbolt1.link` and enter the following content:
 ```
 [Match]
@@ -74,10 +75,10 @@ This section en sure that the interfaces will be brought up at boot or cable ins
 Huge thanks to @corvy for figuring out a script that should make this much much more reliable for most
 
 1. create a udev rule to detect for cable insertion using `nano /etc/udev/rules.d/10-tb-en.rules` with the following content:
-```
-ACTION=="move", SUBSYSTEM=="net", KERNEL=="en05", RUN+="/usr/local/bin/pve-en05.sh"
-ACTION=="move", SUBSYSTEM=="net", KERNEL=="en06", RUN+="/usr/local/bin/pve-en06.sh"
-```
+    ```
+    ACTION=="move", SUBSYSTEM=="net", KERNEL=="en05", RUN+="/usr/local/bin/pve-en05.sh"
+    ACTION=="move", SUBSYSTEM=="net", KERNEL=="en06", RUN+="/usr/local/bin/pve-en06.sh"
+    ```
 2. save the file
 
 3. create the first script referenced above using `nano /usr/local/bin/pve-en05.sh` and with the follwing content:
@@ -142,6 +143,7 @@ and save the file
 
 ## verify neighbors can see each other (connectivity troubleshooting)
 Install LLDP - this is great to see what nodes can see which.
+
 -  install lldpctl with `apt install lldpd` on all 3 nodes
 -  execute `lldpctl` you should info 
 
@@ -178,15 +180,16 @@ root@pve1:/etc/pve# cat /sys/devices/cpu_core/cpus && cat /sys/devices/cpu_atom/
 1. make a file at `/etc/network/if-up.d/thunderbolt-affinity`
 2. add the following to it - make sure to replace `echo X-Y` with whatever the report told you were your performance cores - e.g. `echo 0-7` 
 
-```
-#!/bin/bash
+    ```
+    #!/bin/bash
 
-# Check if the interface is either en05 or en06
-if [ "$IFACE" = "en05" ] || [ "$IFACE" = "en06" ]; then
-# Set Thunderbot affinity to Pcores
-    grep thunderbolt /proc/interrupts | cut -d ":" -f1 | xargs -I {} sh -c 'echo X-Y | tee "/proc/irq/{}/smp_affinity_list"'
-fi
-```
+    # Check if the interface is either en05 or en06
+    if [ "$IFACE" = "en05" ] || [ "$IFACE" = "en06" ]; then
+    # Set Thunderbot affinity to Pcores
+        grep thunderbolt /proc/interrupts | cut -d ":" -f1 | xargs -I {} sh -c 'echo X-Y | tee "/proc/irq/{}/smp_affinity_list"'
+    fi
+    ```
+
 3. save the file - done
 
 ## Extra Debugging for Thunderbolt

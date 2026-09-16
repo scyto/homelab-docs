@@ -79,6 +79,7 @@ iface vmbr100 inet6 static
 ## FRR Configuration addition repeat on node 2 & 3 with changes from table
 
 Key things to note compared to the normal non-routed setup:
+
 - additon of vmbr100 to openfabric to allow VM connectivity
 
 #### add the following to `/etc/frr/frr.conf` for all 3 nodes.

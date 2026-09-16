@@ -15,9 +15,11 @@ Put simply I am not sure what the design should be. I have the thunderbolt mesh 
 3. one wants cluster communicationsnetwork reddundant
 
 I have 3 networks:
+
 1. Onboard 2.5gb NIC connected to one switch for subnet IPv4 `192.168.1.0/24` and IPv6 /64 address (my LAN)
 2. Thunderbolt mesh connected in a ring for subnet fc00::80/124
     - this has 3 single address subnets `fc00::81/128`, `fc00::82/128` and `fc00::83/128` these are used for FRR Openfabric  routing between nodes
+
 3. Addtional 2.5Gbe using (NUCIOALUWS) add-on afor subnet TBD
 
     - cluster (aka corosync) network uses network 1 (2.5gbe)

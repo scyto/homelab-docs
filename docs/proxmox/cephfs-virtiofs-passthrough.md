@@ -12,10 +12,12 @@ This is currently a work-in-progress documentation - rough notes for me, maybe m
 The idea is to replace GlusterFS running inside the VM with storage on my cephfs cluster.  This is my proxmox cluster and it runs both the storage and is the hypervisor for my docker VMs.
 
 Other possible approaches:
+
 - ceph fuse clien in VM to mount cephFS or CephRBD over IP
 - use of ceph docker volume plugin (no useable version of this yet exists but it is being worked on) 
 
 Assumptions:
+
 - I already have a working Ceph Cluster - this will not be documented in this gist. See my proxmox gist for a working example.
 - this is for proxmox as a hypervisor+ceph cluster and the VMs are hosted on the same proxmox that is the ceph cluster
 

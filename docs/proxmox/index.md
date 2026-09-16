@@ -22,6 +22,7 @@ _note: these are designed to be primarily a re-install guide for myself (writing
 
 
 Update as of 2025.04.29
+
 - Added some more tweaks to the thunderbolt setup, mesh setup
 - added way to get VMs to access ceph mesh (no you cant bridge en05 and en06 - it breaks if you do that)
 - added way to get any machine on LAN to access ceph mesh

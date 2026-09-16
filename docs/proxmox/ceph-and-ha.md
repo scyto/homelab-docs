@@ -83,10 +83,10 @@ note: i need to revise this as this file could be overwritten on upgrade)
 2. create a file in `nano /etc/systemd/system/pvestatd.service.d/dependencies.conf`
 3. add to file the following
 
-```
-[Unit]
-After=pve-storage.target
-```
+    ```
+    [Unit]
+    After=pve-storage.target
+    ```
 4. save
 
 (note i am ucnlear if this currently works despite this being the recommended answer)
