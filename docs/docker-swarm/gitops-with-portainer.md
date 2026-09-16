@@ -123,6 +123,17 @@ one branch per stack directory, same names. nobody commits to them directly, the
 workflow in the next step moves them. change `stacks/swarm/npm/compose.yml`,
 `deploy/swarm/npm` moves, npm redeploys, the other five don't notice.
 
+the environment in the middle of the name is not decoration. the `pi-zwave01`
+branches above are a **standalone docker host**, not the swarm: a raspberry pi
+running the Portainer agent, holding the radios. see
+[the pi's stacks](../raspberry-pi/index.md#stacks-deployed-from-git).
+
+the repo layout, the branches and the workflow in the next step are the same for
+it. the cutover in [step 6](#6-cut-a-stack-over) is not: that captures swarm
+service state and waits out an overlay network, where a standalone host has
+compose containers and neither. the compose files differ too, since a standalone
+host honours `container_name`, `restart` and `devices`, which swarm ignores.
+
 `main` is never deployed by anything. merging to main is a promotion, not a
 deployment.
 
