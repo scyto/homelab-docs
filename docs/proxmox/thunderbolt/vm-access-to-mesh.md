@@ -85,7 +85,7 @@ Key things to note compared to the normal non-routed setup:
 #### add the following to `/etc/frr/frr.conf` for all 3 nodes.
 (can be done by editing file or vtysh if you prefer)
 
-```bash
+```
 !
 interface vmbr100
  ip router openfabric 1
@@ -255,7 +255,7 @@ i had to install ifupown2 in my debian swarm vms as an upgrade from from 11 to 1
 <details>
   <summary>Click me</summary>
     
-```bash
+```
 auto eth0
 allow-hotplug eth0
 iface eth0 inet static
