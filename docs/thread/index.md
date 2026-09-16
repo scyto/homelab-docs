@@ -245,7 +245,7 @@ happened, the second is the catch-all.
 | hardware | Espressif ESP Thread Border Router/Zigbee Gateway board: ESP32-S3 host, ESP32-H2 radio co-processor, UART between them |
 | backbone | Ethernet, on Espressif's Sub-Ethernet daughter board (W5500, 10/100), built with `CONFIG_EXAMPLE_CONNECT_ETHERNET`. the main board alone is Wi-Fi only. i wanted this border router as reliable as i could make it, so no Wi-Fi |
 | power | PoE, through an external splitter. Espressif lists 5 V over either USB-C port as the board's only power input, and neither board has PoE |
-| firmware | [esp-thread-br](https://github.com/espressif/esp-thread-br) `basic_thread_border_router`, built from `main` at `46d36d3` (September 2026) on ESP-IDF v5.5.4 |
+| firmware | [esp-thread-br](https://github.com/espressif/esp-thread-br) `basic_thread_border_router`, built from `main` at `46d36d3` on ESP-IDF v5.5.4 |
 
 ### what you need
 
@@ -285,12 +285,22 @@ from the S3 on first boot, so you only flash one of them.
       system python3
     - **Windows**: the
       [ESP-IDF Windows installer](https://docs.espressif.com/projects/esp-idf/en/v5.5.4/esp32s3/get-started/windows-setup.html),
-      which is the supported path rather than WSL. it creates **ESP-IDF
-      PowerShell** and **ESP-IDF Command Prompt** shortcuts that set the
-      environment up for you, so you never source anything by hand
+      which is the supported path rather than WSL. its **ESP-IDF PowerShell**
+      shortcut sets the environment up for you, but for the tree **the installer**
+      manages. so either:
 
-2. get both trees. `install.sh` is `install.bat` on Windows, and every `idf.py`
-   below runs in a shell where you have sourced `export.sh` (`export.bat`)
+        - pick **v5.5.4** in the installer, use that shortcut, and skip the
+          `esp-idf` clone in the next step, or
+        - clone as below and activate that clone yourself, in PowerShell:
+          `.\esp-idf\install.ps1 esp32s3,esp32h2` then `. .\esp-idf\export.ps1`
+
+        get this wrong and `idf.py` runs against a different ESP-IDF from the one
+        you built the radio firmware in
+
+2. get both trees. on Windows that is `install.ps1` in PowerShell, or
+   `install.bat` in the Command Prompt. every `idf.py` below runs in a shell where
+   you have sourced the matching `export` script for **this** tree, unless you let
+   the installer manage it
 
     ```
     git clone -b v5.5.4 --depth 1 --recursive https://github.com/espressif/esp-idf.git
@@ -327,10 +337,10 @@ from the S3 on first boot, so you only flash one of them.
     with `AUTO_UPDATE_RCP` the S3 flashes the H2 with the radio firmware it was
     built with, over the reset and boot pins
 
-4. **optional, but do it now if you might ever own two.** upstream hardcodes the
-   mDNS name `esp-ot-br`, so two boards on one LAN answer to the same name. one
-   line in `main/esp_ot_br.c` makes it per-board, matching how the firmware names
-   the network it forms:
+4. **give the board a name of its own.** Espressif's code sets the same name,
+   `esp-ot-br`, on every board, so a second one answers to the same
+   `esp-ot-br.local` as the first. one line in `main/esp_ot_br.c` names it after
+   its own MAC instead, the way the firmware already names the network it forms:
 
     ```c
     uint8_t mac[6];
@@ -340,20 +350,24 @@ from the S3 on first boot, so you only flash one of them.
     ESP_ERROR_CHECK(mdns_hostname_set(hostname));
     ```
 
-    with `#include "esp_mac.h"` at the top, replacing
-    `mdns_hostname_set("esp-ot-br")`. mine is then `esp-ot-br-33f0.local`. it
-    renames the web UI, the REST API and the name Home Assistant shows, and you
-    re-apply it at each firmware update. **the examples below use the upstream
-    name**, so substitute yours
+    add `#include "esp_mac.h"` at the top, and replace the line that reads
+    `mdns_hostname_set("esp-ot-br")`. this renames the web UI, the REST API and
+    the name Home Assistant shows, and it is a change to Espressif's code, so
+    re-apply it at each firmware update
+
+    mine came out as `esp-ot-br-33f0.local`, and **every example on this page uses
+    that name**. yours ends in your own four characters, which the board prints on
+    the console at boot and shows in the web UI. skip this step and it stays
+    `esp-ot-br.local`
 
 5. build. the radio firmware goes first, the border router build packs it into
    its `rcp_fw` partition. Linux and macOS:
 
     ```
-    cd esp-idf/examples/openthread/ot_rcp &&
+    cd "$IDF_PATH/examples/openthread/ot_rcp" &&
       idf.py set-target esp32h2 && idf.py build
 
-    cd ../../../../esp-thread-br/examples/basic_thread_border_router &&
+    cd ~/esp-thread-br/examples/basic_thread_border_router &&
       export SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.esp-ot-br" &&
       idf.py set-target esp32s3 && idf.py build
     ```
@@ -361,19 +375,24 @@ from the S3 on first boot, so you only flash one of them.
     in the ESP-IDF PowerShell, where `export` and `&&` do not exist:
 
     ```
-    cd esp-idf\examples\openthread\ot_rcp
+    cd "$env:IDF_PATH\examples\openthread\ot_rcp"
     idf.py set-target esp32h2
     idf.py build
 
-    cd ..\..\..\..\esp-thread-br\examples\basic_thread_border_router
+    cd $HOME\esp-thread-br\examples\basic_thread_border_router
     $env:SDKCONFIG_DEFAULTS = "sdkconfig.defaults;sdkconfig.esp-ot-br"
     idf.py set-target esp32s3
     idf.py build
     ```
 
-    the chaining is not decoration: `idf.py set-target` clears the build
-    directory, so a `cd` that failed means the next command wipes the radio
-    firmware build. on Windows, check each command worked before the next
+    - `IDF_PATH` is set by the `export` script, or by the installer's shortcut on
+      Windows, and points at whichever ESP-IDF you activated. using it means these
+      commands work whether that tree sits beside `esp-thread-br` or wherever the
+      installer put it
+    - the second `cd` is wherever you cloned `esp-thread-br`
+    - the chaining is not decoration: `idf.py set-target` clears the build
+      directory, so a `cd` that failed means the next command wipes the radio
+      firmware build. on Windows, check each command worked before the next
 
 6. plug your computer into **USB2** and flash. the S3 appears as a USB serial
    device: `/dev/ttyACM0` on Linux, `/dev/cu.usbmodemXXXX` on macOS, `COM4` or
@@ -385,7 +404,7 @@ from the S3 on first boot, so you only flash one of them.
 
 7. first boot takes about 15 seconds: the S3 flashes the H2 with the radio
    firmware, restarts, brings up Ethernet, and serves its web UI at
-   `http://esp-ot-br.local`. `idf.py -p <port> monitor` shows it, and restarts the
+   `http://esp-ot-br-33f0.local`. `idf.py -p <port> monitor` shows it, and restarts the
    board when it connects
 
 **it does not join anything by itself.** with no dataset stored it forms its own
@@ -399,7 +418,7 @@ copying dataset TLVs around by hand. the panel only offers it for a border route
 it *manages*, so add it to the integration first.
 
 1. **Settings** > **Devices & services** > **Add integration** > **OpenThread
-   Border Router**, URL `http://esp-ot-br.local`. port 80, a standard border
+   Border Router**, URL `http://esp-ot-br-33f0.local`. port 80, a standard border
    router uses 8081
 2. rename both entries, ⋮ > **Rename**. the one you add by URL is always called
    *Open Thread Border Router*, the add-on's takes the add-on's name, and
@@ -416,7 +435,7 @@ it *manages*, so add it to the integration first.
 5. it attaches as a child and is a router a minute or two later
 
     ```
-    curl -s http://esp-ot-br.local/node/state; echo
+    curl -s http://esp-ot-br-33f0.local/node/state; echo
     ```
 
 6. the empty `ESP-BR-xxxx` network is left behind in the panel. delete it with the
@@ -435,17 +454,15 @@ it *manages*, so add it to the integration first.
 
 ### web UI and REST API
 
-- web UI: `http://esp-ot-br.local/`. on v1.2 only `/index.html` worked and the bare
-  `/` returned a JSON 404
-- `http://esp-ot-br.local/.well-known/thread/esp-br-rest` lists the API, on builds
-  from `main` since August 2026
+- web UI: `http://esp-ot-br-33f0.local/`
+- `http://esp-ot-br-33f0.local/.well-known/thread/esp-br-rest` lists the API
 - REST API, the same shape as OpenThread's own border router:
 
     ```
-    curl -s http://esp-ot-br.local/node/state; echo
-    curl -s http://esp-ot-br.local/node
-    curl -s http://esp-ot-br.local/diagnostics
-    curl -s http://esp-ot-br.local/topology
+    curl -s http://esp-ot-br-33f0.local/node/state; echo
+    curl -s http://esp-ot-br-33f0.local/node
+    curl -s http://esp-ot-br-33f0.local/diagnostics
+    curl -s http://esp-ot-br-33f0.local/topology
     ```
 
     `/node/state` answers `"disabled"`, `"detached"`, `"child"`, `"router"` or
@@ -453,7 +470,7 @@ it *manages*, so add it to the integration first.
 - a path it does not know returns HTTP 200 with a 404 error in the body, so read
   the body, not the status code
 - the OpenThread console is on USB, the S3's USB-C port, not on the network.
-  from v1.3 its commands need an `ot` prefix (`ot state`). plain
+  its commands need an `ot` prefix (`ot state`). plain
   `idf.py -p /dev/cu.usbmodemXXXX monitor` restarts the S3 when it connects;
   `--no-reset` is meant to stop that, which i have not tried
 
@@ -473,42 +490,39 @@ cannot: no Home Assistant, or a border router it does not manage.
 first, things that do not work, or not the way you would expect:
 
 - **the menuconfig dataset** (**Component config** > **OpenThread** > **Thread
-  Operational Dataset**) is only used when no dataset is stored, and a normal flash
-  does not erase the stored one. from esp-thread-br v1.3 the example ignores those
-  values completely, and with nothing stored it makes a random `ESP-BR-xxxx`
-  network
-- **Join in the web UI**, before a fix in March 2026 that is not in v1.3, starts
-  from a random new network and copies in only the channel, PAN ID and key. the
-  name, extended PAN ID and mesh-local prefix end up random. my build from `main`
-  has the fix, but i have not tried Join since
+  Operational Dataset**) is ignored. with nothing stored the board forms its own
+  `ESP-BR-xxxx` network instead
+- **Join in the web UI** once started from a random new network and copied in only
+  the channel, PAN ID and key, leaving the name, extended PAN ID and mesh-local
+  prefix random. this build has the fix, but i have not used it
 - **Form** in the web UI makes a new network
 
-mine joined, but only as a **child**, and never became a router. its dataset
-matched the network apart from the mesh-local prefix, and with the same active
-timestamp on both it never took the network's copy. after i pushed Home
-Assistant's dataset it was a router within a few minutes.
+a board that attaches but stays a **child** has a dataset that differs from the
+network's, usually in the mesh-local prefix. with the same active timestamp on
+both, it never takes the network's copy, and pushing the dataset is what fixes it.
 
-check what it has. `jq` picks out four fields, so the key is never printed. macOS
-ships `jq`, on Linux install it:
+check what it has. `jq` picks out four fields, so the key is never printed:
 
 ```
-curl -s http://esp-ot-br.local/node/dataset/active | jq '{NetworkName, Channel, MeshLocalPrefix, ActiveTimestamp}'
+curl -s http://esp-ot-br-33f0.local/node/dataset/active | jq '{NetworkName, Channel, MeshLocalPrefix, ActiveTimestamp}'
 ```
 
 in Home Assistant's **Active dataset TLVs**, the mesh-local prefix is the 16 hex
-characters after `0708` (type 7, length 8). if they differ, push the dataset. from a Mac, no USB:
+characters after `0708` (type 7, length 8). if they differ, push the dataset. the
+clipboard commands below are macOS, `pbpaste` and `pbcopy`; on Linux use
+`xclip -o` and `xclip -i /dev/null`, on Windows `Get-Clipboard`:
 
 1. stop Thread. it only takes a new active dataset while stopped. expect `200`
 
     ```
-    curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"disable"' http://esp-ot-br.local/node/state
+    curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"disable"' http://esp-ot-br-33f0.local/node/state
     ```
 
 2. copy **Active dataset TLVs** from Home Assistant, then send it from the
    clipboard and clear the clipboard. expect `200`
 
     ```
-    pbpaste | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br.local/node/dataset/active
+    pbpaste | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
     pbcopy < /dev/null
     ```
 
@@ -519,7 +533,7 @@ characters after `0708` (type 7, length 8). if they differ, push the dataset. fr
 4. start Thread
 
     ```
-    curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"enable"' http://esp-ot-br.local/node/state
+    curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"enable"' http://esp-ot-br-33f0.local/node/state
     ```
 
 5. after two or three minutes `/node/state` should say `"router"`. if it sits at
@@ -527,8 +541,7 @@ characters after `0708` (type 7, length 8). if they differ, push the dataset. fr
 
 ### firmware updates
 
-same build as [above](#build-and-flash-it), with three differences. mine went from
-v1.2 on ESP-IDF v5.4.2 to `main` at `46d36d3` on v5.5.4 in September 2026.
+same build as [above](#build-and-flash-it), with three differences.
 
 1. keep the old tree. clone the new ESP-IDF and esp-thread-br into new
    directories, so the build you are running now is still there
@@ -554,9 +567,8 @@ then `/node/state` should say `"router"` within a couple of minutes and the
 `main`'s default partitions need the 8 MB board, its app partitions are 2M each.
 `nvs`, where the dataset is stored, does not move.
 
-changed from v1.2: `/` serves the web UI, and `/diagnostics` and `/topology` no
-longer return `NetworkData`, `Connectivity`, `MACCounters` or `ChannelPages`.
-network data is on the USB console, see
+`/diagnostics` and `/topology` do not return `NetworkData`, `Connectivity`,
+`MACCounters` or `ChannelPages`, so network data comes from the USB console, see
 [what each border router publishes](#what-each-border-router-publishes).
 
 ## checking it is one mesh
@@ -564,14 +576,12 @@ network data is on the USB console, see
 ### the ESP's API
 
 ```
-curl -s http://esp-ot-br.local/topology
+curl -s http://esp-ot-br-33f0.local/topology
 ```
 
 one entry per router, with its extended address, `Rloc16` and links. the router
 ID is `Rloc16` divided by 1024. a child's `Rloc16` has a non zero remainder.
-`LeaderData.PartitionId` should be the same in every entry. v1.2 also returned
-`Connectivity`, where `LinkQuality3` counts neighbours on the best link quality.
-builds from `main` do not.
+`LeaderData.PartitionId` should be the same in every entry.
 
 ### mDNS
 
@@ -683,10 +693,9 @@ ot bbr
 each entry includes the `Rloc16`, in hex, of the router that published it (`a400`
 is router 41, `3800` router 14). `::/0` is a default route, a route with `n` in
 its flags is a NAT64 prefix, service `5d` is an SRP server and service `01` is a
-backbone router. `ot bbr` names the primary. v1.2 also returned the network data
-as hex in the `NetworkData` field of `/diagnostics`.
+backbone router. `ot bbr` names the primary.
 
-mine since the [failover](#watching-a-failover) in September 2026:
+mine, since the [failover](#watching-a-failover):
 
 | | add-on | ESP |
 | --- | --- | --- |
@@ -712,8 +721,8 @@ what happens when the add-on goes away, watched over the ESP's REST API, no USB.
 2. watch the routers' addresses and the ESP's own
 
     ```
-    curl -s http://esp-ot-br.local/diagnostics | jq -c '.[] | {router: (.Rloc16 / 1024 | floor), addresses: .IP6AddressList}'
-    curl -s http://esp-ot-br.local/ipaddr | jq -c '.result[] | {address, preferred}'
+    curl -s http://esp-ot-br-33f0.local/diagnostics | jq -c '.[] | {router: (.Rloc16 / 1024 | floor), addresses: .IP6AddressList}'
+    curl -s http://esp-ot-br-33f0.local/ipaddr | jq -c '.result[] | {address, preferred}'
     ```
 
     - an address ending `0:ff:fe00:fc38` is the primary backbone router's,
