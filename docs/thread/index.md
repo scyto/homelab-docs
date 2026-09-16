@@ -467,6 +467,9 @@ it *manages*, so add it to the integration first.
 
     `/node/state` answers `"disabled"`, `"detached"`, `"child"`, `"router"` or
     `"leader"`. in `/node` the same thing is a number, 0 to 4 in that order
+- the answers are not shaped alike: `/topology` and `/ipaddr` wrap theirs in a
+  `result` field, while `/diagnostics` is a bare array and `/node` a bare object.
+  so `jq` needs `.result[]` for the first two and `.[]` for `/diagnostics`
 - a path it does not know returns HTTP 200 with a 404 error in the body, so read
   the body, not the status code
 - the OpenThread console is on USB, the S3's USB-C port, not on the network.
@@ -508,9 +511,11 @@ curl -s http://esp-ot-br-33f0.local/node/dataset/active | jq '{NetworkName, Chan
 ```
 
 in Home Assistant's **Active dataset TLVs**, the mesh-local prefix is the 16 hex
-characters after `0708` (type 7, length 8). if they differ, push the dataset. the
-clipboard commands below are macOS, `pbpaste` and `pbcopy`; on Linux use
-`xclip -o` and `xclip -i /dev/null`, on Windows `Get-Clipboard`:
+characters after `0708` (type 7, length 8). if they differ, push the dataset.
+
+the point of going through the clipboard is that the network key never lands in
+shell history or a file. step 2 is the only platform-specific part, and i only run
+the macOS one:
 
 1. stop Thread. it only takes a new active dataset while stopped. expect `200`
 
@@ -519,15 +524,34 @@ clipboard commands below are macOS, `pbpaste` and `pbcopy`; on Linux use
     ```
 
 2. copy **Active dataset TLVs** from Home Assistant, then send it from the
-   clipboard and clear the clipboard. expect `200`
+   clipboard and overwrite the clipboard. expect `200`. macOS:
 
     ```
     pbpaste | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
     pbcopy < /dev/null
     ```
 
-    the key goes from the clipboard straight to the request, never into shell
-    history or a file. the values in the TLVs replace the stored ones
+    Linux. `-selection clipboard` matters: `xclip` reads the PRIMARY selection by
+    default, which is the text you last highlighted, not what the browser copied.
+    on Wayland use `wl-paste` and `wl-copy --clear`:
+
+    ```
+    xclip -selection clipboard -o | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
+    printf '' | xclip -selection clipboard -i
+    ```
+
+    PowerShell, where `tr` and `pbcopy` do not exist. `-Raw` matters: without it
+    `Get-Clipboard` hands back one string per line, and the PUT then carries an
+    array rather than the dataset. `Set-Clipboard` will not take an empty string,
+    so overwrite it with a space:
+
+    ```
+    $tlv = (Get-Clipboard -Raw) -replace '\s', ''
+    Invoke-RestMethod -Method Put -ContentType 'text/plain' -Body $tlv -Uri http://esp-ot-br-33f0.local/node/dataset/active
+    Set-Clipboard -Value ' '
+    ```
+
+    the values in the TLVs replace the stored ones
 
 3. run the check above. the mesh-local prefix should now match
 4. start Thread
@@ -552,7 +576,8 @@ same build as [above](#build-and-flash-it), with three differences.
       idf.py -p <port> flash
     ```
 
-    - the `&&` stops the flash if the backup fails
+    - the `&&` stops the flash if the backup fails. in PowerShell run the two
+      separately and check the backup exists first
     - the backup takes about 12 minutes and holds the network key, keep it out of
       git. the way back is `esptool.py write_flash 0` with it, which i have not
       needed
@@ -589,10 +614,12 @@ every border router announces `_meshcop._udp`:
 
 ```
 dns-sd -B _meshcop._udp local.
-dns-sd -L esp-ot-br _meshcop._udp local.
+dns-sd -L esp-ot-br-33f0 _meshcop._udp local.
 ```
 
-most TXT values are binary, so `dns-sd` prints them garbled.
+`dns-sd` is macOS. on Linux the same two are `avahi-browse _meshcop._udp` and
+`avahi-browse -r _meshcop._udp`. most TXT values are binary, so both print them
+garbled.
 
 | key | what it is |
 | --- | --- |
@@ -604,9 +631,9 @@ most TXT values are binary, so `dns-sd` prints them garbled.
 | `at` | active dataset timestamp |
 | `tv`, `vn`, `mn` | Thread version, vendor, model |
 
-my ESP's firmware fills `sb`, `omr` and `at` in differently from current
-OpenThread: no role bits, its own prefix in `omr`. i read its role from the REST
-API, not from mDNS.
+my ESP's firmware fills `sb`, `omr` and `at` differently from OpenThread's own
+border router: no role bits, and its own prefix in `omr`. i read its role from the
+REST API, not from mDNS.
 
 ??? note "decode the TXT records with python"
 
@@ -676,7 +703,7 @@ API, not from mDNS.
     ```
 
     ```
-    python3 meshcop.py esp-ot-br "Home Assistant OpenThread Border Router #XXXX"
+    python3 meshcop.py esp-ot-br-33f0 "Home Assistant OpenThread Border Router #XXXX"
     ```
 
     the instance names are the ones `dns-sd -B` lists.
@@ -751,6 +778,7 @@ what mine did:
 | --- | --- |
 | add-on stopped after the pi was off, with **Watchdog** on | the 10 restarts in 30 minutes were used up. the [automation](#the-automation) starts it again |
 | `No route to host` in the add-on log | the pi is unreachable. `Connection refused` means ser2net is not running |
+| a freshly flashed board sits on its own `ESP-BR-xxxx` network | expected, it forms one when it has no dataset. [move it onto yours](#get-it-onto-your-network) |
 | the ESP stays a child | its dataset differs from the network's. [check the mesh-local prefix](#joining-it-by-hand) |
 | the panel shows 2 border routers, the ESP's topology shows 3 routers | routers and border routers are different things, see [above](#border-routers-and-routers) |
 | the ESP still has the prefix and primary backbone router after the add-on came back | expected, they do not move back. see [watching a failover](#watching-a-failover) |
