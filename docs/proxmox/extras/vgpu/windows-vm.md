@@ -12,9 +12,8 @@ source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
 6. shutdown VM and change display to VirtIO-GPU
 7. Now add the vGPU pool as a PCI device
 8. when creating a VM add a PCI device and add the poool as follows:
-<p align="center">
-<img width="450" alt="image" src="../../../../assets/img/875be66329db.png">
-</p>
+
+    ![image](../../../assets/img/875be66329db.png){ width="450" }
 
 7. now boot into VM and install latest IrisXe drivers from intel
 9. you should now have graphics acceleration availble to apps wether you connect by webcolse VNC, SPICE or an RDP client

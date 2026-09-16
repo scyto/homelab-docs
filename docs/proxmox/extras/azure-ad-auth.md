@@ -18,7 +18,7 @@ All of these steps will be done in the Azure Portal AAD UI
 4. set initial redirect URI to web https://node.mydomain.com:8006 (this assume you are not publishing externaly)
 5. click register
 
-nav should change to the the proxmox  app reg
+    nav should change to the the proxmox  app reg
 
 7. click certificans & secrets
 8. click the client secrets tab
@@ -28,7 +28,7 @@ nav should change to the the proxmox  app reg
 12. copy the value <a string hash>
 13. copy the secret id <a guid>)
 
-**very important - you will never see the value again - must copy it down now**
+    **very important - you will never see the value again - must copy it down now**
   
 14. click authentication in the left nav
 15. add all the internally and externally accessible node names, in my case this is as follows for my 3 internal node names, the pbs server name and cluster name via internal nginx.
