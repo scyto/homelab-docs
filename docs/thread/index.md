@@ -372,7 +372,8 @@ from the S3 on first boot, so you only flash one of them.
       idf.py set-target esp32s3 && idf.py build
     ```
 
-    in the ESP-IDF PowerShell, where `export` and `&&` do not exist:
+    in the ESP-IDF PowerShell, where `export` does not exist and `&&` only works
+    in PowerShell 7:
 
     ```
     cd "$env:IDF_PATH\examples\openthread\ot_rcp"
@@ -467,6 +468,9 @@ it *manages*, so add it to the integration first.
 
     `/node/state` answers `"disabled"`, `"detached"`, `"child"`, `"router"` or
     `"leader"`. in `/node` the same thing is a number, 0 to 4 in that order
+- the answers are not shaped alike: `/topology` and `/ipaddr` wrap theirs in a
+  `result` field, while `/diagnostics` is a bare array and `/node` a bare object.
+  so `jq` needs `.result[]` for the first two and `.[]` for `/diagnostics`
 - a path it does not know returns HTTP 200 with a 404 error in the body, so read
   the body, not the status code
 - the OpenThread console is on USB, the S3's USB-C port, not on the network.
@@ -508,9 +512,15 @@ curl -s http://esp-ot-br-33f0.local/node/dataset/active | jq '{NetworkName, Chan
 ```
 
 in Home Assistant's **Active dataset TLVs**, the mesh-local prefix is the 16 hex
-characters after `0708` (type 7, length 8). if they differ, push the dataset. the
-clipboard commands below are macOS, `pbpaste` and `pbcopy`; on Linux use
-`xclip -o` and `xclip -i /dev/null`, on Windows `Get-Clipboard`:
+characters after `0708` (type 7, length 8). if they differ, push the dataset.
+
+the point of going through the clipboard is that the network key never lands in
+shell history or a file. steps 1, 2 and 4 differ per platform and i only run the
+macOS ones. in Windows PowerShell 5.1, which is what the installer's shortcut
+opens, `curl` is an alias for `Invoke-WebRequest` rather than curl itself, so
+`-s`, `-o`, `-w` and `-X` are not understood: call `curl.exe` for the reads, and
+use the `Invoke-RestMethod` lines below for the writes. PowerShell 7 dropped that
+alias, so there `curl` is the real thing.
 
 1. stop Thread. it only takes a new active dataset while stopped. expect `200`
 
@@ -518,22 +528,57 @@ clipboard commands below are macOS, `pbpaste` and `pbcopy`; on Linux use
     curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"disable"' http://esp-ot-br-33f0.local/node/state
     ```
 
+    PowerShell, which throws on anything but a 2xx rather than printing a code:
+
+    ```
+    Invoke-RestMethod -Method Put -ContentType 'application/json' -Body '"disable"' -Uri http://esp-ot-br-33f0.local/node/state
+    ```
+
 2. copy **Active dataset TLVs** from Home Assistant, then send it from the
-   clipboard and clear the clipboard. expect `200`
+   clipboard and overwrite the clipboard. expect `200`. macOS:
 
     ```
     pbpaste | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
     pbcopy < /dev/null
     ```
 
-    the key goes from the clipboard straight to the request, never into shell
-    history or a file. the values in the TLVs replace the stored ones
+    Linux over ssh, with no desktop and so no clipboard. `read -rs` takes the
+    paste without echoing it, and `read` is a shell builtin, so the key is not in
+    the history, not in a file and not in the process list:
+
+    ```
+    read -rs TLV
+    printf '%s' "$TLV" | tr -d '[:space:]' | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: text/plain' --data-binary @- http://esp-ot-br-33f0.local/node/dataset/active
+    unset TLV
+    ```
+
+    paste at the blank line and press Enter. `-s` is bash and zsh; on a shell
+    without it the paste is echoed, which is only a shoulder-surfing problem
+
+    PowerShell, where `tr` and `pbcopy` do not exist. `-Raw` matters: without it
+    `Get-Clipboard` hands back one string per line, and the PUT then carries an
+    array rather than the dataset. `Set-Clipboard` will not take an empty string,
+    so overwrite it with a space:
+
+    ```
+    $tlv = (Get-Clipboard -Raw) -replace '\s', ''
+    Invoke-RestMethod -Method Put -ContentType 'text/plain' -Body $tlv -Uri http://esp-ot-br-33f0.local/node/dataset/active
+    Set-Clipboard -Value ' '
+    ```
+
+    the values in the TLVs replace the stored ones
 
 3. run the check above. the mesh-local prefix should now match
 4. start Thread
 
     ```
     curl -s -o /dev/null -w '%{http_code}\n' -X PUT -H 'Content-Type: application/json' -d '"enable"' http://esp-ot-br-33f0.local/node/state
+    ```
+
+    PowerShell:
+
+    ```
+    Invoke-RestMethod -Method Put -ContentType 'application/json' -Body '"enable"' -Uri http://esp-ot-br-33f0.local/node/state
     ```
 
 5. after two or three minutes `/node/state` should say `"router"`. if it sits at
@@ -552,7 +597,8 @@ same build as [above](#build-and-flash-it), with three differences.
       idf.py -p <port> flash
     ```
 
-    - the `&&` stops the flash if the backup fails
+    - the `&&` stops the flash if the backup fails. in PowerShell run the two
+      separately and check the backup exists first
     - the backup takes about 12 minutes and holds the network key, keep it out of
       git. the way back is `esptool.py write_flash 0` with it, which i have not
       needed
@@ -589,10 +635,12 @@ every border router announces `_meshcop._udp`:
 
 ```
 dns-sd -B _meshcop._udp local.
-dns-sd -L esp-ot-br _meshcop._udp local.
+dns-sd -L esp-ot-br-33f0 _meshcop._udp local.
 ```
 
-most TXT values are binary, so `dns-sd` prints them garbled.
+`dns-sd` is macOS. on Linux the same two are `avahi-browse _meshcop._udp` and
+`avahi-browse -r _meshcop._udp`. most TXT values are binary, so both print them
+garbled.
 
 | key | what it is |
 | --- | --- |
@@ -604,9 +652,9 @@ most TXT values are binary, so `dns-sd` prints them garbled.
 | `at` | active dataset timestamp |
 | `tv`, `vn`, `mn` | Thread version, vendor, model |
 
-my ESP's firmware fills `sb`, `omr` and `at` in differently from current
-OpenThread: no role bits, its own prefix in `omr`. i read its role from the REST
-API, not from mDNS.
+my ESP's firmware fills `sb`, `omr` and `at` differently from OpenThread's own
+border router: no role bits, and its own prefix in `omr`. i read its role from the
+REST API, not from mDNS.
 
 ??? note "decode the TXT records with python"
 
@@ -676,7 +724,7 @@ API, not from mDNS.
     ```
 
     ```
-    python3 meshcop.py esp-ot-br "Home Assistant OpenThread Border Router #XXXX"
+    python3 meshcop.py esp-ot-br-33f0 "Home Assistant OpenThread Border Router #XXXX"
     ```
 
     the instance names are the ones `dns-sd -B` lists.
@@ -751,6 +799,7 @@ what mine did:
 | --- | --- |
 | add-on stopped after the pi was off, with **Watchdog** on | the 10 restarts in 30 minutes were used up. the [automation](#the-automation) starts it again |
 | `No route to host` in the add-on log | the pi is unreachable. `Connection refused` means ser2net is not running |
+| a freshly flashed board sits on its own `ESP-BR-xxxx` network | expected, it forms one when it has no dataset. [move it onto yours](#get-it-onto-your-network) |
 | the ESP stays a child | its dataset differs from the network's. [check the mesh-local prefix](#joining-it-by-hand) |
 | the panel shows 2 border routers, the ESP's topology shows 3 routers | routers and border routers are different things, see [above](#border-routers-and-routers) |
 | the ESP still has the prefix and primary backbone router after the add-on came back | expected, they do not move back. see [watching a failover](#watching-a-failover) |
