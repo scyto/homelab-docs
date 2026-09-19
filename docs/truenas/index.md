@@ -8,6 +8,10 @@ my NAS runs TrueNAS and sits outside the proxmox cluster. for backups that is
 the point of it: the box holding the backups does not depend on ceph, so losing
 the cluster does not take the backups with it.
 
+it runs on bare metal. for about a year before that it was a VM on its own single
+proxmox host, with every drive passed through to it over PCIe. that setup is kept
+for information in [virtualized on proxmox](virtualized-on-proxmox.md).
+
 what runs on it that the rest of these docs care about:
 
 - **proxmox backup server**, as a TrueNAS container, datastore on a dataset on

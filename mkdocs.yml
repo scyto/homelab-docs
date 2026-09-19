@@ -148,6 +148,7 @@ nav:
               - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md
   - TrueNAS:
       - truenas/index.md
+      - Virtualized on Proxmox: truenas/virtualized-on-proxmox.md
       - S3 with Versity Gateway: truenas/s3-versity-gateway.md
   - Raspberry Pi:
       - raspberry-pi/index.md
