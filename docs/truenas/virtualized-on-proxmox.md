@@ -178,6 +178,17 @@ what each ID catches:
 | `10de:2bb1` | NVIDIA RTX PRO 6000 Blackwell (`21:00.0`) |
 | `10de:22e8` | Blackwell HDA audio. a no-op while the card is in compute mode, kept so flipping it back to display mode needs no edit |
 
+!!! warning "one passed-through device is missing from that list"
+
+    `84:00.0`, the Crucial T710, goes to the VM on `hostpci8`, but its ID
+    `c0a9:5428` is **not** in the `ids=` line. that is how it is recorded in both
+    places i have it from, so i have left it rather than quietly correcting the
+    record, but it is a gap either way: nothing stops the host's `nvme` driver
+    claiming that drive at boot. if you are copying this line, add `c0a9:5428`.
+
+    the general check, before you trust any `ids=` line: every device in the
+    `hostpci` map must be covered by an entry here.
+
 - **bind by vendor:device, not by address.** one ID covers every identical drive,
   so adding another Optane needs no edit and a bus renumber breaks nothing
 
@@ -218,15 +229,39 @@ are on the FCH and they have never moved.
 - `driver_override` sets the only driver the device will ever accept, and the
   `RUN+=` line binds it there and then rather than waiting
 
-## 4. apply
+## 4. make sure vfio actually loads, then apply
+
+everything above *configures* vfio-pci. none of it *loads* it, and a `softdep`
+that points at a module the initramfs does not carry buys you nothing. so ask for
+the modules explicitly.
+
+`/etc/initramfs-tools/modules`:
+
+```conf
+vfio
+vfio_iommu_type1
+vfio_pci
+```
+
+then rebuild the initramfs and reload the rules:
 
 ```
 update-initramfs -u -k all
 udevadm control --reload-rules
 ```
 
-reboot for the modprobe change to take effect. `vfio-pci` has to be in the initramfs
-or the host's own drivers win the race at boot, which is the whole problem.
+reboot for the modprobe changes to take effect.
+
+- it has to be **this** file. modules listed here are included in the initramfs
+  and loaded early in boot, which is the only stage that matters on a host that
+  boots off NVMe: by the time the real root is up, `nvme` has long since loaded
+- the Proxmox wiki points at `/etc/modules-load.d/vfio.conf` instead. that is read
+  by systemd in the real root, so it is too late to win this particular race
+- do not assume the module is already in the image. `MODULES=most`, the default,
+  covers filesystem, ata, sata, scsi and usb drivers, and `vfio-pci` is none of
+  those
+- older guides, mine included, list a fourth module here, `vfio_virqfd`. it was
+  folded into the vfio core in kernel 6.2 and no longer exists, so drop it
 
 ## 5. the VM itself
 
