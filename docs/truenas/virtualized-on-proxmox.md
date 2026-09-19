@@ -235,7 +235,7 @@ everything above *configures* vfio-pci. none of it *loads* it, and a `softdep`
 that points at a module the initramfs does not carry buys you nothing. so ask for
 the modules explicitly.
 
-`/etc/modules-load.d/vfio.conf`:
+`/etc/initramfs-tools/modules`:
 
 ```conf
 vfio
@@ -252,10 +252,16 @@ udevadm control --reload-rules
 
 reboot for the modprobe changes to take effect.
 
+- it has to be **this** file. modules listed here are included in the initramfs
+  and loaded early in boot, which is the only stage that matters on a host that
+  boots off NVMe: by the time the real root is up, `nvme` has long since loaded
+- the Proxmox wiki points at `/etc/modules-load.d/vfio.conf` instead. that is read
+  by systemd in the real root, so it is too late to win this particular race
+- do not assume the module is already in the image. `MODULES=most`, the default,
+  covers filesystem, ata, sata, scsi and usb drivers, and `vfio-pci` is none of
+  those
 - older guides, mine included, list a fourth module here, `vfio_virqfd`. it was
   folded into the vfio core in kernel 6.2 and no longer exists, so drop it
-- `vfio-pci` has to be in the initramfs or the host's own drivers win the race at
-  boot, which is the whole problem this page exists to solve
 
 ## 5. the VM itself
 
