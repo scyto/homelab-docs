@@ -3,7 +3,7 @@
 The [homelab-docs](https://scyto.github.io/homelab-docs/) site was built from the 47 gists
 reachable from the two hub gists (*my proxmox cluster* and *My Docker Swarm Architecture*).
 
-These **16** gists were left out: nothing in that tree links to them, so they were never
+These **15** gists were left out: nothing in that tree links to them, so they were never
 part of the graph. This is a review list, not a backlog, several are probably fine as-is.
 
 Tick a box once you have decided what to do with one.
@@ -15,10 +15,6 @@ Real, standalone content that nothing currently links to. Each would slot into t
 - [ ] **[CasaTunes → Music Assistant conversion](https://gist.github.com/scyto/2eef6306f3ac0e90252d21b35c0e6473)**
   `1-ct-converted-to-ma.md, 2-using-squeezelite.md, 3-docker-sendspin.md, 4-asound.conf, 5-operations-guide.md, 6-lr-channel-check-test-script.sh` · 23,221 bytes · 0 comments · updated 2026-05-31
   Four-part guide (squeezelite, docker sendspin, asound config). The largest unmigrated topic and arguably deserves its own section rather than folding into either existing one.
-
-- [ ] **[TrueNAS VM prep — PCIe passthrough](https://gist.github.com/scyto/305224b5e651f6d3c318744bfde99974)**
-  `passthrough-setup.md` · 8,609 bytes · 0 comments · updated 2026-05-14
-  Reference snapshot of pve-nas1 PCIe layout. Fits naturally under Proxmox → Extra Credit.
 
 - [ ] **[Home Assistant USBIP Z-Wave setup](https://gist.github.com/scyto/9be69eb8f1e736ae69a0fa70dc4a6ed2)**
   `001-README.md, 99-zwave-stick.rules, usbip.service, usbipManager.sh, usbipd.service` · 7,210 bytes · 0 comments · updated 2026-01-23
@@ -86,7 +82,7 @@ These are **secret**, not public. A secret gist is reachable by anyone who has i
 
 ---
 
-*16 gists · 215,996 bytes · 28 comments between them.*
+*15 gists · 207,387 bytes · 28 comments between them.*
 
 > Generated after the gist consolidation. If you migrate one, remember to add a
 > "moved" banner to the gist the way the other 47 have, and drop it from this list.
