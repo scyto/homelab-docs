@@ -29,6 +29,21 @@ not a disaster copy.
 | `fast` | small pool: the apps dataset, and app config under `fast/configs/<app>` |
 | `rust` | big pool: media, backups, S3 buckets |
 
+## how it is put together
+
+- [hardware and base install](hardware-and-base-install.md) — the board, the
+  accelerators, the pools and how the network and identity are set up
+- [system extensions](sysexts.md) — how drivers the base image does not ship
+  get added, and survive a reboot
+- [storage and snapshots](storage.md) — dataset layout, and the one rule that
+  stopped a snapshot holding half a pool
+- [apps](apps.md) — what runs as a catalog app, where its storage goes, and the
+  portainer agent
+- [frigate](frigate.md) — the NVR, four accelerators, and why it is not an app
+- [containers](containers.md) — the PBS system container
+- [boot environments](boot-environments.md) — making a rollback target, and
+  protecting it so it survives the update you made it for
+
 ## app gotchas
 
 stuff that took me a while, symptom first.
@@ -62,10 +77,18 @@ chown 568:568 /mnt/<pool>/<dataset>
 
 ### host paths or ixVolumes
 
-for data i care about i use a dataset i made, as a Host Path. an ixVolume lives
-under the hidden apps dataset (`.ix-apps/app_mounts/<app>`), which is awkward to
-point a snapshot task at, and deleting the app offers to remove its ixVolumes
-along with it.
+an ixVolume is the sensible default: it is chowned for you, and dying with the
+app is a feature for config that means nothing without it. TrueNAS also
+snapshots them before every app upgrade.
+
+i use a dataset i made when i want either **point-in-time recovery** — a
+periodic snapshot task cannot target an ixVolume at all — or the data on a
+**different pool**, since an ixVolume always lands on the apps pool. see
+[apps](apps.md#storage-ixvolume-or-your-own-dataset).
+
+anything left under `.ix-apps` also gets caught by the automatic snapshots
+TrueNAS takes before an update, which is its own problem: see
+[storage and snapshots](storage.md).
 
 ### certificates
 
@@ -75,3 +98,7 @@ portainer will refuse it.
 
 when the certificate changes, TrueNAS redeploys the apps using it, so an acme
 renewal just restarts the app. nothing to do by hand.
+
+that convenience is app-only. a stack you run yourself binds the certificate
+files and keeps serving the old one until you restart it, see
+[frigate](frigate.md#certificates).

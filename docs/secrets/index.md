@@ -1,13 +1,61 @@
 ---
-title: "getting secrets into swarm containers"
+title: "Secrets"
 comments: true
 ---
 
-# getting secrets into swarm containers
+# secrets
 
 for years i typed passwords straight into the stack editor in portainer as
 environment variables. it works. its also the worst of the options, for a reason
 that isn't obvious.
+
+this page is the strategy: how a secret reaches a container, and which of the
+five ways to pick. the operations are their own pages:
+
+| page | for |
+| --- | --- |
+| [background](background.md) | the model, in depth. age and SOPS, where Key Vault fits, why rotation difficulty is set by where the authority lives, and how to run the container |
+| [add a secret](add.md) | a value that does not exist yet |
+| [rotate a secret](rotate.md) | replacing one that does |
+| [retire a secret](retire.md) | taking a superseded one out of service |
+| [recover](recover.md) | reading the store from anywhere, restoring it, rebuilding a swarm |
+
+the tooling is a container, `ghcr.io/scyto/key-manager`, and it is public, so
+the commands on those pages are runnable rather than illustrative. what it
+operates on is my own encrypted store, so substitute your own.
+
+## One-time setup: the keyman alias
+
+every command on the operations pages runs **inside that container**, never on a
+host. the container is ephemeral, so nothing is left behind when you exit: not
+the clone, not the logins, not any key.
+
+**1** add this to `~/.zshrc`, as one line:
+
+```bash
+alias keyman='ssh -t docker01 '\''docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search yourdomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=you -e GIT_AUTHOR_EMAIL=you@yourdomain.com -e HOMELAB_REPO_URL=https://github.com/you/your-repo.git ghcr.io/scyto/key-manager:latest'\'''
+```
+
+**2** load it, and check it reaches a prompt. type `exit` to leave:
+
+```bash
+source ~/.zshrc
+keyman
+```
+
+- **`ssh -t <a swarm manager>`** because `provision` and `verify` need that
+  node's docker socket, which on a manager is the Swarm API. `-t` gives it a
+  terminal; without it `docker run -it` fails with "the input device is not a
+  TTY"
+- **paste it as one line.** splitting the `ssh` and the `docker` parts across
+  lines runs the docker half on your workstation after ssh exits
+- **`HOMELAB_REPO_URL` is the one you must change.** the container clones a
+  repo into `/repo` on first run and, left unset, that is *my* repo, which is
+  private -- so the clone fails for anyone else. point it at your own. `clone
+  --url <repo>` does the same thing per-run
+- substitute your own vault, tenant and domain
+- there are other ways to run it, including on a machine with nothing, see
+  [background](background.md#three-ways-to-run-it)
 
 ## why not environment variables
 
@@ -111,16 +159,36 @@ whatever the image normally runs:
       - /bin/sh
       - -c
       - >
-        export DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password)";
+        set -e;
+        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password)";
+        export DB_MYSQL_PASSWORD;
         exec /init
 ```
 
-three things that will bite you:
+four things that will bite you:
+
+- **do not write `export VAR="$(cat ...)"`.** it looks equivalent and is the
+  form you will find in most examples, including an earlier version of this
+  page. `export` is a *command*, and its own exit status is 0, so `set -e`
+  never sees the `cat` fail and your app starts with an **empty** password.
+  a plain assignment propagates the failure, so a missing secret crashes the
+  container instead. try it:
+
+  ```
+  sh -c 'set -e; V="$(cat /nope)"; export V; echo REACHED'   # exit 1, silent
+  sh -c 'set -e; export V="$(cat /nope)"; echo REACHED'      # exit 0, REACHED
+  ```
+
+  this matters most where an empty value degrades quietly rather than failing:
+  an app that falls back to a different auth mode, or an image with a default
+  baked in
 
 - `$$` is compose's escape for a literal `$`. write one `$` and compose
   substitutes it at deploy time, which is exactly what you're trying to avoid
+
 - you must `exec`, not just run the command, or your shell stays as pid 1 and
   signal handling breaks, so the container stops responding to `docker stop`
+
 - the image needs a shell. distroless images have no `/bin/sh` so this option
   isn't available. check first:
 

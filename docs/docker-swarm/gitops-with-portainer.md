@@ -22,7 +22,7 @@ assumes you have [portainer on a swarm](portainer.md) already.
 1. a git repo, private if your compose files describe your estate (mine does)
 2. portainer business or CE, both do git stacks
 3. shell access to a manager node
-4. somewhere to put secrets first, see [secrets](secrets.md), do that page before
+4. somewhere to put secrets first, see [secrets](../secrets/index.md), do that page before
    this one if any stack has a password in it
 
 ## 1. lay the repo out one directory per stack
