@@ -16,7 +16,7 @@ Each major task has its own gist, this is to help with maitainability long term.
 5. [Install KeepaliveD](keepalived.md)
 6. [Using VirtioFS backed by CephFS for bind mounts (migrating from glsuterFS - WIP)](../proxmox/cephfs-virtiofs-passthrough.md)
 7. [Move your stacks into git](gitops-with-portainer.md)
-8. [Get secrets out of your stack definitions](secrets.md)
+8. [Get secrets out of your stack definitions](../secrets/index.md)
 9. [Keep images updated with Renovate](image-updates-renovate.md)
 10. [Random notes and troubleshooting](troubleshooting.md)
 11. ~~[glusterFS disk prep, install & config ](glusterfs-install.md)~~
@@ -35,6 +35,8 @@ Each major task has its own gist, this is to help with maitainability long term.
     - [unifi poller / UnPoller](stacks/unifi-poller.md)
     - [omni-tools, file and text tools in the browser](stacks/omni-tools.md)
     - [bentopdf, pdf toolkit in the browser](stacks/bentopdf.md)
+    - [acme.sh, certificates for an ASRock Rack BMC](stacks/acme-asrock-bmc.md)
+    - [acme.sh, certificates for Synology DSM](stacks/acme-synology.md)
     - no longer used, kept for reference:
         - [watchtower](stacks/watchtower.md)
         - [shepherd](stacks/shepherd.md)
@@ -53,7 +55,7 @@ Each major task has its own gist, this is to help with maitainability long term.
 - all stacks now deploy [from git](gitops-with-portainer.md), not the portainer web editor
   - each stack watches its own branch, so a commit only redeploys the stacks it touched
   - point them all at `main` and every commit redeploys everything, don't do that
-- [passwords are out of the service specs](secrets.md) - they were env vars, which anything that could reach the docker API could read, and i had an unauthenticated docker socket proxy on the LAN at the time. both fixed
+- [passwords are out of the service specs](../secrets/index.md) - they were env vars, which anything that could reach the docker API could read, and i had an unauthenticated docker socket proxy on the LAN at the time. both fixed
 - watchtower and shepherd are gone, replaced by [renovate](image-updates-renovate.md) opening PRs against the compose files
 - also retired: traefik (NPM does the job), and a docker management UI i was running on an eight month old dev build off a fork
 - two stacks had been broken for a while and nobody noticed, because nothing was checking

@@ -123,7 +123,6 @@ nav:
       - Configure Swarm: docker-swarm/configure-swarm.md
       - Portainer: docker-swarm/portainer.md
       - Stacks in Git: docker-swarm/gitops-with-portainer.md
-      - Secrets: docker-swarm/secrets.md
       - Image Updates with Renovate: docker-swarm/image-updates-renovate.md
       - Troubleshooting: docker-swarm/troubleshooting.md
       - KeepaliveD: docker-swarm/keepalived.md
@@ -140,16 +139,32 @@ nav:
           - UniFi Poller / UnPoller: docker-swarm/stacks/unifi-poller.md
           - omni-tools: docker-swarm/stacks/omni-tools.md
           - BentoPDF: docker-swarm/stacks/bentopdf.md
+          - "acme.sh: ASRock Rack BMC": docker-swarm/stacks/acme-asrock-bmc.md
+          - "acme.sh: Synology DSM": docker-swarm/stacks/acme-synology.md
           - No Longer Used:
               - Watchtower: docker-swarm/stacks/watchtower.md
               - Shepherd: docker-swarm/stacks/shepherd.md
               - Traefik: docker-swarm/stacks/traefik.md
               - "Not Recommended: Portainer Agent": docker-swarm/stacks/portainer-agent.md
               - "Do Not Attempt: Portception": docker-swarm/stacks/portception.md
+  - Secrets:
+      - secrets/index.md
+      - Background: secrets/background.md
+      - Add a Secret: secrets/add.md
+      - Rotate a Secret: secrets/rotate.md
+      - Retire a Secret: secrets/retire.md
+      - Recover: secrets/recover.md
   - TrueNAS:
       - truenas/index.md
-      - Virtualized on Proxmox: truenas/virtualized-on-proxmox.md
+      - Hardware & Base Install: truenas/hardware-and-base-install.md
+      - System Extensions: truenas/sysexts.md
+      - Storage & Snapshots: truenas/storage.md
+      - Apps: truenas/apps.md
+      - Frigate: truenas/frigate.md
+      - Containers: truenas/containers.md
+      - Boot Environments: truenas/boot-environments.md
       - S3 with Versity Gateway: truenas/s3-versity-gateway.md
+      - Virtualized on Proxmox: truenas/virtualized-on-proxmox.md
   - Raspberry Pi:
       - raspberry-pi/index.md
   - Thread:
