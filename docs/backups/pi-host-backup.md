@@ -86,7 +86,7 @@ the first line, so the newline nano adds is fine.
 ```bash
 #!/bin/bash
 set -euo pipefail
-export PBS_REPOSITORY='pi-zwave01@pbs!backup@pbs1.yourdomain.com:mnt-pbs'
+export PBS_REPOSITORY='pi-zwave01@pbs!backup@pbs1.mydomain.com:mnt-pbs'
 export PBS_PASSWORD_FILE=/var/lib/pbs-backup/token
 proxmox-backup-client backup \
   docker-data.pxar:/docker-data \
@@ -157,7 +157,7 @@ a clean exit only proves the upload finished. this proves the backup is usable.
 
 ```
 set +H
-export PBS_REPOSITORY='pi-zwave01@pbs!backup@pbs1.yourdomain.com:mnt-pbs'
+export PBS_REPOSITORY='pi-zwave01@pbs!backup@pbs1.mydomain.com:mnt-pbs'
 export PBS_PASSWORD_FILE=/var/lib/pbs-backup/token
 SNAP='host/pi-zwave01/<snapshot time>'
 

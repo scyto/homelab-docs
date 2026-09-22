@@ -70,7 +70,7 @@ Also made ceph take a hard dependecy on frr service being started - this may hel
 - using one of these three ceph volume plugins [Brindster/docker-plugin-cephfs](https://github.com/Brindster/docker-plugin-cephfs) [flaviostutz/cepher](https://github.com/flaviostutz/cepher) [n0r1sk/docker-volume-cephfs](https://gitlab.com/n0r1sk/docker-volume-cephfs) each has different strengths and weaknesses (i will like choose either the n0r1sk or the Brindster one) - until i figure out ceph networking more this is dead in the water as ceph isn't reachable from LAN or docker swarm VMs - so using virtiofs linked in main items above.
 
 ## Purpose of cluster
-I have been using Hyper-V for my docker swarm cluster VM hosts ([see other gists](../docker-swarm/index.md)).  Original intenttion was to try and get Thunderbolt Networking for a Hyper-V cluster going and clustered storage for the VMs.  This turns out to be super hard when using NUCs as cluster nodes due to too few disks.  I looked at solar winds as alternative but this was both complex and not pervasive.
+I have been using Hyper-V for my docker swarm cluster VM hosts ([see other gists](../docker/index.md)).  Original intenttion was to try and get Thunderbolt Networking for a Hyper-V cluster going and clustered storage for the VMs.  This turns out to be super hard when using NUCs as cluster nodes due to too few disks.  I looked at solar winds as alternative but this was both complex and not pervasive.
 
 I had been watching proxmox for years and thought now was a good time to jump in and see what it is all about. 
 (i had never booted or looked at proxmox UI before doing this - so this documentation is soup to nuts and intended for me to repro if needed)

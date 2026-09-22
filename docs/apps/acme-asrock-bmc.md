@@ -30,7 +30,7 @@ None, by default this template will result in a single replica
 ## Secrets
 the BMC password is a swarm secret, the hook reads it from
 `/run/secrets/asrock_bmc_password` and hands it to curl as a file, never as an
-argument. see [secrets](../../secrets/index.md).
+argument. see [secrets](../secrets/index.md).
 
 the account needs **Administrator** privilege, the BMC's SSL page disables every
 control for anything less. i'd use a dedicated account rather than the built in
@@ -62,13 +62,13 @@ admin, with KVM and virtual media turned off.
 
     ```bash
     export CF_Token="<cloudflare token: DNS read and write on your zone>"
-    /acmebin/acme.sh --issue --server letsencrypt --dns dns_cf -d bmc.yourdomain.com --home /acmebin --config-home /acme.sh
+    /acmebin/acme.sh --issue --server letsencrypt --dns dns_cf -d bmc.mydomain.com --home /acmebin --config-home /acme.sh
     ```
 
 6. register the hook, once. this also installs the certificate straight away:
 
     ```bash
-    /acmebin/acme.sh --deploy -d bmc.yourdomain.com --ecc --deploy-hook asrock_bmc --home /acmebin --config-home /acme.sh
+    /acmebin/acme.sh --deploy -d bmc.mydomain.com --ecc --deploy-hook asrock_bmc --home /acmebin --config-home /acme.sh
     ```
 
 why it's done that way:

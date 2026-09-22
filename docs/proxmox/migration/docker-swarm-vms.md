@@ -6,7 +6,7 @@ source_gist: https://gist.github.com/scyto/042c8c41b23bd5ddb31d1e4e38156dff
 # Introduction
 
 This one is the one that has to work, even more so the domain controllers.
-[This is what my swarm looks like](../../docker-swarm/index.md)
+[This is what my swarm looks like](../../docker/index.md)
 
 you may want to read from the bottom up as later migrations are where i had the process more locked and less experimentation
 

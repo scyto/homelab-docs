@@ -15,6 +15,10 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
     blind faith. Some areas are well tested and the docs are robust, some items
     less so. YMMV.
 
+    These docs are also undergoing major changes right now: pages are moving,
+    being rewritten and being filled in. Expect gaps, and be careful before
+    relying on anything here.
+
 <div class="grid cards" markdown>
 
 -   :material-server-network:{ .lg .middle } **[Proxmox Cluster](proxmox/index.md)**
@@ -25,12 +29,28 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
     Openfabric routing, Ceph and high availability, CephFS storage, and
     migrating a fleet of VMs off Hyper-V.
 
--   :material-docker:{ .lg .middle } **[Docker Swarm](docker-swarm/index.md)**
+-   :material-docker:{ .lg .middle } **[Docker](docker/index.md)**
 
     ---
 
-    A 3-node Debian swarm with Portainer, KeepaliveD, VirtioFS-backed shared
-    storage, stacks in git, and templates for everything I run on it.
+    A 3-node Debian swarm with KeepaliveD and VirtioFS-backed shared storage,
+    three standalone Docker hosts, one Portainer over all of them, stacks in
+    git, and the conventions every stack follows.
+
+-   :material-apps:{ .lg .middle } **[Apps](apps/index.md)**
+
+    ---
+
+    What runs on all that and why it is set up the way it is: DNS, the
+    reverse proxy and auth, certificates, the arr stack, Frigate, and the
+    stack files themselves.
+
+-   :material-monitor-dashboard:{ .lg .middle } **[Monitoring](monitoring/index.md)**
+
+    ---
+
+    Knowing it all works: Gatus checks, Glances on every host, Dozzle for
+    logs, and a Homepage dashboard that pulls it together.
 
 -   :material-nas:{ .lg .middle } **[TrueNAS](truenas/index.md)**
 
@@ -53,6 +73,13 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
     One Thread network owned by Home Assistant, two border routers (the add-on
     over ser2net and an ESP32 board), and getting the add-on back after the Pi
     has been off.
+
+-   :material-key-variant:{ .lg .middle } **[Secrets](secrets/index.md)**
+
+    ---
+
+    An experimental encrypted store for keeping credentials out of git. Most
+    people should just use Docker secrets, or set env vars by hand.
 
 -   :material-backup-restore:{ .lg .middle } **[Backups](backups/index.md)**
 

@@ -6,7 +6,7 @@ title: "Thread"
 
 one Thread network, owned by Home Assistant, with two border routers: Home
 Assistant's OpenThread Border Router add-on, using a SkyConnect that sits on the
-[pi](../raspberry-pi/index.md#thread-radio-over-the-network) and is reached over
+[pi](../raspberry-pi/thread-radio.md) and is reached over
 the network, and an Espressif ESP Thread Border Router board. Matter over Thread
 devices join it from Home Assistant.
 
@@ -86,7 +86,7 @@ does not shut down cleanly, which can leave stale routes for up to 30 minutes ev
 with other routers available. the second border router covers routing while the
 add-on is down, it does not make that warning go away.
 
-the ser2net side is on the [pi page](../raspberry-pi/index.md#thread-radio-over-the-network).
+the ser2net side is on the [pi page](../raspberry-pi/thread-radio.md).
 the add-on's settings: **network device** is `192.168.1.96:8000`, **device** is
 any serial port (it is required and not used), **flow control** on.
 
@@ -184,7 +184,7 @@ shows a cross, which is what you want.
   sensor. it wants a token from a Portainer admin and adds, for every environment,
   prune volumes buttons, recreate with image pull, and stack on/off switches.
   that is a lot of control for a readiness check, and recreate with pull goes
-  around the [deploy branches](../docker-swarm/gitops-with-portainer.md)
+  around the [deploy branches](../docker/gitops-with-portainer.md)
 
 ### alerts
 

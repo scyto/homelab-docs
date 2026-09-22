@@ -431,7 +431,7 @@ gh pr merge 123 --rebase --delete-branch
 - **8.4.2 `example_app` is a brand-new stack:** in Portainer, create stack
   `example_app` from `refs/heads/deploy/swarm/example_app` with compose path
   `stacks/swarm/example_app/compose.yml`, as in
-  [stacks in git](../docker-swarm/gitops-with-portainer.md). If it needs a host
+  [stacks in git](../docker/gitops-with-portainer.md). If it needs a host
   device (a USB radio, a disk), confirm the device is present first.
 - **8.4.3 `example_app` already runs, but not from Git:** that is a cutover, not
   this procedure. Follow my own migration notes, which are not public

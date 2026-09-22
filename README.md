@@ -6,11 +6,17 @@ Two projects live here:
 
 - **[Proxmox Cluster](docs/proxmox/index.md)**: 3x Intel NUC 13, Thunderbolt
   mesh networking with Openfabric routing, Ceph, HA, and Hyper-V migrations.
-- **[Docker Swarm](docs/docker-swarm/index.md)**: 3-node Debian swarm with
-  Portainer, KeepaliveD, VirtioFS/CephFS shared storage, and stack templates.
+- **[Docker](docs/docker/index.md)**: 3-node Debian swarm plus three standalone
+  Docker hosts, Portainer, KeepaliveD, VirtioFS/CephFS shared storage, stacks in git.
 
 Plus a section per major topic:
 
+- **[Apps](docs/apps/index.md)**: what runs on the platform and why it is set up
+  that way.
+- **[Monitoring](docs/monitoring/index.md)**: Gatus, Glances, Dozzle and a Homepage
+  dashboard.
+- **[Secrets](docs/secrets/index.md)**: an experimental encrypted store; most people
+  should just use Docker secrets or set env vars by hand.
 - **[TrueNAS](docs/truenas/index.md)**: the NAS outside the cluster, PBS as a
   container and S3 with Versity Gateway.
 - **[Backups](docs/backups/index.md)**: VMs and CephFS to PBS, Portainer to S3,

@@ -39,10 +39,10 @@ None, by default this template will result in a single replica
 - **cloudflare account API token:** made from the "Edit zone DNS" template, DNS
   read and write on one zone. acme.sh only reads `CF_Token` from the environment,
   so an entrypoint wrapper reads the secret and exports it. see
-  [secrets](../../secrets/index.md)
+  [secrets](../secrets/index.md)
 - **a DSM password per NAS:** mounted at a fixed file name,
   `dsm_password_<host>`. the wrapper takes `<host>` from the first label of the
-  certificate's domain, so `syn02.yourdomain.com` reads `dsm_password_syn02`
+  certificate's domain, so `syn02.mydomain.com` reads `dsm_password_syn02`
 - **the DSM account:** a local user in the administrators group, with no 2-step
   verification (the hook can't answer a code) and no password expiry
 
@@ -79,7 +79,7 @@ None, by default this template will result in a single replica
    default certificate often has an empty one:
 
     ```bash
-    B=https://syn02.yourdomain.com:5101/webapi/entry.cgi
+    B=https://syn02.mydomain.com:5101/webapi/entry.cgi
     sid=$(curl -sk "$B" --data-urlencode api=SYNO.API.Auth --data-urlencode version=6 --data-urlencode method=login --data-urlencode account=acme --data-urlencode passwd@/run/secrets/dsm_password_syn02 --data-urlencode session=Core --data-urlencode format=sid | jq -r .data.sid)
     curl -sk "$B" --data-urlencode api=SYNO.Core.Certificate.CRT --data-urlencode version=1 --data-urlencode method=list --data-urlencode _sid="$sid" | jq -r '.data.certificates[] | "desc=\"\(.desc)\" default=\(.is_default) \(.subject.common_name) \(.valid_till)"'
     curl -sk "$B" --data-urlencode api=SYNO.API.Auth --data-urlencode version=6 --data-urlencode method=logout --data-urlencode session=Core --data-urlencode _sid="$sid" >/dev/null
@@ -89,21 +89,21 @@ None, by default this template will result in a single replica
 
     ```bash
     export CF_Token="$(cat /run/secrets/acme_synology_cf_token_v1)"
-    /acmebin/acme.sh --issue --server letsencrypt --dns dns_cf -d syn02.yourdomain.com --home /acmebin --config-home /acme.sh
+    /acmebin/acme.sh --issue --server letsencrypt --dns dns_cf -d syn02.mydomain.com --home /acmebin --config-home /acme.sh
     ```
 
 9. register the hook and install the certificate, once. use the description from
    step 7, here the empty one:
 
     ```bash
-    export SYNO_SCHEME=https SYNO_HOSTNAME=syn02.yourdomain.com SYNO_PORT=5101 SYNO_CERTIFICATE=""
-    /acmebin/acme.sh --deploy -d syn02.yourdomain.com --ecc --deploy-hook synology_dsm_secret --home /acmebin --config-home /acme.sh
+    export SYNO_SCHEME=https SYNO_HOSTNAME=syn02.mydomain.com SYNO_PORT=5101 SYNO_CERTIFICATE=""
+    /acmebin/acme.sh --deploy -d syn02.mydomain.com --ecc --deploy-hook synology_dsm_secret --home /acmebin --config-home /acme.sh
     ```
 
 10. check DSM serves it:
 
     ```bash
-    openssl s_client -connect syn02.yourdomain.com:5101 -servername syn02.yourdomain.com </dev/null 2>/dev/null | openssl x509 -noout -issuer -dates
+    openssl s_client -connect syn02.mydomain.com:5101 -servername syn02.mydomain.com </dev/null 2>/dev/null | openssl x509 -noout -issuer -dates
     ```
 
 why it's done that way:

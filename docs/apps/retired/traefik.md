@@ -6,7 +6,7 @@ source_gist: https://gist.github.com/scyto/1932a9e21c9b8030e8325ab3b380bdf7
 !!! warning "No longer used"
 
     I do not run Traefik any more. Reverse proxying is handled by
-    [Nginx Proxy Manager](nginx-proxy-manager.md), with swag alongside it for
+    [Nginx Proxy Manager](../nginx-proxy-manager.md), with swag alongside it for
     certificates, and running two reverse proxies was solving a problem I did not
     have.
 

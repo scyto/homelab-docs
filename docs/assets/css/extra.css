@@ -1,0 +1,26 @@
+/*
+ * Titles at least as strong as the text under them, in both schemes.
+ * Material draws h1 at 54-56% opacity in weight 300, which measured 4.6:1
+ * (light) and 4.9:1 (dark) against body text at 16:1 and 8.9:1: the title
+ * was fainter than the paragraph below it.
+ */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  color: var(--md-default-fg-color);
+  font-weight: 500;
+}
+
+.md-typeset h1 {
+  font-weight: 600;
+}
+
+/*
+ * Links in dark mode. Material's indigo measured 4.65:1 on slate, only just
+ * over WCAG AA; indigo 200 is comfortably over it. Same two attributes as
+ * Material's own rule, so this one wins on order, not on specificity tricks.
+ */
+[data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
+  --md-typeset-a-color: #9fa8da;
+}

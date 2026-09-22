@@ -73,5 +73,5 @@ only removes a password prompt. On a shared machine, think harder.
 
 Docker doesn't know it needs that mount. On the swarm VMs I make it wait for the
 mount and refuse to start against an empty one, see
-[make docker wait for the mount](../proxmox/cephfs-virtiofs-passthrough.md#docker-data-guard).
+[make docker wait for the mount](../../proxmox/cephfs-virtiofs-passthrough.md#docker-data-guard).
 Do that once the mount exists, the check fails without it.

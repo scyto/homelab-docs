@@ -11,7 +11,7 @@ tool for it. so portainer also backs itself up, to the
 
 portainer's docs are clear about scope: this backs up **portainer's
 configuration only**, not what is deployed on your environments. my stacks are in
-[git](../docker-swarm/gitops-with-portainer.md), so that is fine.
+[git](../docker/gitops-with-portainer.md), so that is fine.
 
 scheduled backup to S3 is a Business Edition feature.
 
@@ -30,7 +30,7 @@ Settings, Backup Portainer, **Store in S3**:
 | Access Key ID / Secret Access Key | the bucket user's keys |
 | Region | `us-east-1` |
 | Bucket name | `portainer-backups` |
-| S3 compatible host | `https://truenas.yourdomain.com:30157` |
+| S3 compatible host | `https://truenas.mydomain.com:30157` |
 | Password protect | on |
 | Password | long and random |
 | Cron rule | `0 3 * * *` |

@@ -20,7 +20,7 @@ read from a file rather than written into the script:
 ```bash
 #!/bin/bash
 # /etc/cron.hourly/ceph-backup   (chmod 700, see below)
-export PBS_REPOSITORY='cephFS@pbs!cephFS@pbs.yourdomain.com:<datastore>'
+export PBS_REPOSITORY='cephFS@pbs!cephFS@pbs.mydomain.com:<datastore>'
 export PBS_PASSWORD_FILE=/root/.pbs-cephfs-token     # chmod 600
 
 proxmox-backup-client backup cephfs.pxar:/mnt/pve/docker-cephFS \

@@ -22,12 +22,14 @@ systemd-sysext status
 | extension | what it provides | from |
 | --- | --- | --- |
 | `nvidia` | GPU driver and runtime | TrueNAS |
-| `nvidia-mig` | the MIG partitioning applied at boot | mine |
-| `hailo` | Hailo-8 driver | TrueNAS |
-| `coral` | Coral Edge TPU (`gasket`/`apex`) driver | community |
-| `memryx` | MX3 driver, firmware, and the `mxa-manager` daemon | community |
-| `cli-tools` | command line tools not in the base image | community |
-| `prometheus-exporters` | exporters for the metrics stack | community |
+| `nvidia-mig` | the MIG partitioning applied at boot | [community](https://github.com/truenas-community-sysexts/nvidia-mig-support) |
+| `hailo` | Hailo-8 driver | [community](https://github.com/truenas-community-sysexts/hailo8-support) |
+| `coral` | Coral Edge TPU (`gasket`/`apex`) driver | [community](https://github.com/truenas-community-sysexts/coral-pcie-support) |
+| `memryx` | MX3 driver, firmware, and the `mxa-manager` daemon | [community](https://github.com/truenas-community-sysexts/memryx-mx3-support) |
+| `cli-tools` | command line tools not in the base image | [community](https://github.com/truenas-community-sysexts/cli-tools) |
+| `prometheus-exporters` | exporters for the metrics stack | [community](https://github.com/truenas-community-sysexts/prometheus-exporters) |
+
+community means the [truenas community sysexts](https://github.com/truenas-community-sysexts) project on github.
 
 the driver ones exist because the hardware is useless without them: no
 `/dev/hailo0`, `/dev/apex_0`, `/dev/memx0`, so nothing to pass to a container.
@@ -80,7 +82,7 @@ two extensions, doing different jobs:
 
 - **`nvidia`** is TrueNAS's own, symlinked from
   `/usr/share/truenas/sysext-extensions/nvidia.raw`
-- **`nvidia-mig`** is mine, and re-applies the
+- **`nvidia-mig`** is from the community, and re-applies the
   [MIG partitioning](hardware-and-base-install.md#the-gpu-is-partitioned) at
   boot
 
@@ -101,10 +103,10 @@ the MX3 needs more than a kernel module. its extension also brings up
 a container using the MX3 needs **both** — the device node and a bind of the
 socket directory — because the runtime talks to the daemon rather than driving
 the device itself. it also needs to be privileged, which is the reason frigate
-does not run as a catalog app, see [frigate](frigate.md).
+does not run as a catalog app, see [frigate](../apps/frigate.md).
 
-this one is built from the
-[community sysext for TrueNAS](https://github.com/truenas-community-sysexts/memryx-mx3-support).
+this one is the
+[community memryx sysext](https://github.com/truenas-community-sysexts/memryx-mx3-support).
 
 ## the thing to remember at upgrade time
 
@@ -125,7 +127,3 @@ systemd-sysext status
 ls -l /dev/memx0 /dev/hailo0 /dev/apex_*
 nvidia-smi -L
 ```
-
-this is the cost of the approach, and it is the honest trade: hardware the base
-image does not support, in exchange for a check you have to remember at every
-upgrade.

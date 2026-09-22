@@ -9,38 +9,49 @@ This (and related gists) captures how i created my docker swarm architecture.  T
 # Installation Step-by-Step
 Each major task has its own gist, this is to help with maitainability long term.
 
-1. [Install Debian VM for each docker host](debian-vm-install.md)
-2. [install Docker](install-docker.md)
-3. [Configure Docker Swarm](configure-swarm.md)
+1. [Install Debian VM for each docker host](swarm/debian-vm-install.md)
+2. [install Docker](swarm/install-docker.md)
+3. [Configure Docker Swarm](swarm/configure-swarm.md)
 4. [Install Portainer](portainer.md)
-5. [Install KeepaliveD](keepalived.md)
+5. [Install KeepaliveD](swarm/keepalived.md)
 6. [Using VirtioFS backed by CephFS for bind mounts (migrating from glsuterFS - WIP)](../proxmox/cephfs-virtiofs-passthrough.md)
 7. [Move your stacks into git](gitops-with-portainer.md)
 8. [Get secrets out of your stack definitions](../secrets/index.md)
 9. [Keep images updated with Renovate](image-updates-renovate.md)
-10. [Random notes and troubleshooting](troubleshooting.md)
-11. ~~[glusterFS disk prep, install & config ](glusterfs-install.md)~~
-12. ~~[gluster FS plugin for docker (optional )](glusterfs-docker-plugin.md)~~
-13. example stack templates:
-    - [adguard 2 node + adguard settings sync](stacks/adguard.md)
-    - [cloudflare Dynamic DNS Updater](stacks/cloudflare-ddns.md)
-    - [infinitude carrier infinity thermostat control](stacks/infinitude.md)
-    - [Mosquitto MQTT](stacks/mosquitto-mqtt.md)
-    - [Nginx Proxy Manager (NPM)](stacks/nginx-proxy-manager.md)
-    - [ouath2-proxy manager](stacks/oauth2-proxy.md)
-    - [migrate portainer agent to be managed by portainer **not recommeded**](stacks/portainer-agent.md)
-    - wordpress - todo
-    - [portception (portainer deployed by portainer - do not attempt)](stacks/portception.md)
-    - [auto lable nodes with name of running containers](stacks/auto-label-nodes.md)
-    - [unifi poller / UnPoller](stacks/unifi-poller.md)
-    - [omni-tools, file and text tools in the browser](stacks/omni-tools.md)
-    - [bentopdf, pdf toolkit in the browser](stacks/bentopdf.md)
-    - [acme.sh, certificates for an ASRock Rack BMC](stacks/acme-asrock-bmc.md)
-    - [acme.sh, certificates for Synology DSM](stacks/acme-synology.md)
-    - no longer used, kept for reference:
-        - [watchtower](stacks/watchtower.md)
-        - [shepherd](stacks/shepherd.md)
-        - [traefik](stacks/traefik.md)
+10. [Stack conventions](conventions.md)
+11. [Add the standalone docker hosts](standalone/index.md)
+12. [Random notes and troubleshooting](troubleshooting.md)
+13. ~~[glusterFS disk prep, install & config ](deprecated/glusterfs-install.md)~~
+14. ~~[gluster FS plugin for docker (optional )](deprecated/glusterfs-docker-plugin.md)~~
+15. [Swarm deployed stacks](#swarm-deployed-stacks)
+
+# Swarm Deployed Stacks
+
+what runs on the swarm, checked against portainer on 9/21/2026. every stack here deploys from git except portainer and its agent. the standalone hosts have [their own pages](standalone/index.md).
+
+- [adguard](../apps/adguard.md) - two dns resolvers, kept in sync
+- [nginx proxy manager](../apps/nginx-proxy-manager.md) - reverse proxy and its certificates
+- [oauth2-proxy](../apps/oauth2-proxy.md) - auth in front of the proxied services
+- [cloudflare ddns](../apps/cloudflare-ddns.md) - keeps the external A record current
+- acme.sh for the [ASRock Rack BMC](../apps/acme-asrock-bmc.md) and [Synology DSM](../apps/acme-synology.md) - certificates
+- [mosquitto mqtt](../apps/mosquitto-mqtt.md) - mqtt broker
+- [infinitude](../apps/infinitude.md) - carrier infinity thermostat control
+- [wordpress](../apps/wordpress.md) - a multisite wordpress and its database
+- apprise - a notifications api, with a web UI for its config
+- unifi api browser - browsing the unifi controller's api
+- [omni-tools](../apps/omni-tools.md) and [bentopdf](../apps/bentopdf.md) - file, text and pdf tools in the browser
+- [gatus](../monitoring/gatus.md), [glances](../monitoring/glances.md), [dozzle](../monitoring/dozzle.md) and [homepage](../monitoring/homepage.md) - monitoring and the dashboard
+- [auto-label nodes](../apps/auto-label-nodes.md) - labels each node with what runs on it
+- docker socket proxy - read-only docker api for the dashboard
+- [portainer](portainer.md) and its agent
+
+## no longer used
+
+- [watchtower](../apps/retired/watchtower.md)
+- [shepherd](../apps/retired/shepherd.md)
+- [traefik](../apps/retired/traefik.md)
+- [portainer agent managed by portainer](../apps/retired/portainer-agent.md) - not recommended
+- [portception](../apps/retired/portception.md) - portainer deployed by portainer, do not attempt
 
 # More Details on What and Why
 
@@ -92,7 +103,7 @@ Each major task has its own gist, this is to help with maitainability long term.
 - I wanted to continue to use docker, docker-compose, docker swarm & portainer due to existing skills
 - I have no interest at this time in k8s (i don't use it at work and never will)
 - Start simple, even if that means i do what i shouldn't (this is just a home network)
-- This is small, the containers include (nginx reverse proxy, oauth2-proxy, wordpress site + database, mqtt, upoller, cloudflare ddns) so bear that in mind, this isn't designed for super throuput or scale - its designed for some resilliency.
+- This is small, the containers include (nginx reverse proxy, oauth2-proxy, wordpress site + database, mqtt, cloudflare ddns) so bear that in mind, this isn't designed for super throuput or scale - its designed for some resilliency.
 - I want to deploy all services (containers) with stack templates and possibly contribute back to portainer template repo
 - The clustered file system must support databases on it (like mariadb)
 

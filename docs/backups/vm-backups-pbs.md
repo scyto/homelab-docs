@@ -16,7 +16,7 @@ Datacenter, Storage, Add, Proxmox Backup Server. what that leaves in
 ```
 pbs: pbs1-vms
         datastore mnt-pbs
-        server pbs1.yourdomain.com
+        server pbs1.mydomain.com
         content backup
         namespace VMs
         prune-backups keep-all=1
@@ -47,7 +47,7 @@ vzdump: backup-582f465c-a553
         enabled 1
         fleecing 0
         mailnotification failure
-        mailto you@yourdomain.com
+        mailto you@mydomain.com
         mode snapshot
         notes-template {{guestname}}
         pbs-change-detection-mode metadata
