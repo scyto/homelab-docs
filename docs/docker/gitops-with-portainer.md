@@ -32,7 +32,7 @@ stacks/
   swarm/                      # the three node swarm
     adguard/compose.yml
     npm/compose.yml
-    uptime-kuma/compose.yml
+    gatus/compose.yml
   pi-zwave01/                 # a standalone pi with the radios on it
     ser2net/compose.yml
     zigbee2mqtt/compose.yml
@@ -48,7 +48,7 @@ the rest of the examples on this page use those six.
 
 ## 2. fix the compose files before you cut anything over
 
-three things to fix while the stack is still running the old way.
+two things to fix while the stack is still running the old way.
 
 **all bind paths must be absolute.** a relative `./data` does not resolve on the
 host, it resolves inside portainer's clone of your repo. the container starts,
@@ -84,14 +84,6 @@ docker volume inspect wordpress_db --format '{{json .Options}}'
 it must show `device`, `o` and `type`. `null` or `{}` means the old volume was
 reused, see [troubleshooting](troubleshooting.md#a-volume-moved-to-cephfs-is-still-on-local-disk).
 
-**pin the digest if you want the cutover to change nothing.** no digest in the
-spec means a recreate re-pulls whatever the tag points at today, so your restart
-is also a version bump you didn't ask for.
-
-```yaml
-    image: mysql:8.0@sha256:968e12b1fde035655c7a940db808b47372b70128293a38a3914e0b291c306e5e
-```
-
 **check the repo file against what is actually running.** my portainer database
 had been restored from backup at some point and several stacks in it did not
 match reality. the running container is the source of truth, not portainer's
@@ -113,7 +105,7 @@ so each stack points at its own branch:
 ```
 deploy/swarm/adguard
 deploy/swarm/npm
-deploy/swarm/uptime-kuma
+deploy/swarm/gatus
 deploy/pi-zwave01/ser2net
 deploy/pi-zwave01/zigbee2mqtt
 deploy/pi-zwave01/zwave-js-ui
@@ -123,10 +115,9 @@ one branch per stack directory, same names. nobody commits to them directly, the
 workflow in the next step moves them. change `stacks/swarm/npm/compose.yml`,
 `deploy/swarm/npm` moves, npm redeploys, the other five don't notice.
 
-the environment in the middle of the name is not decoration. the `pi-zwave01`
-branches above are a **standalone docker host**, not the swarm: a raspberry pi
+the `pi-zwave01` branches above are a **standalone docker host**, not the swarm: a raspberry pi
 running the Portainer agent, holding the radios. see
-[the pi's stacks](../raspberry-pi/index.md#stacks-deployed-from-git).
+[the pi's stacks](../raspberry-pi/stacks.md).
 
 the repo layout, the branches and the workflow in the next step are the same for
 it. the cutover in [step 6](#6-cut-a-stack-over) is not: that captures swarm
@@ -176,7 +167,9 @@ jobs:
             echo "::warning::no usable before-SHA; promoting nothing"; exit 0
           fi
 
-          changed="$(git diff --name-only "$BEFORE" "$AFTER")"
+          # --no-renames, or a file moved between stacks only shows its new
+          # path, and the stack it left is not promoted
+          changed="$(git diff --no-renames --name-only "$BEFORE" "$AFTER")"
           [ -z "$changed" ] && { echo "nothing changed"; exit 0; }
 
           refs=""
@@ -206,30 +199,19 @@ though a stack file clearly did change. `deploy/swarm/adguard` stays where it is
 and portainer carries on serving the last commit it saw, indefinitely.
 
 promoting the deletion would not help either, portainer would just fetch a commit
-with no compose file at the configured path and error. retiring a stack is a
-manual sequence and worth writing on your own runbook:
+with no compose file at the configured path and error. retiring a stack is manual:
 
 1. delete the stack in portainer
-2. delete `deploy/<env>/<stack>` — which the ruleset blocks, so this needs the
-   break-glass in [step 7](#7-rolling-back-a-compose)
+2. delete `deploy/<env>/<stack>`: `git push origin --delete deploy/<env>/<stack>`
 3. then remove the directory from git
 
 renaming has the mirror problem: the new directory looks like a change so the
 push creates `deploy/<env>/<newname>`, which nothing polls, and the old branch is
 left stale.
 
-**`--atomic` is not optional.** i first wrote this as a plain `git push` with
-several refs and told myself that was all or nothing. it isn't. refuse one ref,
-say a deploy branch is somehow non fast forward, and the others still land, so a
-commit touching two stacks gets half of itself into production and then reports
-failure, which reads like nothing happened. with `--atomic` either every branch
-moves or none do.
-
-easy to check against a local bare repo with an `update` hook that refuses one
-ref. without the flag the survivor shows `* [new branch]`, with it both report
-`atomic push failure` and the remote is untouched. use an `update` hook not
-`pre-receive`, exiting non zero in `pre-receive` rejects the whole push either
-way and makes a non atomic push look atomic.
+**`--atomic` is not optional.** without it, a push that has one ref refused still
+lands the others, so a commit touching two stacks gets half of itself into
+production. with it, every branch moves or none do.
 
 worked example, a commit that edits `stacks/swarm/npm/compose.yml` and
 `stacks/pi-zwave01/ser2net/compose.yml` and a readme:
@@ -243,9 +225,13 @@ two branches move, four don't, the readme moves nothing.
 
 ## 5. protect the deploy branches (and check it actually applies)
 
-block force pushes and deletions on `deploy/*` so a deploy branch can only ever
-move forward, onto a commit that passed ci. that makes rollback a revert rather
-than a rewrite, see [step 7](#7-rolling-back-a-compose).
+block force pushes on `deploy/*` so a deploy branch can only ever move forward,
+onto a commit that passed ci. that makes rollback a revert rather than a
+rewrite, see [step 7](#7-rolling-back-a-compose).
+
+leave deletions allowed. a deploy branch only ever points at a commit that is
+also on `main`, so deleting one loses nothing, and retiring a stack stays one
+push.
 
 the trap: a ruleset targeting `deploy/**` matches **nothing**, because of how
 github's `**` matching works. it shows as active and enforces nothing at all. you
@@ -268,8 +254,6 @@ something the rule should forbid and confirm you get refused.
 the rules for `main` itself, require a PR and require your ci check, are worth
 doing once renovate is opening PRs, see
 [image updates with renovate](image-updates-renovate.md#lock-the-branches-down-last).
-
-![the deploy branches ruleset, both patterns listed, applying to 25 targets, restricting deletions and blocking force pushes](../assets/img/gitops-ruleset-targets.png)
 
 ## 6. cut a stack over
 
@@ -330,12 +314,9 @@ gh pr create --fill && gh pr merge --rebase
 promote moves `deploy/swarm/npm` forward to the revert and portainer picks it up
 on the next poll, so under five minutes from merge.
 
-i chose this over allowing force push rollbacks because the audit trail survives,
-the revert commit records why, and the deploy branches keep the property that
-they only ever point at a commit that passed ci.
-
-the cost is speed, and its slower exactly when you want it to be fast. a revert
-still needs a PR and a ci run. if something is actually broken right now:
+a revert keeps the history, and the deploy branches only ever point at a commit
+that passed ci. the cost is speed: it needs a PR and a ci run. if something is
+broken right now:
 
 1. **stop the stack in portainer.** instant, stops the bleeding, do the proper
    revert after
@@ -348,8 +329,6 @@ still needs a PR and a ci run. if something is actually broken right now:
    # force push the rollback, then IMMEDIATELY
    gh api -X PUT repos/<owner>/<repo>/rulesets/<id> -F enforcement=active
    ```
-
-   a disabled ruleset nobody re-enables is worse than never having had one.
 
 **a compose revert is not a data revert.** reverting the image tag on something
 that ran a schema migration on startup gets you the old binary against the new
@@ -387,5 +366,4 @@ schema. for databases, take the backup before you merge the bump, not after.
 
 ## next
 
-[image updates with renovate](image-updates-renovate.md), which is the reason to
-do any of this.
+[image updates with renovate](image-updates-renovate.md).

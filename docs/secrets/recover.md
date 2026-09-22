@@ -33,7 +33,7 @@ On any Swarm manager, from a workstation with ssh or on the manager itself.
 this on the manager:
 
 ```bash
-docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search yourdomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 ghcr.io/scyto/key-manager:latest
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 ghcr.io/scyto/key-manager:latest
 ```
 
 **1.2** At `No repo in /repo. Sign in to GitHub and clone it now? [Y/n]`, press

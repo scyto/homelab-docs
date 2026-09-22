@@ -5,6 +5,11 @@ comments: true
 
 # secrets
 
+!!! warning "experimental"
+    this is experimental, and it's how i do it, not what i'd suggest for most
+    people. if you just want secrets out of your compose files, use docker
+    secrets, or set environment variables by hand in portainer.
+
 for years i typed passwords straight into the stack editor in portainer as
 environment variables. it works. its also the worst of the options, for a reason
 that isn't obvious.
@@ -33,7 +38,7 @@ the clone, not the logins, not any key.
 **1** add this to `~/.zshrc`, as one line:
 
 ```bash
-alias keyman='ssh -t docker01 '\''docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search yourdomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=you -e GIT_AUTHOR_EMAIL=you@yourdomain.com -e HOMELAB_REPO_URL=https://github.com/you/your-repo.git ghcr.io/scyto/key-manager:latest'\'''
+alias keyman='ssh -t docker01 '\''docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=you -e GIT_AUTHOR_EMAIL=you@mydomain.com -e HOMELAB_REPO_URL=https://github.com/you/your-repo.git ghcr.io/scyto/key-manager:latest'\'''
 ```
 
 **2** load it, and check it reaches a prompt. type `exit` to leave:

@@ -6,7 +6,7 @@ title: "Apps"
 
 what runs as a TrueNAS catalog app here, where its storage lives, and how the
 app system is put together. the one app that is **not** run this way is
-[frigate](frigate.md), and that page says why.
+[frigate](../apps/frigate.md), and that page says why.
 
 apps are docker compose projects. the UI is a form, a template turns the
 answers into a compose file, and everything is on disk and readable.
@@ -71,7 +71,7 @@ two reasons, and neither is "ixVolumes are bad":
    apps pool. bulk data that wants the big pool, or that you want on spinning
    disks rather than NVMe, needs a dataset you made
 
-[frigate](frigate.md) is the second case: its recordings are on datasets i
+[frigate](../apps/frigate.md) is the second case: its recordings are on datasets i
 made, on the pool that suits them, with retention frigate manages itself.
 
 a host path is **not** chowned for you, only ixVolumes get the automatic
@@ -123,7 +123,7 @@ hostname with the certificate picked in the app.
 ## the portainer agent
 
 this one is a **custom app**, not a catalog one, so that the NAS appears in
-[portainer](../docker-swarm/portainer.md) next to the swarm and can run stacks
+[portainer](../docker/portainer.md) next to the swarm and can run stacks
 from git.
 
 Apps → Discover Apps → the three dots by **Custom App** → **Install via YAML**:
@@ -221,4 +221,4 @@ editing the two files locally does work, and **an app update overwrites them**.
 quietly: the container still starts and still reports healthy, just without
 whatever you added.
 
-that is the whole reason [frigate](frigate.md) is not an app here.
+that is the whole reason [frigate](../apps/frigate.md) is not an app here.

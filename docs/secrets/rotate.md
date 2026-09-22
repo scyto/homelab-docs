@@ -319,7 +319,7 @@ exit
 `keyman` command with the node changed:
 
 ```bash
-ssh -t docker02 'docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search yourdomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=scyto -e GIT_AUTHOR_EMAIL=you@yourdomain.com ghcr.io/scyto/key-manager:latest'
+ssh -t docker02 'docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=scyto -e GIT_AUTHOR_EMAIL=you@mydomain.com ghcr.io/scyto/key-manager:latest'
 ```
 
 **C2.2** Sign in to GitHub when it asks, then confirm you are on `main` and sign

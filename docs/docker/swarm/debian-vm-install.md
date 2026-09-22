@@ -114,4 +114,4 @@ Set eth0 to static IP address
 ```
 sudo nmtui
  ```
-Edit the connection, set your IP, gateway, DNS, and DNS search suffix to yourdomain.com
+Edit the connection, set your IP, gateway, DNS, and DNS search suffix to mydomain.com

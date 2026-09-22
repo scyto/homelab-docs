@@ -133,7 +133,7 @@ user, so both need the role.
 proxmox-backup-manager cert info
 ```
 
-a Let's Encrypt certificate for `pbs1.yourdomain.com`. it validates on an ordinary
+a Let's Encrypt certificate for `pbs1.mydomain.com`. it validates on an ordinary
 debian CA store, full chain served. it also gets replaced every couple of months,
 which matters for how clients are told to trust it.
 

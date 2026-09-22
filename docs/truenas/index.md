@@ -39,7 +39,7 @@ not a disaster copy.
   stopped a snapshot holding half a pool
 - [apps](apps.md) — what runs as a catalog app, where its storage goes, and the
   portainer agent
-- [frigate](frigate.md) — the NVR, four accelerators, and why it is not an app
+- [frigate](../apps/frigate.md) — the NVR, four accelerators, and why it is not an app
 - [containers](containers.md) — the PBS system container
 - [boot environments](boot-environments.md) — making a rollback target, and
   protecting it so it survives the update you made it for
@@ -101,4 +101,4 @@ renewal just restarts the app. nothing to do by hand.
 
 that convenience is app-only. a stack you run yourself binds the certificate
 files and keeps serving the old one until you restart it, see
-[frigate](frigate.md#certificates).
+[frigate](../apps/frigate.md#certificates).

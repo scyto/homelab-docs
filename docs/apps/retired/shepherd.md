@@ -14,7 +14,7 @@ source_gist: https://gist.github.com/scyto/1091c492fa0c8353be4cbfa3874c7f54
     without touching the compose in git, which stopped making sense once the
     compose became the source of truth.
 
-    Replaced by [Renovate](../image-updates-renovate.md).
+    Replaced by [Renovate](../../docker/image-updates-renovate.md).
 
     Kept for reference, and because the placement notes below are still a decent
     illustration of pinning a service to a manager node.

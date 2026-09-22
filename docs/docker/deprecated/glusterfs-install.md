@@ -5,7 +5,7 @@ source_gist: https://gist.github.com/scyto/452fc778c4c3ba7caf03b833151e84a1
 
 # Install & Configure GlusterFS
 
-Assumes you installed debian, docker, etc as [per the list here](index.md)
+Assumes you installed debian, docker, etc as [per the list here](../index.md)
 
 ## Assumptions
 - I will have one gluster volume i will call `glusterfs-vol1`
@@ -79,9 +79,9 @@ sudo systemctl enable glusterd
 ### On the master node (docker01) - note you must run sudo -s and not sudo for each command
 ```
 sudo -s
-gluster peer probe docker02.yourdomain.com; gluster peer probe docker03.yourdomain.com;
+gluster peer probe docker02.mydomain.com; gluster peer probe docker03.mydomain.com;
 gluster pool list
-gluster volume create gluster-vol1 disperse 3 redundancy 1 docker01.yourdomain.com:/mnt/glusterfs/vol1-brick1 docker02.yourdomain.com:/mnt/glusterfs/vol1-brick2 docker03.yourdomain.com:/mnt/glusterfs/vol1-brick3
+gluster volume create gluster-vol1 disperse 3 redundancy 1 docker01.mydomain.com:/mnt/glusterfs/vol1-brick1 docker02.mydomain.com:/mnt/glusterfs/vol1-brick2 docker03.mydomain.com:/mnt/glusterfs/vol1-brick3
 gluster volume start gluster-vol1
 gluster volume info  gluster-vol1
  ```

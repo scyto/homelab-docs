@@ -5,17 +5,17 @@ title: "Frigate"
 # frigate
 
 the NVR. eight cameras, four inference accelerators, running on the NAS because
-that is where the [accelerators](hardware-and-base-install.md#hardware) and the
+that is where the [accelerators](../truenas/hardware-and-base-install.md#hardware) and the
 disk are.
 
 it is the one workload here that is **not** a TrueNAS app. it runs as a compose
-stack that [portainer](apps.md#the-portainer-agent) deploys from git.
+stack that [portainer](../truenas/apps.md#the-portainer-agent) deploys from git.
 
 ## why not a catalog app
 
 the MemryX MX3 detector needs the container to run **privileged**. the device
 node alone is not enough — the runtime talks to the `mxa-manager` daemon, see
-[sysexts](sysexts.md#memryx-in-particular).
+[sysexts](../truenas/sysexts.md#memryx-in-particular).
 
 the catalog app exposes a **Devices** list but has no privileged toggle. that
 option can be added by editing the app's `questions.yaml` and its compose
@@ -113,7 +113,7 @@ for this many cameras; frigate's detector processes pass frames through
 | `/tmp/cache` | `fast/frigate/cache` | in-progress recording segments |
 
 - **config is the only irreplaceable one**, and it is the only one snapshotted.
-  media and cache must not be, see [storage](storage.md#the-rule)
+  media and cache must not be, see [storage](../truenas/storage.md#the-rule)
 - all three are host paths on datasets i made, not ixVolumes
 - cache churns hard. it is scratch, and frigate rebuilds it
 

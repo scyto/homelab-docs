@@ -80,9 +80,9 @@ additional global flags, one row each, flag and value in separate boxes:
 | flag | value |
 | --- | --- |
 | `--iam-dir` | `/var/lib/versitygw-iam` |
-| `--webui-gateways` | `https://truenas.yourdomain.com:30157` |
-| `--webui-admin-gateways` | `https://truenas.yourdomain.com:30157` |
-| `--cors-allow-origin` | `https://truenas.yourdomain.com:30355` |
+| `--webui-gateways` | `https://truenas.mydomain.com:30157` |
+| `--webui-admin-gateways` | `https://truenas.mydomain.com:30157` |
+| `--cors-allow-origin` | `https://truenas.mydomain.com:30355` |
 
 - `--iam-dir` turns on versity's own user accounts. without it the root key is
   the only key and everything that uses the S3 has to hold it
@@ -100,7 +100,7 @@ additional global flags, one row each, flag and value in separate boxes:
 ## 4. check it
 
 ```
-curl -fsS https://truenas.yourdomain.com:30157/healthz
+curl -fsS https://truenas.mydomain.com:30157/healthz
 ```
 
 that is the path the app's own healthcheck uses. use the full hostname the
@@ -108,7 +108,7 @@ certificate is for.
 
 ## 5. a user and a bucket per consumer
 
-log in to `https://truenas.yourdomain.com:30355` with the root keys.
+log in to `https://truenas.mydomain.com:30355` with the root keys.
 
 1. **Users**, create user, generate both keys, role **`user`**. a `user` can only
    see buckets assigned to it, and cannot create buckets or users

@@ -261,7 +261,7 @@ directory should make the volume fail to mount, not get replaced with an empty o
 create them on cephFS once, see below.
 
 the guard's output goes to the journal, which a normal user can't read on debian.
-add yourself to `adm` (`-aG`, not `-G`, see [install docker](../docker-swarm/install-docker.md)),
+add yourself to `adm` (`-aG`, not `-G`, see [install docker](../docker/swarm/install-docker.md)),
 log out and back in, then:
 
 ```
@@ -342,7 +342,7 @@ if you get an error about the volumen already being defined you may need to dele
 if there's no error but the options come back `null` or `{}`, a plain volume with
 that name already existed on the node and docker reused it, ignoring the new
 `driver_opts`. the container has been writing to that node's local disk, not
-cephFS. fix in [troubleshooting](../docker-swarm/troubleshooting.md#a-volume-moved-to-cephfs-is-still-on-local-disk).
+cephFS. fix in [troubleshooting](../docker/troubleshooting.md#a-volume-moved-to-cephfs-is-still-on-local-disk).
 
 ## Backup
 havent figured out an ideal strategy for backing up the cephFS on the host or from the vm - with glsuter the bricks were stored on a dedicated vdisk - this was backed up as part of the pbs backup of the vm

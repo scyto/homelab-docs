@@ -10,7 +10,7 @@ source_gist: https://gist.github.com/scyto/38d05c98b18ce7ea57002583f1ebc449
     which updates I actually wanted, so anything on a rolling tag moved whenever
     upstream moved.
 
-    Replaced by [Renovate](../image-updates-renovate.md), which proposes updates
+    Replaced by [Renovate](../../docker/image-updates-renovate.md), which proposes updates
     as pull requests against the compose files in git instead of changing what is
     running. That gives me a diff, a changelog link, and the option to say no.
     The compose is now the source of truth, so an updater that edits running

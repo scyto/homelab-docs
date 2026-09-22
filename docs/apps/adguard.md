@@ -79,20 +79,20 @@ Note this result in your tow adguard servers being 192.168.1.5 and 192.168.1.6 r
 ### Define the macvlan configuration for adguard1 service
 make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
 Note: the ip range of /32 is valid - this hard sets the IP on this service / container to that IP.
-![adgaurd1-mvl](../../assets/img/b7694af4f675.png)
+![adgaurd1-mvl](../assets/img/b7694af4f675.png)
 
 ### Create the macvlan for adguard1 service
 You will have 3 nodes to pick from (see picture) 2 will not work and throw error, 1 will work - it is trial and error to find the right one (the one that works is you managerr node, you only need to this once, not once per node)
-![adgaurd1-creation](../../assets/img/a898c60e6d16.png)
+![adgaurd1-creation](../assets/img/a898c60e6d16.png)
 
 ### Define the macvlan configuration for adguard2 service
 Do the same again, note the change in IP range.
 make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
-![adgaurd2-mvl](../../assets/img/a68244e0c89d.png)
+![adgaurd2-mvl](../assets/img/a68244e0c89d.png)
 
 ### Create the macvlan for adguard2 service
 Same as before, it is trial and error as to which one will work
-![adgaurd2-creation](../../assets/img/d19b854af1a3.png)
+![adgaurd2-creation](../assets/img/d19b854af1a3.png)
 
 ### note on adguard sync
 This is created automatically from the stack and allows all 3 nodes to talk to each other and have private name resolution (without any need to mess with DNS, hosts) it also keeps the traffic off the LAN
