@@ -74,10 +74,13 @@ the DNS servers are my two internal DNS servers, not the AdGuards.
 
 ## on these pages
 
-- [docker and stacks](stacks.md) - docker, the portainer agent, the radios, and each container
-- [thread radio](thread-radio.md) - the SkyConnect shared over the network with ser2net
-- [gps time](gps-time.md) - gpsd and chrony, serving stratum 1 time to the lan
-- [poe hat oled](poe-oled.md) - the status display
+<!-- this page used to hold all four. the empty spans keep its old section
+anchors working, so a deep link lands on the link to where that section went -->
+
+- <span id="docker"></span><span id="portainer-agent"></span><span id="radios-and-stacks"></span><span id="stacks-deployed-from-git"></span><span id="docker-data"></span>[docker and stacks](stacks.md) - docker, the portainer agent, the radios, and each container
+- <span id="thread-radio-over-the-network"></span><span id="is-it-working"></span>[thread radio](thread-radio.md) - the SkyConnect shared over the network with ser2net
+- <span id="gps-time"></span><span id="gpsd"></span><span id="chrony"></span><span id="checking-it"></span>[gps time](gps-time.md) - gpsd and chrony, serving stratum 1 time to the lan
+- <span id="poe-hat-oled"></span>[poe hat oled](poe-oled.md) - the status display
 
 ## backups
 
