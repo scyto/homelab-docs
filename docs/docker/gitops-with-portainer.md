@@ -255,6 +255,8 @@ the rules for `main` itself, require a PR and require your ci check, are worth
 doing once renovate is opening PRs, see
 [image updates with renovate](image-updates-renovate.md#lock-the-branches-down-last).
 
+![the deploy branches ruleset, active, with both target patterns deploy/* and deploy/**/*, applying to 31 branches](../assets/img/gitops-ruleset-targets.png)
+
 ## 6. cut a stack over
 
 this is a delete and recreate, not an edit. portainer always deploys on create.
@@ -300,8 +302,6 @@ git changed or not, per portainer's own tooltip: a regular stack is "redeployed
 whenever triggered, without checking for docker-compose file changes". it does
 put back a stack that was changed or removed outside git, which polling cannot
 see, but that is rare and `pull and redeploy` fixes it when it happens.
-
-![the deploy branches ruleset, active, with both target patterns deploy/* and deploy/**/*, applying to 31 branches](../assets/img/gitops-ruleset-targets.png)
 
 ![portainer stack details for adguard, gitops updates on, polling every 5m, watching refs/heads/deploy/swarm/adguard](../assets/img/gitops-portainer-stack-details.png)
 
