@@ -69,6 +69,54 @@ It is not possible to have a sigle host support two default gateways.
 You may see placement rejection of the second service if it initially tries to place it on the same node as the other adguard instance.  Once rejected docker will try the service on another node and it will wok.  The rejection errors can be ignored.  This works as an implicit placement constraint.  If someone knows how to specifiy that two services in the same stack run on different swarm nodes (lables won't cut it in this 3 node scenario) let me know in the comments!
 
 
+## Reaching AdGuard from the node it runs on
+
+A macvlan child cannot talk to its parent. The node running an AdGuard therefore
+cannot reach it, and neither can any container on that node, while every other
+node on the LAN can. That breaks anything co-located that needs DNS or the
+AdGuard API, and it breaks it silently.
+
+Each docker host carries a macvlan shim to fix it. `mac0` is a second macvlan
+child of `eth0`, and child-to-child traffic is allowed, so routing the two
+resolver addresses out of it works:
+
+```
+auto mac0
+iface mac0 inet manual
+  pre-up ip link add mac0 link eth0 type macvlan mode bridge
+  up ip route replace 192.168.1.5/32 dev mac0 src 192.168.1.41
+  up ip route replace 192.168.1.6/32 dev mac0 src 192.168.1.41
+  up iptables -N DOCKER-USER 2>/dev/null || true
+  up iptables -C DOCKER-USER -o mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -o mac0 -j ACCEPT
+  up iptables -C DOCKER-USER -i mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -i mac0 -j ACCEPT
+  post-down ip link del mac0
+```
+
+- only `src` changes per host, to that host's own address
+- the shim needs **no address of its own**, so nothing has to be reserved. the
+  route's `src` supplies the source address, and adguard sees the host
+- the `/32` routes are correct whether or not the adguard is local. `mac0` is on
+  the same segment, so traffic to a resolver on another node just goes out the
+  wire
+- the iptables rules let container traffic forward out `mac0`. without them the
+  host works and containers do not, and traffic that previously reached the
+  remote resolver breaks too, because the route pulls it onto `mac0`
+- `DOCKER-USER` is created first because networking starts before docker at
+  boot. docker keeps an existing chain and its rules, verified across a daemon
+  restart
+
+Check it from a container, not just the host, and from an overlay-attached one
+if swarm services depend on it:
+
+```
+docker run --rm --network <an overlay> alpine:3 ping -c2 192.168.1.5
+```
+
+With this in place no service needs a placement constraint to avoid AdGuard
+nodes, which matters on a three node cluster: constraints that keep a service
+off both resolvers leave it exactly one eligible node, and losing a node leaves
+it unschedulable.
+
 ## Network Preparation
 This is one of the few times where showing picture will use less space than trying to explain something complex and non-intutive.
 Note is asbolutely possible to do this via command line.  If you prefer that [this is the best article](https://jpft.win/docker-swarm-macvlan/) i won't be covering command line here as i didn't use it after i had learnt what i was doing :-).
