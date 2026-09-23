@@ -173,6 +173,7 @@ nav:
           - truenas1: docker/standalone/truenas1.md
           - syn02: docker/standalone/syn02.md
           - pi-zwave01: docker/standalone/pi-zwave01.md
+      - IPv6: docker/ipv6.md
       - Portainer & GitOps:
           - Portainer: docker/portainer.md
           - Stacks in Git: docker/gitops-with-portainer.md

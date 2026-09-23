@@ -45,9 +45,35 @@ volumes:
 | truenas1 | truenas custom app | [truenas apps](../truenas/apps.md) |
 | syn02, pi-zwave01 | a container, `restart: always` | [add a host](standalone/add-a-host.md) |
 
-- keep every agent on the same version as the server
-- the server reaches the swarm's agents through `tasks.agent` on the overlay, and the standalone ones at `<host>:9001`
+- keep every agent on the same version as the server. portainer's upgrade docs
+  say to update the server first: it can talk to older agents, the reverse is
+  not guaranteed
+- **each environment points at an address on 9001**, the swarm's at the keepalived
+  VIP and the standalone ones at the host. the stock file starts the server with
+  `-H tcp://tasks.agent:9001`, which reads like the server finds the agents over
+  the overlay, but the environment's own address is what is used. worth knowing
+  before you delete an agent: that is how portainer reaches the swarm at all
 
-## not in git
+## portainer is not in git, the agent is
 
-portainer and its swarm agent are the two stacks not deployed [from git](gitops-with-portainer.md): portainer can't safely redeploy itself. renovate leaves them alone too, so upgrades are by hand, with a [backup](../backups/portainer-s3.md) first.
+**portainer itself** is the one stack not deployed [from git](gitops-with-portainer.md).
+it would be applying changes to itself, and a bad commit leaves no UI to fix it
+with. upgrades are deliberate, with a [cold copy](../backups/portainer-s3.md#cold-copies-before-an-upgrade)
+taken first.
+
+**the agent moved into git**, because portainer applying a change there is an
+ordinary service update: it hands the update to the swarm manager, which
+finishes it whether or not portainer's own connection blips while the agents
+roll. two things to know if you do the same:
+
+- **converting it needs a temporary agent.** portainer reaches the swarm
+  *through* the agents, and converting a stack to git deletes it before
+  recreating it. run a standalone agent on a manager on a spare port, point the
+  environment at it for the window, convert, point back, remove it
+- **a broken agent compose reaches every node a few minutes after it merges**,
+  and takes portainer's view of the swarm with it. recovery is that same
+  standalone agent. that is the trade for having the definition in git, where
+  drift cannot hide
+
+renovate proposes bumps for both, but only through the dependency dashboard, so
+restarting the control plane is always a decision.
