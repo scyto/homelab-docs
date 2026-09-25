@@ -267,7 +267,7 @@ services:
       - VPN_ENABLED=true
       - VPN_CONF=wg0
       - VPN_PROVIDER=generic
-      - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_NETWORK=192.168.1.0/24
       - VPN_LAN_LEAK_ENABLED=false
       - VPN_EXPOSE_PORTS_ON_LAN=
       - VPN_PORT_REDIRECTS=
@@ -317,7 +317,7 @@ services:
       - VPN_ENABLED=true
       - VPN_CONF=wg0
       - VPN_PROVIDER=generic
-      - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_NETWORK=192.168.1.0/24
       - VPN_LAN_LEAK_ENABLED=false
       - VPN_EXPOSE_PORTS_ON_LAN=
       - VPN_AUTO_PORT_FORWARD=false

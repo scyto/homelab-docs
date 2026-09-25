@@ -4,6 +4,11 @@ title: "Dozzle"
 
 # dozzle logs
 
+!!! note "secrets"
+    i make my secrets from my own [secret store](../secrets/index.md), which
+    only fits my setup. the `docker secret create` commands here are plain
+    swarm: use them, or however you normally make secrets.
+
 one [dozzle](https://dozzle.dev/) UI shows the logs of every container on every docker host, fed by an agent on each host. the hub (the UI) has no docker socket, so every host reaches it through an agent, docker01 included.
 
 | piece | where | port |

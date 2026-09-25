@@ -7,7 +7,7 @@ source_gist: https://gist.github.com/scyto/ce866ee606ef27fd7c47832005b55d9f
 
 ## Description
 
-UPDATED 9/2/2023 - here we are a few years later, adguuard has been stable as heck
+UPDATED 9/2/2025 - here we are a few years later, adguuard has been stable as heck
 now i wanted to add IPv6 to this mix
 these were the steps
 

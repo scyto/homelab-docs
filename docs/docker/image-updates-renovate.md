@@ -220,7 +220,7 @@ what each setting does:
 
   ```json
   {
-    "matchFileNames": ["stacks/pi-zwave01/zigbee2mqtt/**"],
+    "matchFileNames": ["stacks/<env>/<stack>/**"],
     "enabled": false
   }
   ```

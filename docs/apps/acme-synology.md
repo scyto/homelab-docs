@@ -4,6 +4,11 @@ title: "acme.sh for Synology DSM"
 
 # acme.sh for synology DSM
 
+!!! note "secrets"
+    i make my secrets from my own [secret store](../secrets/index.md), which
+    only fits my setup. the `docker secret create` commands here are plain
+    swarm: use them, or however you normally make secrets.
+
 [acme.sh](https://github.com/acmesh-official/acme.sh) renews my synology NAS
 certificates and installs them in DSM, through its `synology_dsm` deploy hook
 and a small wrapper, see [the hook](#the-hook).

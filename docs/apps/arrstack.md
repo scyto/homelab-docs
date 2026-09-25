@@ -86,13 +86,18 @@ qbittorrent and sabnzbd use hotio images with a wireguard client built in:
       - VPN_ENABLED=true
       - VPN_CONF=wg0
       - VPN_PROVIDER=generic
-      - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_NETWORK=192.168.1.0/24
       - VPN_LAN_LEAK_ENABLED=false
 ```
 
-- `VPN_LAN_NETWORK` lists what stays reachable outside the tunnel, so the lan
-  can use the web UI. with `VPN_LAN_LEAK_ENABLED=false`, nothing else leaves
-  for the lan
+- `VPN_PROVIDER=generic` uses the `wg0.conf` you put in `/config/wireguard/`,
+  so any provider that gives you a wireguard config works. hotio also has
+  `proton` and `pia`, which can fetch a forwarded port for you, and `pia`
+  writes the `wg0.conf` as well
+- `VPN_LAN_NETWORK` lists the networks that can reach the web UI outside the
+  tunnel. `192.168.1.0/24` is my lan: put your own lan here, and any other
+  range that needs the web UI. with `VPN_LAN_LEAK_ENABLED=false`, nothing else
+  leaves for the lan
 - the web UI answers with the tunnel down, so both healthchecks fail when
   wireguard's last handshake on `wg0` is missing or older than 5 minutes.
   docker doesn't act on a standalone container's health, so an unhealthy client

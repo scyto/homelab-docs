@@ -6,10 +6,10 @@ title: "Frigate"
 
 frigate is my NVR, with eight cameras and four inference accelerators. it runs on
 the NAS because that is where the
-[accelerators](../truenas/hardware-and-base-install.md#hardware) and the disk are.
+[accelerators](../truenas/hardware-and-base-install.md#hardware) are installed.
 
 it isn't a TrueNAS app. [portainer](../truenas/apps.md#the-portainer-agent)
-deploys it from git as a compose stack, like truenas1's other
+deploys it from git as a compose stack, see
 [stacks](../docker/standalone/truenas1.md#stacks-from-git).
 
 --8<-- "blocks/truenas1/frigate/compose.yml.md"
@@ -121,7 +121,8 @@ ffmpeg decodes on one MIG slice of the GPU, not the whole GPU:
 
 the host's docker default runtime is already `nvidia`, so the compose needs no
 `runtime:` line. get the UUID from `nvidia-smi -L`. it goes in both variables
-and in the reservation.
+and in the reservation. If you are not using MIG you can specify the card's normal
+UUID, provided by the command above.
 
 ## storage
 

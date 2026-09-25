@@ -19,6 +19,9 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
     being rewritten and being filled in. Expect gaps, and be careful before
     relying on anything here.
 
+    Yes i used AI to help me port these from the gists and update them.  This is 
+    the only way i can scale. I will continue to review for 'odd AI wording' and accuracy. 
+
 <div class="grid cards" markdown>
 
 -   :material-server-network:{ .lg .middle } **[Proxmox Cluster](proxmox/index.md)**
@@ -41,16 +44,13 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
 
     ---
 
-    What runs on all that and why it is set up the way it is: DNS, the
-    reverse proxy and auth, certificates, the arr stack, Frigate, and the
-    stack files themselves.
+    Details on the apps i have running including app configuration and compose/stack files when on docker, for example: AdGuard DNS, NPM as reverse proxy, auth, certificates, the arr stack, Frigate, etc.
 
 -   :material-monitor-dashboard:{ .lg .middle } **[Monitoring](monitoring/index.md)**
 
     ---
 
-    Knowing it all works: Gatus checks, Glances on every host, Dozzle for
-    logs, and a Homepage dashboard that pulls it together.
+    Monitoring: Gatus checks, Glances on every host, Dozzle for logs, and a Homepage dashboard that pulls it together. This will expand to include both prometheus and other centralized logging, grafana dashboards and notifications. 
 
 -   :material-key-variant:{ .lg .middle } **[Secrets](secrets/index.md)**
 
@@ -63,24 +63,19 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
 
     ---
 
-    The NAS outside the cluster: the hardware and pools, system extensions for
-    the GPU and AI accelerators, Proxmox Backup Server as a container, S3 with
-    Versity Gateway, and the app gotchas that cost me time.
+    TrueNAS: This augments the Proxmox cluster and is used for traditional NAS storage and VMs & containers that need the unique hardware.  Section covers ZFS pools and data sets, system extensions for GPU and AI accelerators, Proxmox Backup Server as a container, S3 with Versity Gateway.
 
 -   :material-raspberry-pi:{ .lg .middle } **[Raspberry Pi](raspberry-pi/index.md)**
 
     ---
 
-    The Pi that holds the home automation radios: Docker, the stacks, a GPS
-    time source with PPS, and a PoE HAT OLED.
+    The Pi that holds the home automation radios (zigbee, zwave and thread): Uses docker to deploy apps on the pi. Also includes a GPS time source with PPS, and a PoE HAT OLED.
 
 -   :material-access-point-network:{ .lg .middle } **[Thread](thread/index.md)**
 
     ---
 
-    One Thread network owned by Home Assistant, two border routers (the app
-    over ser2net and an ESP32 board), and getting the app back after the Pi
-    has been off.
+    Thread network owned by Home Assistant, two border routers RCP for redundancy.  1 x OTBR using HAOS and ser2net on the pi.  Another RCP / OTBR on an ESP32+Thread dev board.
 
 -   :material-backup-restore:{ .lg .middle } **[Backups](backups/index.md)**
 

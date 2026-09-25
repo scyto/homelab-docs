@@ -9,5 +9,6 @@ a raspberry pi 4 holding the usb radios for home automation. the [raspberry pi s
 ## stacks from git
 
 - [zwave-js-ui](../../raspberry-pi/stacks.md#zwave-js-ui) - the z-wave radio
+- [zigbee2mqtt](../../raspberry-pi/stacks.md#zigbee2mqtt) - the zigbee radio
 - [ser2net](../../raspberry-pi/stacks.md#ser2net) - the thread radio, for home assistant's border router
 - [dozzle agent](../../monitoring/dozzle.md) and [glances](../../monitoring/glances.md)
