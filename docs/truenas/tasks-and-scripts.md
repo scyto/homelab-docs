@@ -4,7 +4,8 @@ title: "Tasks & Scripts"
 
 # tasks and scripts
 
-what truenas1 runs at boot and on a schedule. scripts live in `/mnt/fast/scripts`, on a pool, so they survive an OS update.
+what truenas1 runs at boot and on a schedule. the scripts live on a pool, in
+`/mnt/fast/scripts`, so they survive an OS update.
 
 ## at boot
 
@@ -37,11 +38,13 @@ Data Protection → Periodic Snapshot Tasks
 | `rust/S3` | daily, and sunday | 30 days, and 12 weeks |
 | `rust/cloud-backups`, recursive | daily 05:00 | 2 weeks |
 
-`fast/configs` holds every app's config, so one recursive task covers them all, see [storage and snapshots](storage.md).
+`fast/configs` holds every app's config, so one recursive task covers them all,
+see [storage and snapshots](storage.md).
 
 ## scrubs
 
-both pools, checked every sunday at midnight. a scrub runs when the last one is more than 35 days old.
+both pools are checked every sunday at midnight. a scrub runs when the last one
+is more than 35 days old.
 
 ## cloud sync
 

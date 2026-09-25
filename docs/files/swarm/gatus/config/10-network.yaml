@@ -1,0 +1,33 @@
+endpoints:
+  - name: gateway
+    group: network
+    url: "icmp://192.168.1.1"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[CONNECTED] == true"
+
+  - name: adguard1
+    group: network
+    url: "192.168.1.5"
+    interval: 60s
+    dns:
+      query-name: "mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+
+  - name: adguard2
+    group: network
+    url: "192.168.1.6"
+    interval: 60s
+    dns:
+      query-name: "mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"

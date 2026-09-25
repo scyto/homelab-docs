@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.1.2-alpine
+    environment:
+      - TZ=America/Los_Angeles
+    configs:
+      - source: mqtt_config
+        target: /mosquitto/config/mosquitto.conf
+
+    ports:
+      - 1883:1883
+
+    deploy:
+       mode: replicated
+       replicas: 1
+
+configs:
+  mqtt_config:
+    file: ./mosquitto.conf
+    name: mqtt_config_v2

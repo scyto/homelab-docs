@@ -9,6 +9,8 @@ source_gist: https://gist.github.com/scyto/c66a053477b05552ef9f33fb1abed4a2
 This template runs my infinitude proxy instance.  This enables Carrier Inifinity Thermostats to be controlled by API, web page, home assistant etc)
 One note please for the love of god never buy a carrier heating system with one of these controls they are terrible in my experience.  I inherited it, instead buy a nice generic heating/AC system that can support any standard thermostat.
 
+Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
+
 ## State Considerations for SWARM
 none, this container can be cofigured entirely by env vars so i use those
 
@@ -42,3 +44,11 @@ services:
     stdin_open: true
     tty: true
 ```
+
+## what i run now
+
+- i run the upstream image [nebulous/infinitude](https://hub.docker.com/r/nebulous/infinitude), pinned by digest. there is no scyto/infinitude on docker hub
+- `APP_SECRET` is a swarm secret. an entrypoint wrapper reads it at startup, see [secrets](../secrets/index.md#option-3-an-entrypoint-wrapper)
+- the serial socket to the rs485 converter is off
+
+--8<-- "blocks/swarm/infinitude/compose.yml.md"

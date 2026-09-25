@@ -37,7 +37,8 @@ REMEMBER ceph clients want to access the MONSs / OSDs / MGRs and MDSs on the `lo
 | IPv6 Routes<br>(mesh network)       |`fc00::81/128`<br>`fc00:81::/64`|`fc00::82/128`<br>`fc00:82::/64`|`fc00::83/128`<br>`fc00:83::/64`     |
 | IPv4 Routes<br>(mesh network)| `10.0.0.81/32`<br>`10.0.81.0/24`| `10.0.0.82/32`<br>`10.0.82.0/24`| `10.0.0.83/32`<br>`10.0.83.0/24` |
 
-> **notes 
+> **notes**
+>
 > - `2001:db8:1000:1::` is not my real subnet, `2001:db8::` is a subnet resevered for documentation
 > - you should use your subnet addresses as appropriate
 
@@ -86,13 +87,15 @@ router bgp 65001
   neighbor 192.168.1.83 activate
   neighbor 192.168.1.1 activate
  exit-address-family
- ```
+```
+
 > Remember to change the IP addreses to match the table above the easy way to think about this is:
+>
 >  - network = subnets on this node i want to advertise
 >  - neighbor = other routers/nodes i have to talk to
 >    
 > Instead of explicitly defining the networks you could use one line that says `redistribute connected` in place of the two `network` values in each familly.
-> This would advetise all learnt routes (not kernel / static routes) to your router.  
+> This would advetise every subnet the node is connected to, the LAN included, to your router.  
 > I think this would be a better way as there is less reconfiguration.
 > But given the unpredictably of this in different peoples environments I elected to explicitly define the routes for predictability.
 
@@ -110,7 +113,8 @@ This has only be tested on an EFG running network app 9.1.92
 | IPv4 LAN Address | `192.168.1.1` |
 | IPv6 LAN Address | 2001:db8:1000:1::1/64 |
 
-> **notes
+> **notes**
+>
 > - the BGP AS must be in the range of `64512-65534` or your ISP will get very cross at you ;-)
 > - the BGP Router ID can be anything really, convention makes it the router IPv4 address
 > - The LAN addresses are you normal LAN addresses of you routers LAN port
@@ -164,7 +168,8 @@ router bgp 65001
  exit-address-family
 ```
 
-> **note 
+> **note**
+>
 > - the format above is ordered for easy reading `vtysh -c "show running-config"` will show a different layout
 > - the settings above wont be written to `/etc/frr/frr.conf` - so don't worry if thats empty
 
@@ -177,6 +182,7 @@ router bgp 65001
 5. do NOT select the check box `override wan monitors` (uncheck it it is checked)
 
 > **Notes:**
+>
 > - I found some times times frr.service can crash on UI whem you upload, if it does just restart it
 > - The router learns `fc00::8x/128`, `fc00:8x::/64`, `10.0.0.8x/32`, and `10.0.8x.0/24` routes from your the nodes.
 > - you can use the following command to check everything looks good:
@@ -185,7 +191,7 @@ router bgp 65001
 
 it will look something like this:
 
-> note the i infront of the IPv6 addresses is just a known display bug in frr 8.1 that my router is running
+> note the i infront of the IPv6 addresses is the status code for an internal (iBGP) route, see the legend at the top of the output
 
 ```
 root@EFG:/etc/frr# vtysh -c "show bgp ipv6 unicast"
@@ -236,7 +242,8 @@ RPKI validation codes: V valid, I invalid, N Not found
 * i                 192.168.1.83             0    100      0 i
 
 Displayed  6 routes and 12 total paths
-``` 
+```
+
 ---
 # Bonus Tip: Monitor Convergence
 
@@ -352,5 +359,5 @@ router bgp 65001
   neighbor 192.168.1.83 activate
   neighbor 192.168.1.1 activate
  exit-address-family
-``` 
+```
  </details>

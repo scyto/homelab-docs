@@ -30,4 +30,10 @@ sudo docker swarm join --token <some-very-long-token> 192.168.1.41:2377
 ```
 the IP is the IP of the management node and doesn't need to be changed as you run this on each node.
 
+Update as of 2026.09.24: all three of my nodes are managers now. the [keepalived](keepalived.md) checks run `docker node ls`, and a worker refuses it. to promote the other two, run this on docker01:
+
+```
+sudo docker node promote docker02 docker03
+```
+
 thats it you should now have a fully functioning swarm

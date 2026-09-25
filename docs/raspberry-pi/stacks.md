@@ -4,11 +4,12 @@ title: "Docker & Stacks"
 
 # docker and stacks
 
-the pi is a [standalone docker host](../docker/standalone/index.md): its own environment in portainer, its stacks deployed from git like the swarm's.
+the pi is a [standalone docker host](../docker/standalone/index.md). it has its
+own environment in portainer, and its stacks deploy from git like the swarm's.
 
 ## docker
 
-Docker CE from Docker's own apt repository, the same setup
+Docker CE comes from Docker's own apt repository, the same setup
 [get.docker.com](../docker/swarm/install-docker.md) creates:
 
 ```
@@ -17,23 +18,14 @@ Docker CE from Docker's own apt repository, the same setup
   deb [arch=arm64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian trixie stable
 ```
 
-no `/etc/docker/daemon.json`, and `containerd`'s config is the package default
-(`disabled_plugins = ["cri"]`). nothing tuned.
+there is no `/etc/docker/daemon.json`, and `containerd`'s config is the package
+default (`disabled_plugins = ["cri"]`). nothing is tuned.
 
 ## portainer agent
 
-started by hand once, not from git, because it is what lets portainer deploy
-everything else here:
-
-```
-docker run -d -p 9001:9001 --name portainer_agent --restart=always \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /var/lib/docker/volumes:/var/lib/docker/volumes \
-  -v /:/host \
-  portainer/agent:lts
-```
-
-keep it on the same version as the portainer server.
+the agent is started by hand, not from git, because it is what lets portainer
+deploy everything else here. the command is on
+[add a host](../docker/standalone/add-a-host.md).
 
 ## radios
 
@@ -48,11 +40,15 @@ they land on the right device whatever order they enumerate in.
 
 ## containers
 
-each stack polls its own `deploy/pi-zwave01/<stack>` branch, see [stacks in git](../docker/gitops-with-portainer.md).
+each stack polls its own `deploy/pi-zwave01/<stack>` branch, see
+[stacks in git](../docker/gitops-with-portainer.md).
 
 ### zwave-js-ui
 
-the Z-Wave network, driving the Zooz 800 stick. Home Assistant's Z-Wave JS integration connects to it.
+zwave-js-ui runs the Z-Wave network on the Zooz 800 stick. Home Assistant's
+Z-Wave JS integration connects to it.
+
+--8<-- "blocks/pi-zwave01/zwave-js-ui/compose.yml.md"
 
 | | |
 | --- | --- |
@@ -60,12 +56,19 @@ the Z-Wave network, driving the Zooz 800 stick. Home Assistant's Z-Wave JS integ
 | ports | `80` to the UI on 8091, `3000` for the Z-Wave JS websocket Home Assistant uses |
 | data | `/docker-data/zwavejs2mqtt/store`: settings, network keys, node cache |
 
-- renovate never bumps it on its own. it has to stay compatible with Home Assistant's integration, and an upgrade migrates the node database one way, so i approve each one when i can watch Home Assistant afterwards
-- the store directory keeps its old `zwavejs2mqtt` name. renaming it means changing the stack too
+- renovate never bumps it on its own. it has to stay compatible with Home
+  Assistant's integration, and an upgrade migrates the node database one way. i
+  approve each one when i can watch Home Assistant afterwards
+- the store directory keeps its old `zwavejs2mqtt` name. renaming it means
+  changing the stack too
 
 ### ser2net
 
-shares the SkyConnect over the network on TCP port `8000`, so Home Assistant's OpenThread Border Router add-on can use the radio from its VM. the config and why each line is there are on [thread radio](thread-radio.md).
+ser2net shares the SkyConnect over the network on TCP port `8000`, so Home
+Assistant's OpenThread Border Router app can use the radio from its VM.
+[thread radio](thread-radio.md) has the config and why each line is there.
+
+--8<-- "blocks/pi-zwave01/ser2net/compose.yml.md"
 
 | | |
 | --- | --- |
@@ -73,15 +76,23 @@ shares the SkyConnect over the network on TCP port `8000`, so Home Assistant's O
 | ports | `8000` |
 | data | `/docker-data/ser2net/data/ser2net.yaml` |
 
-its healthcheck looks for an established connection on port `8000`, so healthy means a client is attached. unhealthy usually means the add-on is down, but ser2net failing to start, read its config or open the radio looks the same. check the connection first, then its logs.
+its healthcheck looks for an established connection on port `8000`, so healthy
+means a client is attached. unhealthy usually means the app is down, but ser2net
+failing to start, read its config or open the radio looks the same. check the
+connection first, then its logs.
 
 ### dozzle agent
 
-serves this host's container logs to the [dozzle](../monitoring/dozzle.md) hub on the swarm, on port `7007`. the certificate pair it authenticates with is in `/docker-data/dozzle`.
+the dozzle agent serves this host's container logs on port `7007` to the
+[dozzle](../monitoring/dozzle.md) hub on the swarm. the certificate pair it
+authenticates with is in `/docker-data/dozzle`.
 
 ### glances
 
-host metrics for the [dashboard](../monitoring/glances.md), on port `61208`. host networking so it sees the pi's real interfaces, and an empty directory from the root filesystem mounted read-only, so it reports the pi's own disk.
+glances serves host metrics for the [dashboard](../monitoring/glances.md) on
+port `61208`. it uses host networking to see the pi's real interfaces, and
+mounts an empty directory from the root filesystem read-only to report the pi's
+own disk.
 
 ## /docker-data
 

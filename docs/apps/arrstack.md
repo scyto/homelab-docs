@@ -4,7 +4,45 @@ title: "The Arr Stack"
 
 # the arr stack
 
-ten containers as one portainer stack on [truenas1](../docker/standalone/truenas1.md), deployed from git like everything else.
+the arr stack is ten containers that portainer deploys from git as one stack on
+[truenas1](../docker/standalone/truenas1.md): the arr apps, jellyfin, and two
+download clients that send their traffic through a VPN. it is a stack because
+the truenas catalog can't give the download clients their VPN.
+
+--8<-- "blocks/truenas1/arrstack/compose.yml.md"
+
+## before you deploy
+
+1. create a config folder under `/mnt/fast/configs/` for each app except
+   flaresolverr, which keeps nothing. seerr runs as uid 568, so give its folder
+   to 568:
+
+    ```
+    sudo mkdir -p /mnt/fast/configs/{prowlarr,radarr,sonarr,bazarr,jellyfin,seerr,profilarr,qbittorrent,sabnzbd}
+    sudo chown -R 568:568 /mnt/fast/configs/seerr
+    ```
+
+    - the binds are plain, so docker creates a missing folder empty and owned
+      by root, and the app starts against it with no error. seerr can't write
+      to a folder owned by root
+    - the library, `/mnt/rust/media`, has to exist as well, writable by uid 568
+
+2. put each download client's wireguard config at `wireguard/wg0.conf` in its
+   config folder: `/mnt/fast/configs/qbittorrent/wireguard/wg0.conf` and
+   `/mnt/fast/configs/sabnzbd/wireguard/wg0.conf`
+
+    - it holds the tunnel's private key, so it is not in git and the compose
+      can't carry it
+
+3. before this stack starts, put qbittorrent's web UI password in homepage's
+   key file, `homepage_config/secrets/qbittorrent_password`. see
+   [homepage's steps](../monitoring/homepage.md#before-you-deploy)
+
+    - homepage logs in on every refresh, and qbittorrent bans an address for an
+      hour after five failed logins. homepage's address is its swarm node's, so
+      a wrong password locks homepage out
+
+## the apps
 
 | app | does | port |
 | --- | --- | --- |
@@ -21,17 +59,24 @@ ten containers as one portainer stack on [truenas1](../docker/standalone/truenas
 
 ## why a stack and not truenas apps
 
-all ten are in the truenas community catalogue, but the two download clients need a VPN, and the catalogue can't express it: the app definitions fix the image and offer no capabilities or sysctls. so the whole set is one stack. splitting them would put each catalogue app on its own network, and they talk to each other by container name.
+all ten are in the truenas community catalog, but the catalog can't express
+the download clients' VPN: the app definitions fix the image and offer no
+capabilities or sysctls. the apps talk to each other by container name, and
+splitting them would put each catalog app on a separate network, so the whole
+set is one stack.
 
 ## one network
 
-every service is on one bridge, `arrstack`, and they address each other by name: `sonarr:8989`, `radarr:7878`, `prowlarr:9696`. a service missing the `networks:` key lands on the project's default network instead, can't resolve the others, and still reports healthy.
+every service is on one bridge, `arrstack`, and they address each other by
+name: `sonarr:8989`, `radarr:7878`, `prowlarr:9696`. a service missing the
+`networks:` key lands on the project's default network instead. it can't
+resolve the others, and it still reports healthy.
 
 ## the download clients' VPN
 
 qbittorrent and sabnzbd use hotio images with a wireguard client built in:
 
-```yaml
+```yaml title="compose.yml"
     cap_add:
       - NET_ADMIN
     sysctls:
@@ -42,11 +87,16 @@ qbittorrent and sabnzbd use hotio images with a wireguard client built in:
       - VPN_CONF=wg0
       - VPN_PROVIDER=generic
       - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_LEAK_ENABLED=false
 ```
 
-- the wireguard config is `wg0.conf` in each client's config directory on the host, not in git
-- `VPN_LAN_NETWORK` is what's still reachable outside the tunnel, so the lan can use the web UI
-- qbittorrent has `VPN_AUTO_PORT_FORWARD` on, sabnzbd doesn't need it
+- `VPN_LAN_NETWORK` lists what stays reachable outside the tunnel, so the lan
+  can use the web UI. with `VPN_LAN_LEAK_ENABLED=false`, nothing else leaves
+  for the lan
+- the web UI answers with the tunnel down, so both healthchecks fail when
+  wireguard's last handshake on `wg0` is missing or older than 5 minutes.
+  docker doesn't act on a standalone container's health, so an unhealthy client
+  keeps running
 
 ## storage
 
@@ -55,8 +105,41 @@ qbittorrent and sabnzbd use hotio images with a wireguard client built in:
 | `/mnt/fast/configs/<app>` | each app's config and database, on the fast pool, covered by one recursive [snapshot task](../truenas/tasks-and-scripts.md#snapshots) |
 | `/mnt/rust/media` | the library and downloads, one mount shared by every app that moves files, so a move is a rename, not a copy |
 
-the apps that write to the library run as uid/gid 568, truenas's `apps` user (`PUID`/`PGID`, or `user:` for seerr), so they can all read and write the same files.
+sonarr, radarr, bazarr, jellyfin, qbittorrent and sabnzbd write to the library.
+they run as uid and gid 568, truenas's `apps` user, set with `PUID` and `PGID`,
+so they can all read and write the same files.
 
 ## dashboard
 
-the apps carry homepage labels, and most have a widget. api keys and the qbittorrent password come from files, never the labels, see [homepage](../monitoring/homepage.md#widgets-and-their-keys). qbittorrent bans an address after five failed logins for an hour, and the dashboard's address is its swarm node's, so a wrong password there locks the dashboard out.
+the apps carry homepage labels, and most have a widget. truenas1 runs plain
+containers, so the labels sit under `labels:`. swarm stacks put theirs under
+`deploy.labels`. api keys and the qbittorrent password come from files, never
+the labels, see [homepage](../monitoring/homepage.md#widgets-and-their-keys).
+
+## checking it
+
+sonarr, radarr and prowlarr each answer `/ping`:
+
+```
+curl -s http://192.168.1.86:8989/ping http://192.168.1.86:7878/ping http://192.168.1.86:9696/ping | jq -r .status
+```
+
+```text
+OK
+OK
+OK
+```
+
+and jellyfin answers `/health`:
+
+```
+curl -s http://192.168.1.86:8096/health
+```
+
+```text
+Healthy
+```
+
+[gatus](../monitoring/gatus.md) runs these four checks every two minutes. for
+qbittorrent and sabnzbd the check is their healthcheck, which also tests the
+tunnel, see [the download clients' VPN](#the-download-clients-vpn).

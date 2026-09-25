@@ -17,7 +17,7 @@ Enable VMs hosted on proxmox to be able to access ceph mesh - my usecase is for 
 
 > ### Imperatives
 >
-> you **MUST** change your ceph public and private network in ceph.conf from `fc00::/64` to `fc00::80/124` if you do not ceph might get super funky as `fc00::/64` is actually treated as a /8 by ceph!? - this change should allow you have ceph mons `fc00:81 though fc00::8e`. Make sure to change, then reboot just one node and ensure all logs are clean before you move on
+> you **MUST** change your ceph public and private network in ceph.conf from `fc00::/64` to `fc00::80/124` if you do not ceph might get super funky as `fc00::/64` is actually treated as a /8 by ceph!? - this change should allow you have ceph mons `fc00::81 though fc00::8e`. Make sure to change, then reboot just one node and ensure all logs are clean before you move on
 
 ### Assumptions
 
@@ -51,7 +51,7 @@ This build on the work from the normal mesh gist and adds some additonal bridges
 ### Add a new bridge to each node for VMs to use
 This bridge is what a VM will bind to that allows it to reach the ceph network, this bridge has no ports defined.
 
-#### create a new file called `/etc/network/interfaces.d/vmbridge` for Node 1 (`pve1`).  Repeat on pve3 and pve3, changing addresses as per the table above.
+#### create a new file called `/etc/network/interfaces.d/vmbridge` for Node 1 (`pve1`).  Repeat on pve2 and pve3, changing addresses as per the table above.
 
 ```bash
 # VM routed Bridge IPv4
@@ -73,6 +73,7 @@ iface vmbr100 inet6 static
 
 ```
 > **Notes:**
+>
 > - the MTU is set the same as thunderbolt interface MTUs - this is critical
 
 ---
@@ -135,12 +136,13 @@ IS-IS paths to level-2 routers with hop-by-hop metric
 ```
 
 > **Notes:**
+>
 > - This enabled openfabric routing on the vmbr100 you created earlier
 > - you wont see the IP address you added to vmbr100 - just the subet
 
 ---
 
-## How to configure VM - Example for VM on node pve1
+## How to configure VM - Example for VM on node pve3
 
 > - the vm has two interfaces, one bound to vmbr0 and one bound to vmbr100
 > - this configuration is not intended to be migrated to other nodes (the guest adddressing is node specific)
@@ -186,6 +188,7 @@ iface ens19 inet6 auto
 ```
 
 > **Notes:**
+>
 > - uses `vmbr100` on the host to access the mesh
 > - uses `vmb0` on the host to access the internet
 > - static routes defined via `fc00:83::1` and `10.0.83.1` in the VM (using up command) to avoid using the defatul route on vmbr0
@@ -195,6 +198,8 @@ iface ens19 inet6 auto
 You can now test pinging from the VM to various node and ceph addresses.
 
 Now you need to setup ceph client in the vm - coming soon.
+
+Update as of 2026.09.24: the ceph client setup is [mount cephFS on a LAN client](cephfs-client-mount.md).
 
 ---
 ### Example frr.conf from my pve1 node after this gist.
@@ -267,13 +272,13 @@ iface eth0 inet static
   dns-nameservers 192.168.1.5  192.168.1.6
 
 iface eth0 inet6 static
-  accept_ra = 2
+  accept_ra 2
   address 2001:db8:1000:1::41
   netmask 64
   gateway 2001:db8:1000:1::1
   dns-domain mydomain.com
   dns-search mydomain.com
-  dns-nameservers 2001:db8:1000:1::5 2001:db8:10001::6
+  dns-nameservers 2001:db8:1000:1::5 2001:db8:1000:1::6
 
 
 # This is a manuall configured interface fro the ceph mesh

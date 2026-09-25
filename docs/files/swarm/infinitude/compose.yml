@@ -1,0 +1,29 @@
+version: "3"
+services:
+  infinitude:
+    environment:
+      - TZ=America/Los_Angeles
+      - PASS_REQS=240
+      - MODE=Production
+
+    entrypoint:
+      - /bin/sh
+      - -c
+      - set -e; APP_SECRET="$$(cat /run/secrets/infinitude_app_secret_v2)"; export APP_SECRET; exec /infinitude/entrypoint.sh
+
+    hostname: infinitude
+    image: nebulous/infinitude:latest@sha256:66f64d156c6f4537369d6ea587cf4440cf9607b0e7b8296468febf96bafebe00
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+    ports:
+      - 4000:3000
+    restart: always
+    secrets:
+      - infinitude_app_secret_v2
+
+secrets:
+  infinitude_app_secret_v2:
+    external: true

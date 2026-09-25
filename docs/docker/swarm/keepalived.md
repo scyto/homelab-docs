@@ -1,14 +1,14 @@
 ---
-title: "debian-keepalived"
+title: "KeepaliveD"
 source_gist: https://gist.github.com/scyto/cfe4f1645cb2cd820134238bd3c2596a
 comments: true
 ---
 
-# debian-keepalived
+# keepalived
 
 ## Using keepalived for node ingress and dns relaibility
 
-This assumes you have [installed a docker swarm](configure-swarm.md)
+This assumes you have [installed a docker swarm](configure-swarm.md) with every node a manager
 
 ### Introduction
 When one has a docker swarm a container running on any node in the swarm can be accesed using any IP address of any swarm memeber.
@@ -127,6 +127,7 @@ vrrp_instance docker_swarm {
 }
 ```
 Note you may want to:
+
   - change the PASS to your prefered password
   - change the IP to the IP you want
   - change eth0 if your adapater has a different name
@@ -134,17 +135,17 @@ Note you may want to:
 Once you have created the file save and exit
 
 Then start the service
-  ```
-  sudo systemctl start keepalived 
-  sudo systemctl enable  keepalived 
-  ```
+```
+sudo systemctl start keepalived 
+sudo systemctl enable  keepalived 
+```
 
-  ## Add a local DNS entry to your internal DNS server
-  for example 
-  ```
-  swarm.mydomain.com A 192.168.1.45
-  ```
-  use this name when you want to address any container in the swarm 
+## Add a local DNS entry to your internal DNS server
+for example 
+```
+swarm.mydomain.com A 192.168.1.45
+```
+use this name when you want to address any container in the swarm 
 
-  ## Testing
-  if you want a simple test ping the vip (e.g. 192.168.1.45) and see what happens when you shutdown each of the nodes!
+## Testing
+if you want a simple test ping the vip (e.g. 192.168.1.45) and see what happens when you shutdown each of the nodes!

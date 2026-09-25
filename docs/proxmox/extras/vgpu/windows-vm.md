@@ -5,6 +5,10 @@ source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
 
 
 # add vGPU to a Windows 11 or Server 2022 VM
+
+!!! warning "no longer used"
+    i no longer run vGPU on the cluster.
+
 1. create VM with CPU set to host DO NOT CHANGE THIS
 3. boot VM without vGPU and display set to default
 4. install windows 11
@@ -19,6 +23,7 @@ source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
 9. you should now have graphics acceleration availble to apps wether you connect by webcolse VNC, SPICE or an RDP client
 
 **From @rinze24:**
+
 ----
 If you follow the guide successfully, in Device Manager you will see:
 
@@ -28,12 +33,13 @@ If you follow the guide successfully, in Device Manager you will see:
 You have 2 options (or more) to use your iGPU. Because Windows 11 decide on its own which graphics to use.
 
 1. Setup Remote Desktop Connection in Windows 11 and set the display to none in VM Hardware settings.
-- Pro: No configuration per app, Responsive Connection.
-- Con: No proxmox console.
+    - Pro: No configuration per app, Responsive Connection.
+    - Con: No proxmox console.
 
 2. Inside Windows Set which graphics preference to use per application in Display Settings -> Graphics Settings-
-- Pro: Have proxmox console.
-- Con: Need to configure per application / program.
+    - Pro: Have proxmox console.
+    - Con: Need to configure per application / program.
+
 ----
 
 

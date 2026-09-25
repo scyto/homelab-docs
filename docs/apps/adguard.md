@@ -17,20 +17,22 @@ these were the steps
 
     ```
     node 1
-    subnet  2001:db8:830:1::/64
-    gateway 2001:db8:830:1::1
-    range   2001:db8:830:1::5/128
+    subnet  2001:db8:1000:1::/64
+    gateway 2001:db8:1000:1::1
+    range   2001:db8:1000:1::5/128
 
     node 2
-    subnet  2001:db8:830:1::/64
-    gateway 2001:db8:830:1::1
-    range   2001:db8:830:1::6/128
+    subnet  2001:db8:1000:1::/64
+    gateway 2001:db8:1000:1::1
+    range   2001:db8:1000:1::6/128
     ```
 
 4. assign the actual MVL networks (i actually renamed mine so the 6 config networks are called adguard1/2-config and the two macvlan networks are called adguard1/2-mvl - much easier, i had them the wrong way round when i wrote the original article)  
 5. restart the stack (it really was this easy)
+
 learning: also the randomness i talk about below when selecting the networks in the UI can be avoided if all your machines are hosts!
 don't forget to add the IPv6 upstream resolvers in adguard
+
 --------
 
 
@@ -42,26 +44,28 @@ I wanted redundant adguard - there are two ways to do this:
 I also wanted adguard to accurately record the client host names accessing adgaurd - this meant i needed to use macvlan networking.
 I also wanted to use native ports like 443 but have other services that need to use that too so rather than use host networking i used macvlan/  This is not rquired but i wanted to make this one `interesing` :-)
 
+Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
+
 ## State Considerations for SWARM
 Each of the two nodes needs to have their own confgi and worker mounts.  I chose to use the glusterfs volume driver to make these so they are available on any node. 
 
 ## Network Considerations
 Wow, this is the most complex network setup because i need each adguard instance to be able to have its own MAC and IP address and i needed the adguard sync container to be able to sync between the two nodes.  Also macvlan in swarm is a quite complex and a little werid.  We have the following networks in this config:
 
-- **adguard1-mvl-config   
+- **adguard1-mvl-config**
     - public macvlan config for adguard1 and is dsitributed to all 3 docker nodes
 
-- **adguard1              
+- **adguard1**
     - public macvlan network used in the adgaurd1 container
 
-- **adguard2-mvl-config
+- **adguard2-mvl-config**
     - public macvlan config for adguard2 and is dsitributed to all 3 docker nodes
 
-- **adguard2              
-  - public macvlan network used in the adgaurd2 container
+- **adguard2**
+    - public macvlan network used in the adgaurd2 container
 
-- **adguard_sync
-  - private overlay network to allow all 3 nodes to talk to each other for purpose of sync
+- **adguard_sync**
+    - private overlay network to allow all 3 nodes to talk to each other for purpose of sync
 
 ## Placement Considerations
 It is not possible to have a single host adapter (i.e eth0) have two macvlans running at the same time.
@@ -71,10 +75,9 @@ You may see placement rejection of the second service if it initially tries to p
 
 ## Reaching AdGuard from the node it runs on
 
-A macvlan child cannot talk to its parent. The node running an AdGuard therefore
-cannot reach it, and neither can any container on that node, while every other
-node on the LAN can. That breaks anything co-located that needs DNS or the
-AdGuard API, and it breaks it silently.
+A macvlan child cannot talk to its parent. The node running an AdGuard cannot
+reach it, and nor can any container on that node. Other nodes on the LAN can.
+Anything on that node that needs DNS or the AdGuard API times out.
 
 Each docker host carries a macvlan shim to fix it. `mac0` is a second macvlan
 child of `eth0`, and child-to-child traffic is allowed, so routing the two
@@ -93,33 +96,31 @@ iface mac0 inet manual
 ```
 
 - only `src` changes per host, to that host's own address
-- the shim needs **no address of its own**, so nothing has to be reserved. the
+- the shim needs no address of its own, so nothing has to be reserved. the
   route's `src` supplies the source address, and adguard sees the host
 - the `/32` routes are correct whether or not the adguard is local. `mac0` is on
   the same segment, so traffic to a resolver on another node just goes out the
   wire
 - the iptables rules let container traffic forward out `mac0`. without them the
-  host works and containers do not, and traffic that previously reached the
-  remote resolver breaks too, because the route pulls it onto `mac0`
+  host works but containers do not. containers also lose the remote resolver
+  they reached before, because the route pulls that traffic onto `mac0`
 - `DOCKER-USER` is created first because networking starts before docker at
-  boot. docker keeps an existing chain and its rules, verified across a daemon
-  restart
+  boot. docker keeps an existing chain and its rules
 
-Check it from a container, not just the host, and from an overlay-attached one
-if swarm services depend on it:
+Check it from the host and from a container. If swarm services depend on it,
+check from a container on an overlay network as well:
 
 ```
 docker run --rm --network <an overlay> alpine:3 ping -c2 192.168.1.5
 ```
 
-With this in place no service needs a placement constraint to avoid AdGuard
-nodes, which matters on a three node cluster: constraints that keep a service
-off both resolvers leave it exactly one eligible node, and losing a node leaves
-it unschedulable.
+With the shim in place no service needs a placement constraint to avoid the
+AdGuard nodes. On a three node cluster, a service kept off both resolvers has
+one eligible node, and losing that node leaves it unschedulable.
 
 ## Network Preparation
 This is one of the few times where showing picture will use less space than trying to explain something complex and non-intutive.
-Note is asbolutely possible to do this via command line.  If you prefer that [this is the best article](https://jpft.win/docker-swarm-macvlan/) i won't be covering command line here as i didn't use it after i had learnt what i was doing :-).
+Note is asbolutely possible to do this via command line.  If you prefer that [this is the best article](https://web.archive.org/web/20231225080129/https://jpft.win/docker-swarm-macvlan/) i won't be covering command line here as i didn't use it after i had learnt what i was doing :-).
 
 Note this result in your tow adguard servers being 192.168.1.5 and 192.168.1.6 respectively.  Adjust as needed for your network.
 
@@ -249,3 +250,11 @@ networks:
    adguard1:
      external: true
 ```
+
+## what i run now
+
+- the volumes are named binds on cephfs, see [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts)
+- adguard2 has a placement constraint from [auto-label](auto-label-nodes.md) that keeps it off adguard1's node
+- the two sync passwords are in one swarm secret. adguardhome-sync reads it as its `--config` file, see [secrets](../secrets/index.md#option-1-the-app-reads-the-file-itself)
+
+--8<-- "blocks/swarm/adguard/compose.yml.md"

@@ -3,13 +3,11 @@ title: "Proxmox Backup"
 source_gist: https://gist.github.com/scyto/61dcfff1d0128d9df85cf57b756c599c
 ---
 
-!!! warning "Deprecated: I no longer run this"
-
-    The Synology PBS is gone. PBS now runs as a container on my TrueNAS box, see
-    [Proxmox Backup Server](../../backups/pbs-server.md) and
-    [VM backups to PBS](../../backups/vm-backups-pbs.md). Kept for reference.
-
 # Proxmox Backup
+
+!!! warning "no longer used"
+    PBS runs as a container on my TrueNAS box now: see [proxmox backup server](../../backups/pbs-server.md).
+
 At this time proxmox backup only backs up VM and Containers - ths guide covers that.
 
 What i didn't realize is the backup job is still defined on the cluster and PBS provides a new storage type that dedupes and managed all the vzdump files created - which is cool. 
@@ -50,14 +48,14 @@ Once again i used one of [Derek Seaman's Awesome Blogs](https://www.derekseaman.
 6. now add a mount to fstab with the following command
     ```
     echo "//192.168.1.30/proxmox /mnt/syn01 cifs rw,auto,uid=34,noforceuid,gid=34,noforcegid,credentials=/etc/samba/.syn01 0 0" >> /etc/fstab
+    ```
 
     note: in this example use your synology IP not the example above, if you did my other instructions correctly that is all you should need to change.
 
     The uid and gid ensure you have no strnage issues with permission - these map to the backup user and group in proxmox
 
-    ```
 7. perform a `systemctl daemon-reload` without this the fstab changed won't be picked up
-8. now mount the share with `umount -a`
+8. now mount the share with `mount -a`
 9. create a test fie with `nano /mnt/syn01/test.txt` populate it with some text and save - you should see it appear on the synology in file explorer with no errors
 
 ## Add stroage in proxmox backup

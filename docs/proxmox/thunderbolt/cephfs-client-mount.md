@@ -63,7 +63,7 @@ ceph auth get client.lan01 | grep caps
 `<storage id>.keyring` and `<storage id>.conf` from there for its own Ceph and
 cephFS storages. a client's file that happens to have a storage's name replaces
 that storage's credentials, and the storage stops mounting the next time it
-mounts. my first version of this page did exactly that.
+mounts.
 
 ## 2. copy the files to the client
 
@@ -119,7 +119,7 @@ unable to parse mount source: -22
 
 the form above worked there. i have not tried the newer form with a newer helper.
 
-then check it can read **file contents**, not just list them. a listing only
+then check it can read **file contents**, as well as list them. a listing only
 needs the MDS. contents need the OSDs, so a missing route to an OSD, or caps that
 name the wrong pools, only shows up here:
 

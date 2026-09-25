@@ -21,9 +21,9 @@ It is beyond this gist to be a deep tutorial.
 1. on the node you uploaded the click the `create VM` in the upper right corner
 2. on the General page you need to specify a `name` and the click `next`
 3. on the OS page 
-  - set the ISO to boot, select your storage and then select the iso image from the drop down
-  - set guest OS to windows and the latest date
-  - click next
+    - set the ISO to boot, select your storage and then select the iso image from the drop down
+    - set guest OS to windows and the latest date
+    - click next
 4. For the system page it is imperative you pick the pool you created ealier for EFI and TPM storage as follows:
 
     ![image](../assets/img/c0090a770284.png){ width="600" }
@@ -56,6 +56,8 @@ It is beyond this gist to be a deep tutorial.
 1. in the gui select `Datacenter > HA`
 2. click `add` in the resources pane
 3. select `ClusterGroup1` (this was created in an ealier gist in this gist sequence)
+
+Update as of 2026.09.24: PVE 9 has no HA groups to select. they became node affinity rules, see [cluster setup](cluster-setup.md#configuring-for-high-availability).
 
 ## Test Live Migration
 1. select the VM from pve1 node treet in the GUI

@@ -5,6 +5,10 @@ comments: true
 ---
 
 # Enable & Using vGPU Passthrough
+
+!!! warning "no longer used"
+    i no longer run vGPU on the cluster.
+
 This gist is almost entirely not unlike Derek Seaman's awesome blog:
 
 [Proxmox VE 8: Windows 11 vGPU (VT-d) Passthrough with Intel Alder Lake](https://www.derekseaman.com/2023/06/proxmox-ve-8-windows-11-vgpu-vt-d-passthrough-with-intel-alder-lake.html)
@@ -153,9 +157,11 @@ The pool should now look like this:
 
 Note: machines with PCI pass through devices cannot be live migrated, they must be shutdown, migrated offline to the new node and then started.
 
-# EVERYTIME THE KERNEL IS UPDATED IN PROXMOX YOU SHOULD DO THE FOLLOWING
-```
+## EVERYTIME THE KERNEL IS UPDATED IN PROXMOX YOU SHOULD DO THE FOLLOWING
+
 update the kernel using proxox ui
+
+```
 dkms install -m i915-sriov-dkms -v 6.5 --force
 reboot
 ```

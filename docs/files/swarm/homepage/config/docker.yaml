@@ -1,0 +1,8 @@
+swarm:
+  host: dockerproxy
+  port: 2375
+  swarm: true
+
+truenas:
+  host: 192.168.1.86
+  port: 2375

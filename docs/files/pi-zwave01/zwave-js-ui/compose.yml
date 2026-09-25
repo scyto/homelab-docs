@@ -1,0 +1,23 @@
+services:
+  zwave-js-ui:
+    container_name: zwave-js-ui
+    image: zwavejs/zwave-js-ui:11.22.3
+    restart: always
+    stop_signal: SIGINT
+    stop_grace_period: 10s
+    networks:
+      - zwave
+    devices:
+      - "/dev/serial/by-id/usb-Zooz_800_Z-Wave_Stick_533D004242-if00:/dev/ttyUSB0"
+    volumes:
+      - /docker-data/zwavejs2mqtt/store:/usr/src/app/store
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=America/Los_Angeles
+    ports:
+      - "80:8091"
+      - "3000:3000"
+
+networks:
+  zwave:

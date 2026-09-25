@@ -4,6 +4,10 @@ source_gist: https://gist.github.com/scyto/e0755b318ae84103c7c192a7a2dd1101
 ---
 
 # Postfix M365 (Office 365) relay as LXC 
+
+!!! warning "no longer used"
+    replaced by smtp2go: every host relays its mail through it now.
+
 The purposes of this gist:
 
 1. setup an smtp smarthost/relay that can send mail to Exchange Online 365 Office Outlook M365 (they keep renaming it)

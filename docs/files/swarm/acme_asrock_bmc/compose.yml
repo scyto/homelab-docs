@@ -1,0 +1,38 @@
+services:
+  acme-sh:
+    image: neilpang/acme.sh:latest@sha256:e1a4ac9fddb260b7171dd0c269790ae4561b6af35aa305b23cfdd98419ea1baf
+    volumes:
+      - acme:/acme.sh
+    command: daemon
+    environment:
+      TZ: America/Los_Angeles
+      CF_Account_ID: <account-id>
+      ASROCK_BMC_URL: https://192.168.1.92
+      ASROCK_BMC_USER: acme-sh
+      ASROCK_BMC_PASSWORD_FILE: /run/secrets/asrock_bmc_password_v2
+    configs:
+      - source: asrock_bmc_hook
+        target: /acmebin/deploy/asrock_bmc.sh
+    secrets:
+      - asrock_bmc_password_v2
+
+    deploy:
+       mode: replicated
+       replicas: 1
+
+configs:
+  asrock_bmc_hook:
+    file: ./asrock_bmc.sh
+    name: acme_asrock_bmc_hook_v1
+
+secrets:
+  asrock_bmc_password_v2:
+    external: true
+
+volumes:
+  acme:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/acme_asrock_bmc_acme"
+      o: bind

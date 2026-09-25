@@ -1,0 +1,129 @@
+services:
+  config-sync:
+    image: registry.k8s.io/git-sync/git-sync:v4.7.1
+    user: "1000:1000"
+    environment:
+      - TZ=America/Los_Angeles
+      - GITSYNC_REPO=git@github.com:<you>/<repo>.git
+      - GITSYNC_REF=deploy/swarm/homepage
+      - GITSYNC_PERIOD=60s
+      - GITSYNC_ROOT=/git
+      - GITSYNC_LINK=repo
+      - GITSYNC_SSH_KEY_FILE=/dev/shm/key
+      - GITSYNC_SSH_KNOWN_HOSTS_FILE=/known_hosts
+      - GITSYNC_EXECHOOK_COMMAND=/sync-config.sh
+      - GITSYNC_ADD_USER=true
+      - GITSYNC_FILTER=blob:none
+      - GITSYNC_SPARSE_CHECKOUT_FILE=/sparse-checkout
+      - GITSYNC_HTTP_BIND=:8080
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        umask 077
+        printf '%s\n' "$$(cat /run/secrets/gitsync_ssh_key_v1)" > /dev/shm/key
+        [ -s /dev/shm/key ] || { echo "config-sync: could not write the SSH key to /dev/shm" >&2; exit 1; }
+        mkdir -p /tmp/.ssh && cp /ssh_config /tmp/.ssh/config || { echo "config-sync: could not install the ssh config" >&2; exit 1; }
+        exec /git-sync
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - type: volume
+        source: gitrepo_v2
+        target: /git
+        volume:
+          nocopy: true
+      - config:/app/config
+    configs:
+      - source: homepage_known_hosts
+        target: /known_hosts
+      - source: homepage_ssh_config_v1
+        target: /ssh_config
+      - source: homepage_sparse_checkout_v1
+        target: /sparse-checkout
+      - source: homepage_sync_config_v2
+        target: /sync-config.sh
+        mode: 0555
+    secrets:
+      - gitsync_ssh_key_v1
+    networks:
+      discovery:
+        aliases:
+          - homepage-git-sync
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v2.4.0@sha256:643bd0be730d40f69d58028a55d1a896739333e8815786df42bc97f109ecbe61
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - HOMEPAGE_ALLOWED_HOSTS=192.168.1.45:3000,homepage.mydomain.com,localhost:3000
+      - PUID=1000
+      - PGID=1000
+      - HOMEPAGE_FILE_PROWLARR_KEY=/app/config/secrets/prowlarr_key
+      - HOMEPAGE_FILE_RADARR_KEY=/app/config/secrets/radarr_key
+      - HOMEPAGE_FILE_SONARR_KEY=/app/config/secrets/sonarr_key
+      - HOMEPAGE_FILE_BAZARR_KEY=/app/config/secrets/bazarr_key
+      - HOMEPAGE_FILE_SEERR_KEY=/app/config/secrets/seerr_key
+      - HOMEPAGE_FILE_SABNZBD_KEY=/app/config/secrets/sabnzbd_key
+      - HOMEPAGE_FILE_UNIFI_KEY=/run/secrets/unifi_apikey
+      - HOMEPAGE_FILE_PORTAINER_KEY=/app/config/secrets/portainer_key
+      - HOMEPAGE_FILE_PROXMOX_KEY=/app/config/secrets/proxmox_key
+      - HOMEPAGE_FILE_TRUENAS_KEY=/app/config/secrets/truenas_key
+      - HOMEPAGE_FILE_ADGUARD1_PASSWORD=/app/config/secrets/adguard1_password
+      - HOMEPAGE_FILE_ADGUARD2_PASSWORD=/app/config/secrets/adguard2_password
+      - HOMEPAGE_FILE_QBITTORRENT_PASSWORD=/app/config/secrets/qbittorrent_password
+    ports:
+      - 3000:3000
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - config:/app/config
+    secrets:
+      - unifi_apikey
+    networks:
+      - discovery
+    deploy:
+      mode: replicated
+      replicas: 1
+
+configs:
+  homepage_known_hosts:
+    file: ./known_hosts
+  homepage_ssh_config_v1:
+    file: ./ssh_config
+  homepage_sparse_checkout_v1:
+    file: ./sparse-checkout
+  homepage_sync_config_v2:
+    file: ./sync-config.sh
+
+secrets:
+  unifi_apikey:
+    external: true
+
+  gitsync_ssh_key_v1:
+    external: true
+
+volumes:
+  config:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/homepage_config"
+      o: bind
+  gitrepo_v2:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/homepage_git_v2"
+      o: bind
+
+networks:
+  discovery:
+    external: true

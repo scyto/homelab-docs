@@ -1,0 +1,36 @@
+endpoints:
+  - name: syn02
+    group: hosts
+    url: "icmp://192.168.1.31"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: glances syn02
+    group: hosts
+    url: "http://192.168.1.31:61208/api/4/quicklook"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].mem > 0"
+
+  - name: pi-zwave01
+    group: hosts
+    url: "icmp://192.168.1.96"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: glances pi-zwave01
+    group: hosts
+    url: "http://192.168.1.96:61208/api/4/quicklook"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].mem > 0"

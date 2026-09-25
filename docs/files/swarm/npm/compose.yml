@@ -1,0 +1,88 @@
+version: "3.2"
+services:
+
+  app:
+    image: 'jc21/nginx-proxy-manager:2.15.1'
+    restart: always
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        set -e;
+        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password_v2)";
+        export DB_MYSQL_PASSWORD;
+        exec /init
+    ports:
+      - '180:80'
+      - '1443:443'
+      - '181:81'
+    environment:
+      TZ: America/Los_Angeles
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_NAME: "npm"
+      DISABLE_IPV6: 'true'
+    volumes:
+      - data:/data
+      - le:/etc/letsencrypt
+    depends_on:
+      - db
+    secrets:
+      - npm_db_password_v2
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  db:
+    image: 'jc21/mariadb-aria:10.11.5'
+    restart: always
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        set -e;
+        MYSQL_ROOT_PASSWORD="$$(cat /run/secrets/npm_mysql_root_password_v2)";
+        export MYSQL_ROOT_PASSWORD;
+        MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password_v2)";
+        export MYSQL_PASSWORD;
+        exec /scripts/run.sh
+    environment:
+      TZ: America/Los_Angeles
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+    volumes:
+      - db:/var/lib/mysql
+    secrets:
+      - npm_db_password_v2
+      - npm_mysql_root_password_v2
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: dnsrr
+
+secrets:
+  npm_db_password_v2:
+    external: true
+  npm_mysql_root_password_v2:
+    external: true
+
+volumes:
+  db:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/npm_db"
+      o: bind
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/npm_data"
+      o: bind
+  le:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/npm_le"
+      o: bind

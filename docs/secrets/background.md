@@ -9,6 +9,8 @@ procedures are separate: [ADD.md](add.md), [ROTATE.md](rotate.md),
 [RETIRE.md](retire.md) and [RECOVER.md](recover.md). The incidents and rejected
 alternatives behind these choices are in
 the design notes in my private repo.
+The key-manager container and its commands are in
+[KEY-MANAGER.md](key-manager.md).
 
 ---
 
@@ -20,12 +22,14 @@ A container needs a password. Four places will take it and leak it:
 | --- | --- |
 | Compose file in git | anyone with the repo, forever, including history |
 | Portainer environment variable | anyone with Portainer, and it lands in the service spec |
-| The service spec | anyone who can reach `dockerproxy:2375`, with no credentials |
+| The service spec | anyone who can read the Docker API; here that was the whole LAN, through `dockerproxy:2375`, with no credentials |
 | A Docker label | anyone with socket access; labels cannot reference secrets at all |
 
-The third one is real here. On 2026-08-22, `2375` returned 23 services with no
+The third one was real here. On 2026-08-22, `2375` returned 23 services with no
 authentication, 16 of them exposing environment variables including
-`MYSQL_ROOT_PASSWORD` and `REPLICA_PASSWORD`.
+`MYSQL_ROOT_PASSWORD` and `REPLICA_PASSWORD`. That port is closed now:
+`dockerproxy` publishes no host port, and only containers on its overlay reach
+it. A value in the spec is still readable by anything that can read the API.
 
 So the value has to reach the process without passing through the repo, the
 stack definition, or the service spec.
@@ -43,7 +47,7 @@ this estate's key:
 
 ```
 # public key: age1yourpublickeyhere
-AGE-SECRET-KEY-1<59 more characters, all on this one line>
+AGE-SECRET-KEY-1<58 more characters, all on this one line>
 ```
 
 The `age1...` recipient encrypts and is safe to commit. The
@@ -131,160 +135,7 @@ both loses every secret.
 
 ---
 
-## Everything runs in a container
-
-Nothing is installed on the host except Docker. The container holds `sops`,
-`age`, the Docker CLI and the Azure libraries. Getting that set onto every
-machine you might work from is the problem it exists to solve, so **you get a
-shell inside it and run every command from there.**
-For starting it from a machine with nothing, see
-[RECOVER.md](recover.md#1-read-the-store-from-anywhere).
-
-### Swarm access
-
-`/var/run/docker.sock`, mounted straight through:
-
-```text
-  -v /var/run/docker.sock:/var/run/docker.sock \
-```
-
-**This means you run the container on a Swarm manager.** A manager's local
-socket is the Swarm API. On a worker it is not, and on a workstation there is
-no Swarm socket to mount at all.
-
-Because the socket is passed through unfiltered, the container talks to
-whatever daemon owns it. The store records which Swarm it describes, and every
-Swarm read checks against it, so pointing at the wrong daemon fails closed
-rather than creating secrets somewhere nobody meant to touch:
-
-```
-error: WRONG SWARM. The store expects cluster cvuql7mtd3yh..., this socket
-belongs to abc123...  Refusing to touch a Swarm this store does not describe.
-```
-
-Commands that need this: `status`, `verify`, `provision`, `rotate`, `retire`.
-Commands that do not: `list`, `diff`, `check`, `clone`, `restore`, `backup`,
-`gh-login`, `az-login`.
-
-### Three ways to run it
-
-All three run the same image with the same mounts. Pick whichever suits the
-machine you are on.
-
-**A `docker run` command.** Nothing to fetch first, works anywhere. It is in
-[RECOVER.md, section 1](recover.md#1-read-the-store-from-anywhere).
-
-**`ssh -t` to a manager from your workstation**, as one line, or the `keyman`
-alias. Nothing installed on the workstation but ssh. See
-[README.md, one-time setup](index.md#one-time-setup-the-keyman-alias).
-
-**A compose file.** One file to download, then shorter commands:
-
-```bash
-curl -fsSLO https://raw.githubusercontent.com/scyto/homelab-stacks/main/tools/compose.yaml
-docker compose run --rm key-manager            # shell
-docker compose run --rm key-manager list       # one command
-```
-
-**This one is mine only, for now.** That `curl` is unauthenticated and the repo
-is private, so it 404s for anyone else; you would need a token, or to write the
-equivalent compose file yourself. The `docker run` form above needs nothing but
-the image, which is public, so prefer it.
-
-**The wrapper script**, if you have a clone of this repo. It builds the same
-`docker run` for you, and finds the swarm and the store without being told:
-
-```bash
-sudo install -m0755 tools/key-manager /usr/local/bin/key-manager
-key-manager status          # from any directory
-```
-
-Without installing, `tools/key-manager` only works from inside the clone, which
-is why running it from your home directory says "no such file or directory".
-From elsewhere, point it at a clone:
-
-```bash
-export HOMELAB_REPO=~/repos/homelab-stacks
-```
-
-If you are not using Key Vault, mount your age key by hand: compose cannot
-skip a mount whose path is unset.
-
-### Once you are in the container
-
-The subcommands work on their own. `list` and `key-manager list` are the same
-thing, and `help` prints them all:
-
-```
-key-manager -- read, provision and rotate this estate's secrets.
-
-  Reading            list      names, notes and keyed digests. Never a value.
-                     status    store vs what the Swarm actually holds
-  Getting set up     az-login  sign in to Entra. Once per container session.
-                     restore   fetch the encrypted store from Key Vault
-  Changing a secret  rotate    generate a new value and stage it everywhere
-  ...
-```
-
-`<command> --help` explains one of them. Every writing command is a dry run
-until given `--apply`.
-
-### What each mount is for
-
-| Mount | Why |
-| --- | --- |
-| `$PWD:/repo` | **where the store lives, or will live.** `secrets/secrets.enc.yaml` is the one file the image cannot carry, because it changes. A full clone works, so does a directory holding only that file, so does an empty one if you then run `restore` |
-| *(no flag)* | The GitHub token, the Entra token and `/work` all default to `/dev/shm`, which Docker mounts as a tmpfs in every container. Memory is what you get by doing nothing; putting them on disk would take a deliberate flag |
-| `/var/run/docker.sock` | the Swarm API. Only meaningful on a manager, and checked against the cluster the store describes |
-| `$SOPS_AGE_KEY_FILE:/run/age-key:ro` | optional. Your age identity, if you are not fetching it from Key Vault |
-
-Two absences are deliberate. **No private key is ever mounted** except the age
-identity, and only when you ask for it. **Nothing writable is mounted** except
-the token cache, so a container cannot leave anything behind.
-
-**The tokens are in memory, with one caveat.** `gh-login` warns
-"Authentication credentials saved in plain text" because a container has no OS
-keyring: the GitHub token goes to `~/.config/gh/hosts.yml` in cleartext. That
-path, and the Entra token cache, are tmpfs mounts, so they stay off the
-container's writable layer and go when it exits. **Memory-backed is not
-memory-only**: tmpfs pages can be swapped under memory pressure, and all three
-managers run with swap enabled. Docker 28 does not accept the `noswap` mount
-option, so closing that gap means turning swap off on the managers or
-encrypting it. Both tokens are short-lived and small, which is why this is a
-note rather than a blocker.
-
-`gh` also becomes git's credential helper, so a push works without key-manager
-handling a token.
-
-### What `feed` can reach
-
-`feed` hands a value to a command on stdin, and for a database that command has
-to run against the container holding the database. With only the local socket
-mounted, `docker exec` reaches containers **on this node**, and nothing else.
-
-So run the key-manager container on the node where that database is. Find it
-with:
-
-```
-status                                  # confirms you are on the right Swarm
-docker service ps <stack>_db --format '{{.Node}}'
-```
-
-If the database is on another node, v1 has no route to it: ssh from inside the
-container was removed along with the ssh transport. Run key-manager on that
-node instead.
-
-The wrapper still passes `--dns-search`, so names resolve inside the container
-the way they do on the host. Docker writes a `resolv.conf` with a nameserver
-and no `search` line, so without it a bare `docker01` does not resolve even
-though the host resolves it fine.
-
-### On other machines
-
-Same command. The image is the reason it behaves identically on macOS, Linux
-and WSL. On Windows the ssh agent is a named pipe rather than a socket, so
-either run the wrapper from WSL or pass `-e SOPS_AGE_KEY_FILE` and skip the
-swarm commands.
+<span id="everything-runs-in-a-container"></span><span id="swarm-access"></span><span id="three-ways-to-run-it"></span><span id="once-you-are-in-the-container"></span><span id="what-each-mount-is-for"></span><span id="what-feed-can-reach"></span><span id="on-other-machines"></span>Running the container, what it mounts and what `feed` can reach moved to [KEY-MANAGER.md](key-manager.md).
 
 ---
 
@@ -327,11 +178,15 @@ vault against git.
 
 **So make changes from a full clone.** A store-only directory, which is what
 `restore` gives you, is for reading and for rebuilding a Swarm. Change a secret
-there and it has nowhere to go. `rotate` says so:
+there and it has nowhere to go. Signed in to GitHub, `rotate` says so only at
+the end, after it has already written the new value to Key Vault, the store and
+Swarm:
 
 ```
-  WARNING  /repo is not a git clone, so this change cannot be committed.
+  NOT PUSHED  /repo is not a git clone, so nothing can be committed
 ```
+
+Signed out, it refuses before generating anything.
 
 ### Does the stack need changing?
 
@@ -343,7 +198,7 @@ compose file has to point at it.
 | --- | --- |
 | Swarm secret, rotated to `_v2` | **yes**, that is the whole point |
 | Value edited in place under the same name | no, but the Swarm keeps the old value until you remove and recreate the secret, which restarts the service |
-| Still a Portainer environment variable | no, it is not mounted from the store |
+| Still a Portainer environment variable | only its `x-secrets` line, which restarts nothing. The new value goes into the Portainer stack variable by hand |
 | Not deployed anywhere (`WHERE` is `-`) | no |
 
 `check` is what catches the mistake: it fails if a compose file mounts a name
@@ -411,8 +266,10 @@ docker run --rm --entrypoint /bin/sh <image> -c 'echo has-shell'  # mechanism 4?
 | 4 | **Entrypoint wrapper** | image has a shell but no `_FILE` | no |
 | 5 | **Portainer env var** | distroless, no `_FILE` | **yes** |
 
-**No mechanism works for Docker labels.** A label is part of the service spec
-by definition.
+**No mechanism puts a secret in a Docker label.** A label is part of the
+service spec by definition. What a label can carry is a placeholder that the
+app reading it fills from a file: see
+[placeholders](#placeholders-an-app-fills-from-a-file).
 
 ### 1. Native
 
@@ -426,6 +283,43 @@ secrets:
 ```
 
 `external: true` means `docker stack rm` will not delete it.
+
+**On a standalone endpoint there are no Swarm secrets, so bind the file.** The
+app still reads `/run/secrets/<something>`; a bind puts a host file there:
+
+```yaml
+services:
+  frigate:
+    volumes:
+      - /mnt/fast/configs/frigate/frigate_plus_api_key:/run/secrets/PLUS_API_KEY:ro
+```
+
+- The file holds the **raw value** and nothing else. It is read as the secret,
+  not parsed.
+- Mode 600, owned by root, on a dataset the snapshot task covers.
+- **A bind source that does not exist becomes a DIRECTORY**, and the app then
+  reads a directory as a key.
+- `env_file:` is NOT an alternative here. It is read by whatever *runs*
+  compose, not bind-mounted by the daemon -- and Portainer deploys truenas1
+  through `portainer-agent`, whose only mounts are the Docker socket and
+  `/mnt/.ix-apps/docker/volumes`. It cannot see `/mnt/fast/configs` at all, so
+  the deploy fails outright. A bind is resolved by the daemon on the host,
+  which is why one works and the other cannot.
+
+**When the app dictates the filename, declare it in `x-secrets` anyway.**
+frigate reads `/run/secrets/PLUS_API_KEY` because `frigate/plus.py` looks for
+the file named after the variable. That name cannot also be the globally unique
+store name, so the usual "the path IS the link" property does not hold:
+
+```yaml
+x-secrets:
+  PLUS_API_KEY: frigate_plus_api_key_v1  # gitleaks:allow
+```
+
+`check` accepts a declaration satisfied by an interpolated `${VAR}`, a literal
+`/run/secrets/<VAR>`, or `VAR=` set to a path, in the same file, and the derived
+scan defers to the mapping rather than demanding a store secret called
+`PLUS_API_KEY`.
 
 ### 2. The `_FILE` convention
 
@@ -470,12 +364,13 @@ sh -c 'set -e; export V="$(cat /nope)"; echo REACHED'      # exit 0, REACHED
 ```
 
 An empty value usually fails quietly rather than loudly. `unifiapibrowser`
-falls back to an auth mode UniFi OS refuses, `cloudflare-ddns` deletes the DNS
-record, and `infinitude` uses a default baked into the image.
+falls back to an auth mode UniFi OS refuses, `cloudflare-ddns` stops updating
+the DNS record, which goes stale when the address changes, and `infinitude`
+uses a default baked into the image.
 
-**Exec the entrypoint *and* the cmd.** Compose **clears** the image's `CMD` when
-you override `entrypoint`, which `docker run` does not. Read both from
-`docker image inspect` and reproduce both.
+**Exec the entrypoint *and* the cmd.** Overriding the entrypoint **clears** the
+image's `CMD`, in Compose and with `docker run --entrypoint` alike. Read both
+from `docker image inspect` and reproduce both.
 
 **`$$` is Compose's escape for a literal `$`.** A single `$` is substituted by
 Compose at deploy time, which is the thing you are avoiding.
@@ -493,13 +388,23 @@ docker run --rm -v /path/to/fake:/run/secrets/x:ro --entrypoint /bin/sh <image> 
 ### 5. Portainer environment variable
 
 For distroless images that have no shell and no `_FILE` support. The value
-lands in the service spec and is readable on `2375`, so use it only when none
-of the other four apply.
+lands in the service spec, where anything that can read the Docker API reads it
+back, as the whole LAN once could on `2375`. Use it only when none of the other
+four apply.
 
-This is the only mechanism that has to say which stored secret it uses. The
-other four name it in the `/run/secrets/<name>` path, so the file already says
-it. Here the value arrives as `${SOME_VAR}` from a Portainer stack variable, and
-nothing would otherwise connect the two:
+> **It does not survive a stack edit, and fails silently.** A Portainer stack
+> variable is typed into the UI, and editing a stack detaches and recreates it
+> -- the variable goes too. On 2026-09-20 frigate's running container was found
+> with `PLUS_API_KEY` set to the **empty string**: Frigate+ uploads had been
+> unauthenticated since the migration and nothing reported it. On a standalone
+> endpoint, prefer a bind into `/run/secrets` (mechanism 1); this one is for
+> Swarm, where there is no single host to put a file on.
+
+This mechanism always has to say which stored secret it uses. The other four
+name it in the `/run/secrets/<name>` path, so the file already says it, except
+where the path names something else, as frigate's does above and Homepage's do
+below. Here the value arrives as `${SOME_VAR}` from a Portainer stack variable,
+and nothing would otherwise connect the two:
 
 ```yaml
 x-secrets:
@@ -514,6 +419,44 @@ Matching the names instead does not work. `MYSQL_PASSWORD` is required by both
 `npm` and `wordpress2025` for two different values, because mariadb calls it
 that in every stack that runs it. A store name is global; an image's variable
 name is not.
+
+### Placeholders an app fills from a file
+
+Some apps take a placeholder where the value would go, and fill it from a file
+when they read it. The placeholder can then sit where a secret never could,
+even in a label. Two do it here.
+
+**Homepage** replaces `{{HOMEPAGE_FILE_X}}`, in its config files and in the
+`homepage.*` labels it discovers, with the contents of the file that its own
+`HOMEPAGE_FILE_X` variable names. adguard's dashboard widget signs in that way,
+and its label holds only the placeholder:
+
+```yaml
+    deploy:
+      labels:
+        - homepage.widget.password={{HOMEPAGE_FILE_ADGUARD1_PASSWORD}}
+```
+
+**Gatus**, in this estate's fork, reads `${VAR}` in its config from the file
+that `VAR_FILE` names, when that is set. `PROXMOX_TOKEN_FILE` points at
+`/run/secrets/proxmox_api_token_v1`, so `${PROXMOX_TOKEN}` in a check is the
+token. Upstream declined the feature.
+
+When the file is a Swarm secret, as gatus's is, its `/run/secrets/<name>` path
+is the link and nothing more is declared. When it is a file you place yourself,
+as Homepage's are, on its config volume, the path names no stored secret, so
+declare the mapping in `x-secrets` as mechanism 5 does:
+
+```yaml
+x-secrets:
+  HOMEPAGE_FILE_RADARR_KEY: radarr_api_key_v1  # gitleaks:allow
+```
+
+`check` accepts that declaration when the same compose file sets the variable
+to a path, `HOMEPAGE_FILE_RADARR_KEY=/app/config/secrets/radarr_key`. A value
+written there instead of a path does not satisfy it. `provision` does not create
+these files: `feed` writes them, as in
+[ADD.md, step 6b](add.md#6b-a-secret-that-is-not-a-swarm-secret-in-the-container).
 
 ### Confirm it worked
 
@@ -593,128 +536,20 @@ value publishes it, and rotating is the only thing that undoes that.
 
 ---
 
-## Rotation, in more depth
+<span id="rotation-in-more-depth"></span><span id="the-new-name"></span><span id="effects-a-rotation-can-have"></span><span id="what-alter-user-actually-does"></span><span id="rotation-due-dates-in-key-vault"></span>What a rotation does underneath moved to [ROTATE.md, rotation in more depth](rotate.md#rotation-in-more-depth).
 
-The procedure is [ROTATE.md](rotate.md). This is what is going on underneath.
+---
 
-### The new name
-
-Swarm secrets are immutable, so `rotate` always creates a **new name**:
-`npm_db_password` becomes `npm_db_password_v2`. Nothing uses that name until
-the compose file says so, which is why nothing has broken yet.
-
-The edit is not one line. In `stacks/swarm/npm/compose.yml` the real rotation
-touched four places:
-
-```diff
-      # 1. the path the entrypoint wrapper reads
--        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password)";
-+        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password_v2)";
-
-      # 2. the service's own secrets list
-     secrets:
--      - npm_db_password
-+      - npm_db_password_v2
-
-      # 3. the same two again in the db service, which mounts it too
-
-      # 4. the top-level block that declares them external
- secrets:
--  npm_db_password:
-+  npm_db_password_v2:
-     external: true
-```
-
-Miss one and the stack either mounts a secret nothing reads, or reads a path
-that does not exist. `key-manager check` catches the second.
-
-```mermaid
-%%{init: {'theme':'neutral'} }%%
-sequenceDiagram
-    autonumber
-    participant Op as Operator
-    participant AKV as Key Vault
-    participant Store as sops store
-    participant Swarm as Swarm
-    participant Auth as Authority (e.g. MariaDB)
-    participant App as Running app
-
-    rect rgba(60,160,90,0.18)
-    Note over Op,Swarm: rotate --apply, all abortable
-    Op->>AKV: 1-2. generate, write (write-ahead log)
-    Op->>Store: 3. sops set
-    Op->>Swarm: 4. docker secret create NAME_vN
-    Op->>Swarm: 5. verify --only NAME_vN
-    end
-
-    rect rgba(200,70,70,0.15)
-    Note over Op,App: 6 is the point of no return
-    Op->>Auth: 6. feed (ALTER USER, or provider API)
-    Auth-->>Op: 7. new accepted, old refused
-    Note over App: app cannot log in: it still has the old value
-    Op->>Swarm: 8. compose → _vN, PR, merge, deploy
-    Swarm->>App: restart on the new secret
-    Note over App: app can log in again
-    Op->>App: 9. verify FUNCTION
-    Op->>Auth: 10. revoke old, retire, backup --apply
-    end
-```
-
-Key Vault is written **first** on purpose. A provider issues a credential once;
-if the rotation dies partway an unrecorded value is gone and the service is
-unreachable. A run here failed at step 3 after the vault write, and the value
-was still durable and the rotation resumable.
-
-### Effects a rotation can have
-
-**But the change may still be visible to users.** The app was using the old
-value for something, and that something stops working. Two examples from this
-estate:
-
-- a cookie-signing secret invalidates every existing session, so everyone is
-  logged out
-- a key used to encrypt stored data makes that data unreadable, permanently
-
-Neither is a failure of the rotation. They are what the value was doing. Before
-you run it, read the application's own documentation for what it uses the
-secret for, and decide whether the effect is acceptable now or should wait for
-a quiet moment.
-
-**Some services let you avoid the outage case entirely** ([ROTATE.md](rotate.md) case C or D). `unifiapibrowser` used to be here,
-using a UniFi account password. Switching it to a UniFi API key moved it to case B,
-because the controller issues several keys and a password is singular. Same
-service, no interruption, because the *kind* of credential changed. Where a
-service offers both, take the key.
-
-### What `ALTER USER` actually does
-
-MariaDB does not store the password. It stores a hash:
-
-```
-npm  @ %   mysql_native_password   *468472B916B...
-```
-
-`ALTER USER 'npm'@'%' IDENTIFIED BY '<new>'` recomputes that hash and
-overwrites the row. Nothing restarts, no data changes, and open connections are
-unaffected. Only *new* connections are checked against the new hash, which is
-why the app often keeps working right up until it restarts.
-
-The host is part of the identity: `'npm'@'%'` and `'npm'@'localhost'` are
-different rows with different hashes. The root rotation needed both.
-
-`ALTER USER` is not recoverable from the database, because the old hash is
-gone. It is reversible only because the old plaintext is still in the store,
-which is why retiring comes last.
-
-### When 43 characters will not fit
+## When 43 characters will not fit
 
 `rotate` generates 43 characters because that is 256 bits and nothing here has
 to type it. Some systems cannot take that: appliance web UIs truncate, some
 APIs reject symbols, a few stop at 16 or 20 characters.
 
 `max_chars` is not a limit you are imposing. It is **the most that service will
-accept**, and `rotate` fills it rather than staying under it, so each secret
-gets the strongest value its consumer can actually hold.
+accept**, and `rotate` fills it as closely as whole bytes of entropy allow,
+rather than staying well under it, so each secret gets the strongest value its
+consumer can actually hold.
 
 Do not remember the limit. Record it against the secret, so it survives whoever
 knew it. `rotate` takes the cap and stores it in one step:
@@ -727,27 +562,6 @@ key-manager rotate <secret-name> --max-chars 20 \
 The cap is written into the store, so **later rotations honour it without being
 told again**. Omit `--why` and it says so: a cap with no reason is hard to
 revisit when you are wondering whether it still applies.
-
-### Rotation-due dates in Key Vault
-
-`rotate` stamps two things on the vault item: a `minted` tag with the date, and
-an expiry 90 days later. Both are labels for a human reading the portal. For
-Key Vault **secrets**, unlike keys, `exp` and `nbf` are informational and a
-`get` still succeeds outside the window, so an lapsed date never breaks
-recovery. That was worth checking rather than assuming.
-
-Per secret, with `constraints.rotate_days`.
-
-The date is stamped at **rotation**, not at backup. Setting it on every backup
-would push it forward each run and tell you nothing. `backup` reads the current
-expiry and carries it forward, because `set_secret` creates a new version with
-exactly the properties given and would otherwise erase it.
-
-**A secret with no expiry has never been rotated through this tool.** That
-absence is information, so nothing invents a date to fill it.
-
-For a provider-issued credential, [ROTATE.md](rotate.md) case B is the procedure:
-create the new one in their console, store it, deploy, then revoke the old.
 
 To record a cap without rotating, or to add `alphabet: alnum` for a service
 that rejects symbols:
@@ -765,21 +579,26 @@ tells you the entropy it actually got:
   new value   19 chars, alnum, 113 bits, generated by this command.
 ```
 
-**Most caps are not actually a problem.** 20 alphanumeric characters is 119
-bits, comfortably above the 112-bit floor. The floor exists because of the
+**Most caps are not actually a problem.** A cap of 20 alphanumeric characters
+gives 19 of them, because the budget is whole bytes of entropy, and that is 113
+bits, still above the 112-bit floor. The floor exists because of the
 3-character passwords this estate started with, not to insist on 43.
 
 A cap that does fall below the floor is allowed, but never quietly:
 
 ```
   CONSTRAINED some_secret caps at 16 chars, giving 89 bits, under the 112 floor.
-              reason recorded: the controller UI truncates past 20
+              reason recorded: the controller UI truncates past 16
               This is weaker than default and is only permitted because the cap
               is written down.
 ```
 
-That is the trade: a weaker secret is acceptable when the reason is recorded
-and reviewable, and refused when it is just a preference.
+That is the trade: a weaker secret is accepted because the cap is recorded in
+the store, where a pull request shows it. A missing reason does not stop it:
+without `--why`, `rotate` prints `no --why given`, records the reason as
+`recorded at rotation; reason not given`, and carries on. What it refuses is a
+short `--length` with no cap behind it:
+`--length 13 is 104 bits; refusing below 112`.
 
 ---
 
@@ -787,11 +606,14 @@ and reviewable, and refused when it is just a preference.
 
 A value can be mounted by containers on the Swarm **and** on a standalone host
 like `syn02` or `pi-zwave01`. Nothing needs recording for that: the repo
-already says so, in `stacks/<env>/<stack>/compose.yml`. `list` derives it:
+already says so, in `stacks/<env>/<stack>/compose.yml`. `list` derives it. If
+`example_app` from [ADD.md](add.md) also ran on syn02, from
+`stacks/syn02/example_app/compose.yml`, reading the same secret, `list` would
+show:
 
 ```
-  NAME                    CHARS  DIGEST        WHERE        FLAGS
-  wordpress_db_password      15  467a4b204ad8  swarm,syn02  short
+  NAME                            CHARS  DIGEST        WHERE        FLAGS
+  example_app_portal_password_v1     32  5d1e07c93a4f  swarm,syn02  not-generated
 ```
 
 **Do not put the environment in the name.** One value shared by two places is
@@ -801,8 +623,11 @@ sharing is the whole point, and the two copies could drift with nothing
 noticing.
 
 `WHERE` is derived rather than declared, so it cannot disagree with the compose
-files. `-` means nothing in this repo mounts it: either an unmigrated
-environment variable, or a superseded version kept for rollback.
+files. It sees a mount only where a compose file names the stored secret: a
+`/run/secrets/<name>` path, a `secrets:` entry, or an `x-secrets` mapping. A
+bind whose paths do not name it is invisible to it. `-` means nothing in this
+repo mounts it: either an unmigrated environment variable, or a superseded
+version kept for rollback.
 
 The environments are also mirrored into the Key Vault item's tags, so someone
 reading only the vault can see it too.
@@ -814,12 +639,14 @@ never touched:
 
 ```
   NOTE  these are also mounted outside the Swarm, which this command cannot reach:
-        wordpress_db_password  ->  syn02
+        example_app_portal_password_v1  ->  syn02
 ```
 
 Placing it there is manual: write the value to the path the compose file names,
 mode 600, owned by root. Getting it out of the store without it reaching a
-disk or your scrollback is what `feed` is for.
+disk or your scrollback is what `feed` is for, run on that host:
+[ADD.md, step 6b](add.md#6b-a-secret-that-is-not-a-swarm-secret-in-the-container)
+has the commands.
 
 ---
 
@@ -831,7 +658,7 @@ Not every secret is a password to mint. Three kinds are not:
   `adguardhome-sync` reads as its config file
 - a **provider-issued credential**, like `cloudflare_dns_api_key_v2` or
   `unifi_apikey`, where the value exists because Cloudflare or UniFi created it
-- a **password also set by hand in another system**, like `asrock_bmc_password`,
+- a **password also set by hand in another system**, like `asrock_bmc_password_v2`,
   the BMC login. You may have generated it yourself, but nothing here can change
   it on the other side
 
@@ -856,87 +683,11 @@ reason and the command to edit the value by hand instead.
 
 ---
 
-## How the image is built
-
-Built and published by a workflow in my private repo
-on any change to the tools, for `linux/amd64` and `linux/arm64`. Tagged
-`latest` and with the commit SHA, so a rotation can be pinned to the exact
-image it was run with.
-
-`tools/key-manager` is a thin wrapper around `docker run`. Read it if you need to
-know exactly what is mounted, or run the image directly for anything the
-wrapper does not cover.
-
-The image holds no secrets and no site configuration. `.sops.yaml` is
-deliberately not baked in: sops resolves its config by walking up from the file
-it is editing, so with the repo mounted it finds `/repo/.sops.yaml` and a baked
-copy is never read. Leaving it out keeps the age recipient out of the image.
-
-```bash
-docker build -f tools/Containerfile -t key-manager .
-
-# -v "$PWD:/repo"                              where the store is, or will be
-docker run --rm -it \
-  -v "$PWD:/repo" \
-  -e AKV_VAULT=<vault> \
-  key-manager <subcommand>
-```
-
-`SOPS_AGE_KEY_CMD` is set in the image, so the identity comes from the vault
-with nothing pre-placed. Safe as a default because sops treats `KEY_CMD` and
-`KEY_FILE` as *additive*:
-
-| `KEY_CMD` | `KEY_FILE` | Result |
-| --- | --- | --- |
-| fails | valid | exit 0, the file is used |
-| fails | absent | exit 128 |
-| valid | absent | exit 0 |
-
-The helper fast-fails when `SOPS_AGE_KEY_FILE` is readable or `AKV_VAULT` is
-unset. Without that it would sit on a device-code prompt until timeout before
-sops ever reached the file. That is correct eventually, but it looks like a
-hang on the one path you take when everything else is broken.
-
-`backup --apply` pushes each secret and the encrypted store without a key file.
-Only the **identity upload** needs one: with no file it prints `identity
-skipped: no local key file` and carries on, which is right when the vault's copy
-is what decrypted the store. Uploading the identity is a bootstrap and recovery
-step, not part of adding a secret.
+<span id="how-the-image-is-built"></span><span id="command-reference"></span>[How the image is built](key-manager.md#how-the-image-is-built) and the [command reference](key-manager.md#command-reference) moved to KEY-MANAGER.md.
 
 ---
 
-## Command reference
-
-Every writing command is a **dry run** unless given `--apply`.
-
-| Command | Does | Also needs |
-| --- | --- | --- |
-| `list` | names, notes, keyed digests | |
-| `add` | record a secret, repoint compose to `_v1`; shows `*` per character and the length ([ADD.md](add.md)) | a terminal |
-| `diff` | store vs the local plaintext copies | |
-| `status` | store vs what Swarm holds | |
-| `check` | can the store rebuild production, and is anything a secret that is not one? | nothing at all, runs in CI |
-| `verify` | deployed values match the store | |
-| `provision` | create missing Swarm secrets | |
-| `backup` | push to Key Vault, or `--verify` | `SOPS_AGE_KEY_FILE` only to upload the identity |
-| `restore` | fetch the encrypted store back from Key Vault | |
-| `akv-get` | one value to stdout, for `SOPS_AGE_KEY_CMD` | |
-| `gh-login` | GitHub device code, and git identity for commits typed in the container. Required before any change | a terminal |
-| `clone` | fetch this repo into `/repo`, every branch's tip | `gh-login` first |
-| `az-login` | Entra device code, cache the token | |
-| `rotate` | generate, store, create in Swarm, verify, repoint compose, push a `rotate/` branch ([ROTATE.md](rotate.md)) | `gh-login` first, on `main` |
-| `feed` | plaintext into a command's stdin | whatever the command needs |
-| `retire` | mark a superseded secret unprovisionable, push a `retire/` branch ([RETIRE.md](retire.md)) | `gh-login` first, on `main` |
-
-The wrapper supplies the identity, the vault name and the docker connection, so
-those are not listed. Uploading the identity with `backup --apply` is the one
-exception: fetching it from the vault to upload it there would be circular, so
-that part needs a real file and is skipped without one.
-
-`check` needing nothing is deliberate: secret **names** are plaintext by design,
-so CI can verify the store covers production without holding any key.
-
-### Digests are keyed
+## Digests are keyed
 
 `list` prints HMAC digests, not raw SHA-256. A raw hash of a low-entropy value
 is reversible. The entire 3-character keyspace is 830,584 candidates and

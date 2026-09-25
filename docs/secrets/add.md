@@ -36,16 +36,19 @@ with a service account. You choose that account's password, set it in
   need that node's Docker socket. **Nothing else in this guide does**, so for a
   stack outside `stacks/swarm/` the container can run anywhere Docker runs,
   including your workstation -- see
-  [BACKGROUND.md, three ways to run it](background.md#three-ways-to-run-it).
+  [KEY-MANAGER.md, three ways to run it](key-manager.md#three-ways-to-run-it).
   Without a Swarm socket the wrapper warns that Swarm commands will fail, which
-  is correct and harmless when you are not running any.
+  is correct and harmless when you are not running any. The one exception is
+  step 6b's second container, which runs on the host that holds the file.
 - **Key operations run only in the key-manager container.** Never run `sops`,
   `age` or `secretstore.py` on a workstation, a VM or a node.
 - **Most of this applies anywhere; step 6 does not.** `provision` and `verify`
   are Swarm-only, because `docker secret create` has no standalone equivalent.
-  For a stack outside `stacks/swarm/`, follow steps 1 to 5, then
-  [step 6b](#6b-a-stack-outside-the-swarm-in-the-container) instead of step 6.
-  Background on one value in several environments is in
+  For a secret that nothing mounts as a Swarm secret, follow steps 1 to 5, then
+  [step 6b](#6b-a-secret-that-is-not-a-swarm-secret-in-the-container) instead
+  of step 6. That is every stack outside `stacks/swarm/`, and a Swarm stack
+  that reads the value from a file it names. `add` says which at the end of
+  step 5. Background on one value in several environments is in
   [BACKGROUND.md](background.md#one-secret-several-environments).
 
 ## How the branches fit together
@@ -128,6 +131,8 @@ gh pr update-branch 123 --rebase
 >
 > **Why 1.5:** the container runs `tools/secretstore.py` from the branch it has
 > checked out, not from the image. An old branch runs the old tool.
+> `--rebase` rebuilds the branch's commits on GitHub, so the copies in your
+> clone no longer match them. That is why 8.1 pulls with `--rebase`.
 >
 > **Which way the container reads the secret** (the `_FILE` variable above, an
 > entrypoint wrapper, and so on) depends on the image. Check it before writing
@@ -179,27 +184,67 @@ git checkout stacks/example-app-portal-password
 It prints `branch 'stacks/example-app-portal-password' set up to track
 'origin/stacks/example-app-portal-password'`.
 
-**3.2** Confirm it has your commit from step 1.3:
+**3.2** Pull, **every time**, even on a branch you checked out minutes ago:
+
+```
+git pull --rebase
+```
+
+> **Why this is a step and not an afterthought.** The branch moves under you.
+> Someone else -- or an agent working the same PR -- pushes a review fix while
+> you are partway through `add`, and the first you hear of it is
+> `! [rejected] ... (fetch first)` **after** the value is already recorded and
+> backed up. The store edit is then stranded on a local commit, which is
+> recoverable but alarming at exactly the wrong moment.
+>
+> `--rebase` specifically: without it, a diverged branch stops with
+> `fatal: Need to specify how to reconcile divergent branches`, because the
+> container has no `pull.rebase` preference set.
+
+**3.3** Confirm it has your commit from step 1.3:
 
 ```
 git log --oneline -1
 ```
 
-**3.3** Sign in to Key Vault. Open the URL it prints, enter the code, and sign
+**3.4** Sign in to Key Vault. Open the URL it prints, enter the code, and sign
 in with your account in the tenant it names:
 
 ```
 az-login
 ```
 
-**3.4** Confirm the store decrypts. It prints names, lengths and digests, never
+> **Do this before any command that touches the store, not just before `add`.**
+> The store is encrypted with an age identity that is not in the container: it
+> is fetched from Key Vault on demand.
+>
+> **`check` is the only exception.** It compares compose references against
+> secret *names*, which are plaintext in the store file, so it needs no key --
+> which is why CI runs it with nothing. `clone` and `gh-login` do not read the
+> store at all.
+>
+> Everything else needs this, including the ones that look read-only:
+> `list`, `diff`, `status`, `verify`, `retire`, `feed`, `add`, `provision`,
+> `rotate`, `backup`, `restore` and `akv-get`. Rather than trusting that list
+> to stay current, the rule is: **if it reads or writes a value, sign in
+> first.**
+>
+> **A command that appears to hang is usually this.** On 2026-09-20 a `feed`
+> sat silent until Ctrl-C because the device-code prompt had been printed
+> where nobody could see it: `akv-get` writes the age identity to stdout, so
+> the prompt goes to stderr, and when sops runs `akv-get` as a subprocess that
+> stderr does not reach the terminal. The prompt now goes to `/dev/tty` first,
+> which redirection cannot swallow, so this should not recur -- but if a
+> command ever goes quiet, run `az-login` and try again before assuming worse.
+
+**3.5** Confirm the store decrypts. It prints names, lengths and digests, never
 values:
 
 ```
 list
 ```
 
-> **If 3.3 loops** (an account picker, then the code prompt again), use a private
+> **If 3.4 loops** (an account picker, then the code prompt again), use a private
 > browser window and type the account name in.
 
 ## 4. Get the value (in the container)
@@ -319,10 +364,17 @@ backup --apply
 > `backup` also prints `identity skipped: no local key file`. That is expected:
 > the vault already holds the identity that decrypted the store.
 
-## 6b. A stack outside the Swarm (in the container)
+## 6b. A secret that is not a Swarm secret (in the container)
 
-Do this **instead of step 6** when the stack lives anywhere but
-`stacks/swarm/` -- `stacks/truenas1/`, `stacks/syn02/`, `stacks/pi-zwave01/`.
+Do this **instead of step 6** when `add` printed `No provision step`: nothing
+mounts the secret as a Swarm secret. That is every stack outside
+`stacks/swarm/` -- `stacks/truenas1/`, `stacks/syn02/`, `stacks/pi-zwave01/` --
+and a Swarm stack that reads the value from a file it names, the way Homepage
+reads its widget keys.
+
+The commands below suppose `example_app` ran on truenas1 instead, with its
+compose file binding `/mnt/fast/configs/example_app/portal_password` over the
+path the app reads.
 
 **6b.1** Push the secret and the store to Key Vault:
 
@@ -342,20 +394,65 @@ backup --verify
 check
 ```
 
+**6b.4** Leave this container open for step 7. In a second terminal on your
+workstation, start another one on the host that holds the file, with the file's
+directory bound in at `/out`:
+
+```bash
+ssh -t truenas1 'sudo docker pull -q ghcr.io/scyto/key-manager:latest && sudo docker run --rm -it -v /mnt/fast/configs/example_app:/out --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 ghcr.io/scyto/key-manager:latest'
+```
+
+**6b.5** At `No repo in /repo. Sign in to GitHub and clone it now? [Y/n]`, type
+**n**. Sign in to Key Vault, and fetch the store that 6b.1 pushed there:
+
+```
+az-login
+restore
+```
+
+**6b.6** Write the value into the file. It prints `command exited 0`:
+
+```
+feed example_app_portal_password_v1 --template '{value}' --apply -- sh -c 'umask 077; cat > /out/portal_password'
+```
+
+**6b.7** Check the file without reading it. Expect `-rw-------`, owner `root`,
+and a size of `32`, the length `add` reported:
+
+```
+ls -l /out/portal_password
+```
+
+**6b.8** Leave this container, and go back to the first one for step 7:
+
+```
+exit
+```
+
 > **There is no `provision` step and no `verify` step.** `docker secret create`
 > is Swarm-only, so there is nothing to create and nothing for `verify` to
 > compare against. `add` says so itself: with nothing on the Swarm it prints
 > `Next: backup --apply` rather than `provision --apply`, and names the
 > environments `provision` cannot reach.
 >
-> **Getting the value to the host is manual, and step 6b does not do it.** How
-> depends on the mechanism:
+> **Why a second container:** `feed` hands the value to a command inside its
+> own container. The one from step 2 has no directory of that host mounted and
+> no ssh credentials to reach it, so it cannot write the file. Started on the
+> host with the directory bound in, `feed` writes the file directly.
 >
-> - **A mounted secret** (mechanisms 1 to 4): write the value to the path the
->   compose file names, mode 600, owned by root. `feed` gets it out of the
->   store without it reaching a disk or your scrollback.
-> - **A Portainer environment variable** (mechanism 5): set it as a stack
->   variable in Portainer. Nothing is placed on the host at all.
+> **Why `restore`:** the store change reaches git only in step 7, but 6b.1 has
+> already put it in Key Vault, so this container needs no GitHub sign-in.
+>
+> - `--template '{value}'` writes the raw value, with no newline after it.
+> - `umask 077` makes the file mode 600. If the app does not run as root,
+>   `chown` the file to the uid it runs as, or it cannot read it.
+> - `command exited 0` does not prove the file was written: a command that
+>   ignores its input exits 0 too. The size in 6b.7 does.
+> - The file must exist before the stack deploys. **A bind source that does not
+>   exist becomes a directory**, and the app reads a directory as its secret.
+>
+> **A Portainer environment variable** (mechanism 5) has no file. Skip 6b.4 to
+> 6b.8, and set the value as a stack variable in Portainer instead.
 >
 > **Mechanism 5 also needs an `x-secrets` block** in the compose file, added in
 > step 1, or `check` cannot connect the `${VAR}` to a stored value. See
@@ -383,13 +480,20 @@ git status --short
  M stacks/swarm/example_app/compose.yml
 ```
 
-**7.2** Commit and push both:
+**7.2** Commit and push both. **Pull again first** -- step 3.2 was possibly a
+while ago, and the whole point is that the branch moves:
 
 ```
 git add -A
 git commit -m "secrets: example_app example-portal password"
+git pull --rebase
 git push
 ```
+
+> A rejected push here is not a lost value: the store edit is committed
+> locally and `backup --apply` has already made it durable in Key Vault. Pull
+> and push again. But the alarm it causes is avoidable, which is the point of
+> pulling first.
 
 **7.3** Leave the container:
 
@@ -408,7 +512,7 @@ exit
 ```bash
 cd ~/repos/homelab-stacks
 git checkout stacks/example-app-portal-password
-git pull --ff-only
+git pull --rebase
 git show --stat HEAD
 ```
 
@@ -434,13 +538,18 @@ gh pr merge 123 --rebase --delete-branch
   [stacks in git](../docker/gitops-with-portainer.md). If it needs a host
   device (a USB radio, a disk), confirm the device is present first.
 - **8.4.3 `example_app` already runs, but not from Git:** that is a cutover, not
-  this procedure. Follow my own migration notes, which are not public
-  (`crosscheck.py`, `mountcheck.py`, drift resolved, hardware present) before
-  creating anything.
+  this procedure. Follow
+  [stacks in git, step 6](../docker/gitops-with-portainer.md#6-cut-a-stack-over)
+  before creating anything.
 
 **8.5** Check `example_app` can log in to `example-portal`, for example in
 `example_app`'s logs.
 
+> **Why `--rebase` in 8.1:** if you used 1.5, GitHub rebuilt the branch's
+> commits, and your clone still has the old ones. `git pull --ff-only` then
+> stops with `Not possible to fast-forward`; `--rebase` moves your copy onto the
+> rebuilt branch.
+>
 > **Why step 6 comes before 8.3:** when a running stack's deploy branch moves,
 > Portainer redeploys within five minutes. If the Swarm secret did not exist
 > yet, the stack would not start.
@@ -481,6 +590,7 @@ verify --only example_app_portal_password_v1
 backup --apply
 git add -A
 git commit -m "secrets: re-enter example_app_portal_password_v1"
+git pull --rebase
 git push
 ```
 
@@ -503,5 +613,6 @@ sops set /repo/secrets/secrets.enc.yaml '["secrets"]["example_app_portal_passwor
 ```
 backup --apply
 git commit -am "secrets: mark example_app_portal_password_v1 as set by hand"
+git pull --rebase
 git push
 ```

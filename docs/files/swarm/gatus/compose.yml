@@ -1,0 +1,117 @@
+services:
+  git-sync:
+    image: registry.k8s.io/git-sync/git-sync:v4.7.1
+    user: "1000:1000"
+    environment:
+      - TZ=America/Los_Angeles
+      - GITSYNC_REPO=git@github.com:<you>/<repo>.git
+      - GITSYNC_REF=deploy/swarm/gatus
+      - GITSYNC_PERIOD=60s
+      - GITSYNC_ROOT=/git
+      - GITSYNC_LINK=repo
+      - GITSYNC_SSH_KEY_FILE=/dev/shm/key
+      - GITSYNC_SSH_KNOWN_HOSTS_FILE=/known_hosts
+      - GITSYNC_ADD_USER=true
+      - GITSYNC_FILTER=blob:none
+      - GITSYNC_SPARSE_CHECKOUT_FILE=/sparse-checkout
+      - GITSYNC_HTTP_BIND=:8080
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        umask 077
+        printf '%s\n' "$$(cat /run/secrets/gitsync_ssh_key_v1)" > /dev/shm/key
+        [ -s /dev/shm/key ] || { echo "git-sync: could not write the SSH key to /dev/shm" >&2; exit 1; }
+        mkdir -p /tmp/.ssh && cp /ssh_config /tmp/.ssh/config || { echo "git-sync: could not install the ssh config" >&2; exit 1; }
+        exec /git-sync
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - type: volume
+        source: gitrepo_v2
+        target: /git
+        volume:
+          nocopy: true
+    configs:
+      - source: gatus_known_hosts
+        target: /known_hosts
+      - source: gatus_ssh_config_v1
+        target: /ssh_config
+      - source: gatus_sparse_checkout_v1
+        target: /sparse-checkout
+    secrets:
+      - gitsync_ssh_key_v1
+    networks:
+      discovery:
+        aliases:
+          - gatus-git-sync
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  gatus:
+    image: ghcr.io/scyto/gatus:v5.36.0-12-secrets@sha256:82aafabd56ad1161f0f82e92174a3fb53e8cb91940ee31e4664a692f8c2eb691
+    environment:
+      - TZ=America/Los_Angeles
+      - GATUS_CONFIG_PATH=/git/repo/stacks/swarm/gatus/config
+      - GATUS_LOG_LEVEL=INFO
+      - PROXMOX_TOKEN_FILE=/run/secrets/proxmox_api_token_v1
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - gitrepo_v2:/git:ro
+      - data:/data
+    secrets:
+      - proxmox_api_token_v1
+    networks:
+      - discovery
+    ports:
+      - 8085:8080
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - homepage.group=Monitoring
+        - homepage.name=Gatus
+        - homepage.icon=gatus.png
+        - homepage.href=http://192.168.1.45:8085
+        - homepage.description=Health checks, config in git
+        - homepage.widget.type=gatus
+        - homepage.widget.url=http://192.168.1.45:8085
+
+volumes:
+  gitrepo_v2:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/gatus_git_v2"
+      o: bind
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/gatus_data"
+      o: bind
+
+networks:
+  discovery:
+    external: true
+
+configs:
+  gatus_known_hosts:
+    file: ./known_hosts
+  gatus_ssh_config_v1:
+    file: ./ssh_config
+  gatus_sparse_checkout_v1:
+    file: ./sparse-checkout
+
+secrets:
+  proxmox_api_token_v1:
+    external: true
+
+  gitsync_ssh_key_v1:
+    external: true

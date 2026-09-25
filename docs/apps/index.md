@@ -4,11 +4,20 @@ title: "Apps"
 
 # apps
 
-what runs on the platform, and why each app is set up the way it is. these pages describe the architecture and point at the config; they only show fragments where something is unusual enough to need one.
+these pages cover what runs on the platform, and why each app is set up the way
+it is. each page shows its stack's files from git, and the text repeats a
+fragment only where something is unusual enough to need one.
 
-- every app is a stack in git, `stacks/<env>/<stack>/compose.yml`, deployed by portainer to the swarm or to a [standalone host](../docker/standalone/index.md), see [stacks in git](../docker/gitops-with-portainer.md)
-- every stack follows the same [conventions](../docker/conventions.md): named binds, digests, `deploy.labels`, the time zone, secrets as files
-- what runs where is listed on the [swarm](../docker/index.md#swarm-deployed-stacks) and each standalone host's page
+- every app is a stack in git, at `stacks/<env>/<stack>/compose.yml`. portainer
+  deploys it to the swarm or to a
+  [standalone host](../docker/standalone/index.md), see
+  [stacks in git](../docker/gitops-with-portainer.md)
+- the [conventions](../docker/conventions.md) are named binds, digests,
+  `deploy.labels`, the time zone and secrets as files. not every stack meets all
+  of them: several images have a tag and no digest, frigate and the arr stack
+  use plain binds, and oauth2-proxy's cookie secret is an environment variable
+- the [swarm](../docker/index.md#swarm-deployed-stacks) page and each standalone
+  host's page list what runs where
 
 | group | apps |
 | --- | --- |

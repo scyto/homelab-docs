@@ -4,9 +4,10 @@ title: "Proxmox Backup Server"
 
 # proxmox backup server
 
-PBS 4.2, running as a container on the [NAS](../truenas/index.md). one datastore,
-which the [VM backups](vm-backups-pbs.md) and the [cephFS backups](cephfs.md)
-both write to. this page is the PBS side.
+PBS 4.2 runs as a container on the [NAS](../truenas/index.md). it has one
+datastore, which the [VM backups](vm-backups-pbs.md), the
+[cephFS backups](cephfs.md) and the [raspberry pi](pi-host-backup.md) write to.
+this page is the PBS side.
 
 ## datastore
 
@@ -47,11 +48,11 @@ proxmox-backup-manager prune-job list
 | keep-monthly | 12 |
 | keep-yearly | 5 |
 
-one job at the root covers `VMs` and `Files` both. nothing on the proxmox side
-prunes, the storage and the job are both `keep-all`, so this job is the only
-thing that deletes backups.
+one job at the root covers `VMs`, `Files` and `Hosts`. nothing on the proxmox side
+prunes: the storage and the job are both `keep-all`. this job is the only thing
+that deletes backups.
 
-what that keeps, given how often each thing backs up:
+this is what that keeps, given how often each thing backs up:
 
 | rule | VMs, every 2 hours | cephFS, hourly |
 | --- | --- | --- |
@@ -67,14 +68,14 @@ counted again by the next.
 ## garbage collection
 
 pruning only removes the index of a backup. the data lives in chunks shared
-between backups, and garbage collection is what deletes chunks nothing references
-any more, once they have gone unused for about a day. daily at 02:00.
+between backups, and garbage collection deletes the chunks nothing references any
+more, once they have gone unused for about a day. it runs daily at 02:00.
 
 ```
 proxmox-backup-manager garbage-collection status mnt-pbs
 ```
 
-what the numbers looked like in September 2026:
+these were the numbers in September 2026:
 
 | | |
 | --- | --- |
@@ -123,7 +124,7 @@ proxmox-backup-manager acl list
 `DatastoreBackup` can create backups and restore the ones it owns. it cannot prune
 or delete them.
 
-the token has its own ACL entry as well as its user. PBS works out a token's
+each token has its own ACL entry, as does its user. PBS works out a token's
 permissions from ACLs naming the token, and a token can never do more than its
 user, so both need the role.
 
@@ -133,9 +134,9 @@ user, so both need the role.
 proxmox-backup-manager cert info
 ```
 
-a Let's Encrypt certificate for `pbs1.mydomain.com`. it validates on an ordinary
-debian CA store, full chain served. it also gets replaced every couple of months,
-which matters for how clients are told to trust it.
+PBS has a Let's Encrypt certificate for `pbs1.mydomain.com`. it validates on an
+ordinary debian CA store, and PBS serves the full chain. it gets replaced every
+couple of months, which matters for how clients are told to trust it.
 
 **the proxmox PBS storage** trusts a certificate one of two ways, and they do not
 mix (from `pve-apiclient`):
@@ -149,5 +150,5 @@ with a certificate from a public CA, leave the fingerprint off. a fingerprint is
 for a self-signed certificate, which does not get replaced every couple of months.
 the VM backup storage has none set.
 
-**`proxmox-backup-client`**, used by the cephFS backup, has no `PBS_FINGERPRINT` set
-and connects fine.
+**`proxmox-backup-client`** has no `PBS_FINGERPRINT` set for the cephFS and pi
+backups, and connects fine.

@@ -46,7 +46,7 @@ And repeat after me 'i will backup all VMs with snapshots AND will backup with b
 7. create VM but don't start it
 
 ## Import and attach disk to VM
-1. in the shell navigate t the cifs mount point where you can see the vhdx exported earlier (or copy it to /temp)
+1. in the shell navigate t the cifs mount point where you can see the vhdx exported earlier (or copy it to /tmp)
 2. execute `qm importdisk <VMID> <FILENAME>.vhdx <CEPH storage location>` for example if the VM in VM102 and the vhdx is called myserver.vhdx and the ceph pool is called vm-disks then the command would be:
 ```
 qm disk import 102 myserver.vhdx vm-disks

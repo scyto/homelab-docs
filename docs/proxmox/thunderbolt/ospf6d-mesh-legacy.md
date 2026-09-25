@@ -4,6 +4,10 @@ source_gist: https://gist.github.com/scyto/a3172c798cdaf12d33cd4efaeb6abe2c
 ---
 
 # Enable IPv6 OSPF Routing on Thunderbolt-Net Mesh 
+
+!!! warning "no longer used"
+    replaced by the [openfabric mesh](openfabric-mesh.md).
+
 ## This requires proxmox kernel 6.2.16-14-pve  or higher due to bugs in earlier version.s
 
 This will result in a routable mesh network that can survive any one node failure or any one cable failure.

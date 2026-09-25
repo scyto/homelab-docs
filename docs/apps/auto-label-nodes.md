@@ -11,9 +11,11 @@ this can be used with constraints to either locate serices on a node with anothe
 
 I would love to find a better version of this that does this without the need for the manual config file (you can use a file bindmount instead of a config if you prefer)
 
+Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
+
 ## Swarm Consideration
 State is all read-only in a config
-You need this to run on all nodes.
+This runs as one replica on a manager and sets the labels on every node.
 
 ### Example Stack
 ```
@@ -87,3 +89,11 @@ adguard2:
         
 ...
 ```
+
+## what i run now
+
+- the service list is `servicelist.txt` in git. it deploys as a swarm config with a version in its name, see [stack conventions](../docker/conventions.md#swarm-configs-are-versioned-by-name)
+
+--8<-- "blocks/swarm/autolabel/compose.yml.md"
+
+--8<-- "blocks/swarm/autolabel/servicelist.txt.md"

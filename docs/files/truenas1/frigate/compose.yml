@@ -1,0 +1,84 @@
+services:
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:0.17.1@sha256:1724960349dad0bd2ae8ec884171a6fd5755a4dc242a0e66cadbda9c0e85c99b
+    container_name: frigate
+    labels:
+      - homepage.group=Media
+      - homepage.name=Frigate
+      - homepage.icon=frigate.png
+      - homepage.href=https://192.168.1.86:8971
+      - homepage.description=NVR, 8 cameras, 4 detectors
+      - homepage.widget.type=frigate
+      - homepage.widget.url=http://192.168.1.86:5000
+    platform: linux/amd64
+    restart: unless-stopped
+
+    privileged: true
+
+    network_mode: host
+
+    shm_size: 512M
+
+    user: "0:0"
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - PERFMON
+      - KILL
+    security_opt:
+      - no-new-privileges=true
+    group_add:
+      - "44"
+      - "107"
+      - "568"
+
+    devices:
+      - /dev/apex_0:/dev/apex_0
+      - /dev/apex_1:/dev/apex_1
+      - /dev/hailo0:/dev/hailo0
+      - /dev/memx0:/dev/memx0
+
+    environment:
+      TZ: America/Los_Angeles
+      UMASK: "002"
+      UMASK_SET: "002"
+      NVIDIA_DRIVER_CAPABILITIES: all
+      NVIDIA_VISIBLE_DEVICES: MIG-87144e2e-17bb-5983-95c6-b84fa3d63613
+      CUDA_VISIBLE_DEVICES: MIG-87144e2e-17bb-5983-95c6-b84fa3d63613
+
+    volumes:
+      - /mnt/fast/configs/frigate/frigate_plus_api_key:/run/secrets/PLUS_API_KEY:ro
+      - /mnt/fast/configs/frigate:/config
+      - /mnt/fast/frigate/media:/media
+      - /run/mxa_manager:/run/mxa_manager
+      - /mnt/fast/frigate/cache:/tmp/cache
+      - /etc/certificates/frigate_cert.crt:/etc/letsencrypt/live/frigate/fullchain.pem:ro
+      - /etc/certificates/frigate_cert.key:/etc/letsencrypt/live/frigate/privkey.pem:ro
+      - /tmp
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4096M
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids:
+                - MIG-87144e2e-17bb-5983-95c6-b84fa3d63613
+              capabilities:
+                - gpu
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'body=$$(curl -fsS --max-time 10 http://127.0.0.1:5000/api/stats) || { echo "frigate api unreachable"; exit 1; }; out=$$(printf "%s" "$$body" | jq -r ''[ (if (.cameras | length) == 0 then "no cameras configured" else empty end), (.cameras | to_entries[] | select(.value.camera_fps <= 0) | "camera \(.key) not streaming"), (if (.detectors | keys | sort) != ["coral1","coral2","hailo8l","memryx"] then "detector set is \(.detectors | keys | sort) expected [coral1,coral2,hailo8l,memryx]" else empty end), (.detectors | to_entries[] | select(.value.inference_speed <= 0) | "detector \(.key) stalled") ] as $$p | if ($$p | length) == 0 then "ok" else ($$p | join("; ")) end'') || { echo "frigate stats unparseable"; exit 1; }; [ "$$out" = ok ] || { echo "$$out"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 360s

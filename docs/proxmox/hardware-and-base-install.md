@@ -51,4 +51,6 @@ In `node-name > updates > repositories` perform the following:
 - disable `pve-enterprise`
 - disable `ceph-quincy enterprise` too
 
+Update as of 2026.09.24: the cluster runs Proxmox VE 9 and Ceph 20.2 now, so pick the no-subscription repository for the ceph release you install, not quincy.
+
 Open the shell and perform `apt update && apt upgrade` to update all components and then reboot.

@@ -1,0 +1,41 @@
+title: mydomain homelab
+theme: dark
+headerStyle: clean
+
+maxGroupColumns: 6
+
+layout:
+  Arr:
+    tab: Apps
+    style: column
+  Downloads:
+    tab: Apps
+    style: column
+  Media:
+    tab: Apps
+    style: column
+  AI:
+    tab: Apps
+    style: column
+  Tools:
+    tab: Apps
+    style: column
+  Storage:
+    tab: Apps
+    style: column
+  Infrastructure:
+    tab: Infrastructure
+    style: row
+    columns: 4
+  Glances:
+    tab: Infrastructure
+    style: row
+    columns: 3
+  Monitoring:
+    tab: Infrastructure
+    style: row
+    columns: 4
+  Plumbing:
+    tab: Plumbing
+    style: row
+    columns: 4

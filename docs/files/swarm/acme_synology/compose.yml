@@ -1,0 +1,41 @@
+services:
+  acme-sh:
+    image: neilpang/acme.sh:latest@sha256:5e5713c64816ca2f2dde780df87bc7464e6f6a5995d457710131b688317b8352
+    environment:
+      - TZ=America/Los_Angeles
+      - CF_Account_ID=<account-id>
+    entrypoint:
+      - /bin/sh
+      - -c
+      - set -e; CF_Token="$$(cat /run/secrets/acme_synology_cf_token_v1)"; export CF_Token; exec /entry.sh daemon
+    volumes:
+      - acme:/acme.sh
+    configs:
+      - source: synology_dsm_secret_hook
+        target: /acmebin/deploy/synology_dsm_secret.sh
+    secrets:
+      - acme_synology_cf_token_v1
+      - source: synology_acme_password_syn02_v1
+        target: dsm_password_syn02
+    deploy:
+      mode: replicated
+      replicas: 1
+
+configs:
+  synology_dsm_secret_hook:
+    file: ./synology_dsm_secret.sh
+    name: acme_synology_hook_v1
+
+secrets:
+  acme_synology_cf_token_v1:
+    external: true
+  synology_acme_password_syn02_v1:
+    external: true
+
+volumes:
+  acme:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/acme_synology"
+      o: bind

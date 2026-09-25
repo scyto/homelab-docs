@@ -1,0 +1,16 @@
+services:
+  omni-tools:
+    image: iib0011/omni-tools:latest@sha256:9a94e6ebc8dada2c7a5607b232214307e6f903a7747878602281ecdb79ced851
+    environment:
+      - TZ=America/Los_Angeles
+    ports:
+      - 8090:80
+    deploy:
+      labels:
+        - homepage.group=Tools
+        - homepage.name=omni-tools
+        - homepage.icon=omni-tools.png
+        - homepage.href=http://192.168.1.45:8090
+        - homepage.description=File and text tools in the browser
+      mode: replicated
+      replicas: 1

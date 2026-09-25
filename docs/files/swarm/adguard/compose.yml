@@ -1,0 +1,124 @@
+version: '3.8'
+services:
+  adguard1:
+    image: 'adguard/adguardhome:latest@sha256:8a4107ec812023842ccab9e04600c5d39d3be6b15e907c34a36339c184c8fccf'
+    environment:
+      - TZ=America/Los_Angeles
+    restart: always
+    volumes:
+      - work:/opt/adguardhome/work
+      - config:/opt/adguardhome/conf
+    networks:
+      - adguard1-mvl
+      - adguard_sync
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        - homepage.group=Infrastructure
+        - homepage.name=AdGuard 1
+        - homepage.icon=adguard-home.png
+        - homepage.href=http://192.168.1.5
+        - homepage.description=DNS and filtering, primary
+        - homepage.widget.type=adguard
+        - homepage.widget.url=http://192.168.1.5
+        - homepage.widget.username=<username>
+        - homepage.widget.password={{HOMEPAGE_FILE_ADGUARD1_PASSWORD}}
+
+  adguard2:
+    image: 'adguard/adguardhome:latest@sha256:8a4107ec812023842ccab9e04600c5d39d3be6b15e907c34a36339c184c8fccf'
+    environment:
+      - TZ=America/Los_Angeles
+    restart: always
+    volumes:
+      - work2:/opt/adguardhome/work
+      - config2:/opt/adguardhome/conf
+    networks:
+      - adguard2-mvl
+      - adguard_sync
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.running_adguard1 == 0]
+      labels:
+        - homepage.group=Infrastructure
+        - homepage.name=AdGuard 2
+        - homepage.icon=adguard-home.png
+        - homepage.href=http://192.168.1.6:3000
+        - homepage.description=DNS and filtering, secondary
+        - homepage.widget.type=adguard
+        - homepage.widget.url=http://192.168.1.6:3000
+        - homepage.widget.username=<username>
+        - homepage.widget.password={{HOMEPAGE_FILE_ADGUARD2_PASSWORD}}
+
+  adguardhome-sync:
+    image: ghcr.io/bakito/adguardhome-sync:latest@sha256:fb7224aeeab74d68990c3ecf51594a6f92428fcc93c7a162c3bc221e77a49025
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+    deploy:
+      labels:
+        - homepage.group=Infrastructure
+        - homepage.name=AdGuard Sync
+        - homepage.icon=adguard-home.png
+        - homepage.description=Replicates config adguard1 to adguard2
+    command: --config /run/secrets/adguard_sync_config run
+    networks:
+      - adguard_sync
+    depends_on:
+      - adguard1
+      - adguard2
+    environment:
+      - TZ=America/Los_Angeles
+      - ORIGIN_URL=http://adguard1
+      - ORIGIN_USERNAME=<username>
+      - REPLICA_AUTOSETUP=true
+      - REPLICA_URL=http://adguard2:3000
+      - REPLICA_USERNAME=<username>
+
+      - CRON=*/1 * * * *
+      - RUNONSTART=true
+    restart: unless-stopped
+    secrets:
+      - adguard_sync_config
+
+secrets:
+  adguard_sync_config:
+    external: true
+
+volumes:
+  work:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/adguard_work"
+      o: bind
+  config:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/adguard_config"
+      o: bind
+  work2:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/adguard_work2"
+      o: bind
+  config2:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/adguard_config2"
+      o: bind
+
+networks:
+   adguard1-mvl:
+     external: true
+   adguard2-mvl:
+     external: true
+
+   adguard_sync:

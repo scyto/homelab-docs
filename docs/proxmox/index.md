@@ -21,6 +21,13 @@ _note: these are designed to be primarily a re-install guide for myself (writing
 <h4 align="center">The first 3 NUCs are the new proxmox cluster, the second set of 3 NUCs is the old Hyper-V nodes.</h4>
 
 
+Update as of 2026.09.24
+
+- the cluster runs Proxmox VE 9 and Ceph 20.2 now. the mesh is still openfabric, set up by hand as in these gists, not OSPF
+- the goals below marked {not started} are done: the migration network, and the windows, home assistant and docker VMs, see [the migration pages](migration/index.md)
+- the docker swarm VMs mount cephFS with virtiofs, see [cephFS - virtiofs passthrough](cephfs-virtiofs-passthrough.md)
+
+
 Update as of 2025.04.29
 
 - Added some more tweaks to the thunderbolt setup, mesh setup
@@ -32,26 +39,26 @@ Update as of 2025.04.29
 Updates as of 2025.04.20
 Been running great, still had issues with IPv4 dual fabric.  Have refactored that with some great suggestions from commenters.  Now need to see if longhaul tests prove out if these have helped.
 
-Also made ceph take a hard dependecy on frr service being started - this may help some scenarios, but not if the thunderbolt interfaces are down, still not sure how to help folks there (this applies mostly to MS-101 users, see commnts sections of indidual gists, esp old deprecated openfrabric mesh gist) 
 
 ## Outcomes
 1. [Hardware and Base Proxmox Install](hardware-and-base-install.md)
 2. Thunderbolt Netwokring Setup 
-   - [Prepare Thunderbolt-Net cables and interface setup](thunderbolt/cables-and-interfaces.md)
-   - [Enable Dual Stack IPv4 / IPv4) Openfabric Routing Mesh (new)](thunderbolt/openfabric-mesh.md)
-   - ~Enable Dual Stack (IPv4 and IPv6) Openfabric Routing Mesh (old)~ deprecated - [Old gist here](thunderbolt/openfabric-mesh-legacy.md)
-   - Optional: [Enable VMs to access ceph mesh](thunderbolt/vm-access-to-mesh.md)
-   - Optional: [Enable LAN clients to access mesh](thunderbolt/lan-access-to-mesh.md)
-   - Optional: [mount cephFS on a LAN client](thunderbolt/cephfs-client-mount.md)
+    - [Prepare Thunderbolt-Net cables and interface setup](thunderbolt/cables-and-interfaces.md)
+    - [Enable Dual Stack IPv4 / IPv4) Openfabric Routing Mesh (new)](thunderbolt/openfabric-mesh.md)
+    - ~~Enable Dual Stack (IPv4 and IPv6) Openfabric Routing Mesh (old)~~ deprecated - [Old gist here](thunderbolt/openfabric-mesh-legacy.md)
+    - Optional: [Enable VMs to access ceph mesh](thunderbolt/vm-access-to-mesh.md)
+    - Optional: [Enable LAN clients to access mesh](thunderbolt/lan-access-to-mesh.md)
+    - Optional: [mount cephFS on a LAN client](thunderbolt/cephfs-client-mount.md)
 4. [Setup Cluster](cluster-setup.md)
 5. [Setup Ceph and High Availability](ceph-and-ha.md)
 6. [Create CephFS and storage for ISOs and CT Templates](cephfs-and-storage.md)
-   - [cephFS - virtiofs passthrough to docker swarm VMs](cephfs-virtiofs-passthrough.md)
+    - [cephFS - virtiofs passthrough to docker swarm VMs](cephfs-virtiofs-passthrough.md)
+    - [cephFS start guards](cephfs-start-guards.md), the hookscript and docker's data guard
 7. [Setup HA Windows Server VM + TPM](ha-windows-vm-tpm.md)
 8. [How to migrate Gen2 Windows VM from Hyper-V to Proxmox](migration/windows-gen2-from-hyperv.md)
-   1. [Notes on migrating my real world domain controller #2 ](migration/domain-controller-2.md)
-   2. [Notes on migrating my real world domain controller #1 (FSMO holder, AAD Sync and CA server) ](migration/domain-controller-1.md)
-   3. [Notes on migrating my windows (server 2019) admin center VM](migration/admin-center-vm.md)
+    1. [Notes on migrating my real world domain controller #2 ](migration/domain-controller-2.md)
+    2. [Notes on migrating my real world domain controller #1 (FSMO holder, AAD Sync and CA server) ](migration/domain-controller-1.md)
+    3. [Notes on migrating my windows (server 2019) admin center VM](migration/admin-center-vm.md)
 9. [Migrate HomeAssistant VM from Hyper-V](migration/home-assistant.md)
 10. [Migrate my debian VM based docker swarm from Hyper-V to proxmox](migration/docker-swarm-vms.md)
 11. Extra Credit (optional):

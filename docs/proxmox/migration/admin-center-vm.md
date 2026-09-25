@@ -1,7 +1,10 @@
 ---
-title: "Migration Steps"
+title: "Windows Admin Center VM"
 source_gist: https://gist.github.com/scyto/3ebe199d718b25a2927294dbf3d74a97
 ---
+
+# Windows Admin Center VM
+
 
 # Migration Steps
 
@@ -21,7 +24,7 @@ I think this is because this was server core 2019 with no gui  as such i had to 
 I did this for all the following drivers:
 
 - NetKVM for virtio networking
-- vstor for virtio block device etc)
+- viostor for virtio block device etc)
 - Balloon for memory
 - ran the guest tools msi (the one in the subdir of the dvd) with msiexec -i 
 

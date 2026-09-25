@@ -35,7 +35,7 @@ If you use a DHCP reseveration a) why are you doing that for crtitical machines.
 ha > login
 
 # nmcli con show
-# nmcli con edit “HassOS default” (or whatever the active connection is calle don you machine 
+# nmcli con edit "HassOS default" (or whatever the active connection is calle don you machine 
 
 nmcli> set ipv4.addresses 192.168.1.63/24
 nmcli> set ipv4.dns 1.1.1.1

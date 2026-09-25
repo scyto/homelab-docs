@@ -4,15 +4,15 @@ title: "Add a Host"
 
 # add a standalone host
 
-1. install docker. the pi uses docker's own apt repo, truenas and synology ship it
+1. install docker. the pi uses docker's own apt repo, and truenas and synology ship it
 2. start the agent:
 
     ```
     docker run -d -p 9001:9001 --name portainer_agent --restart=always \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v /var/lib/docker/volumes:/var/lib/docker/volumes \
-      -v /:/host \
-      portainer/agent:lts
+      -v /:/host:ro \
+      portainer/agent:2.45.1
     ```
 
     - keep the agent on the same version as the server

@@ -5,6 +5,10 @@ source_gist: https://gist.github.com/scyto/452fc778c4c3ba7caf03b833151e84a1
 
 # Install & Configure GlusterFS
 
+!!! warning "no longer used"
+    replaced by cephFS, passed into the swarm VMs with virtiofs: see [cephFS virtiofs passthrough](../../proxmox/cephfs-virtiofs-passthrough.md).
+
+
 Assumes you installed debian, docker, etc as [per the list here](../index.md)
 
 ## Assumptions

@@ -5,25 +5,25 @@ comments: true
 
 # moving stacks from the web editor to git
 
-all my stacks used to live in portainer's web editor. the compose text existed in
-exactly one place, portainer's database, and the only backup was portainer's own
-backup. editing a stack meant editing production, no history, no review.
+all my stacks used to live in portainer's web editor. the compose text was only
+in portainer's database, and the only backup was portainer's own backup. editing
+a stack meant editing production, with no history and no review.
 
 this is how i moved them to git.
 
 portainer polls a git repo and redeploys a stack when the commit it is watching
 changes. each stack gets its own compose path and its own branch, and portainer
-remembers the last commit it deployed. default poll is five minutes.
+remembers the last commit it deployed. the default poll is five minutes.
 
-assumes you have [portainer on a swarm](portainer.md) already.
+this assumes you already have [portainer on a swarm](portainer.md).
 
-## Pre-reqs
+## pre-reqs
 
 1. a git repo, private if your compose files describe your estate (mine does)
 2. portainer business or CE, both do git stacks
 3. shell access to a manager node
-4. somewhere to put secrets first, see [secrets](../secrets/index.md), do that page before
-   this one if any stack has a password in it
+4. somewhere to put secrets. if any stack has a password in it, do the
+   [secrets](../secrets/index.md) page before this one
 
 ## 1. lay the repo out one directory per stack
 
@@ -39,21 +39,21 @@ stacks/
     zwave-js-ui/compose.yml
 ```
 
-`stacks/<env>/<stack>/compose.yml`, and the `<env>` level is not optional. i had
-a stack called `watchtower` on three different machines, without the env level
-they collide. the directory name is also what the deploy branch and the renovate
-PR title get named after, so make it readable.
+the path is `stacks/<env>/<stack>/compose.yml`, and the `<env>` level is not
+optional. i run a stack called `dozzle` in four environments, and without the
+env level they collide. the deploy branch and the renovate PR title are named
+after the directory, so make the name readable.
 
-the rest of the examples on this page use those six.
+the rest of the examples on this page use those six stacks.
 
 ## 2. fix the compose files before you cut anything over
 
 two things to fix while the stack is still running the old way.
 
-**all bind paths must be absolute.** a relative `./data` does not resolve on the
-host, it resolves inside portainer's clone of your repo. the container starts,
-finds an empty directory, reports itself healthy and writes there. if its a
-database it initialises a new empty one.
+**all bind paths must be absolute.** a relative `./data` resolves inside
+portainer's clone of your repo, not on the host. the container starts, finds an
+empty directory, reports itself healthy and writes there. if its a database it
+initialises a new empty one.
 
 i use an explicit local volume rather than bare bind syntax:
 
@@ -67,40 +67,41 @@ volumes:
       o: bind
 ```
 
-reason for this approach: deleting the stack removes the volume definition but not
-the data at the device path. my nodes share replicated storage so a delete that
-took the data would take it from all three at once.
+if the device path is missing, the task refuses to start. a plain bind creates
+an empty directory instead, and the app starts against empty storage with no
+error.
 
-two things about it. the `device` directory has to exist before you deploy,
-create it once on the shared storage; if it's missing the task fails to start,
-leave it that way. and if a volume with the same name is already on a node,
-docker reuses it and ignores `driver_opts`. after deploying, on the node running
+create the `device` directory once on the shared storage before you deploy. if
+it's missing the task fails to start, which is what you want: don't have
+anything create it for you.
+
+if a volume with the same name is already on a node, docker reuses it and
+ignores `driver_opts`. to check, run this after deploying, on the node running
 the task:
 
 ```
-docker volume inspect wordpress_db --format '{{json .Options}}'
+docker volume inspect wordpress2025_db --format '{{json .Options}}'
 ```
 
 it must show `device`, `o` and `type`. `null` or `{}` means the old volume was
 reused, see [troubleshooting](troubleshooting.md#a-volume-moved-to-cephfs-is-still-on-local-disk).
 
-**check the repo file against what is actually running.** my portainer database
-had been restored from backup at some point and several stacks in it did not
-match reality. the running container is the source of truth, not portainer's
-stored copy and not your new repo file. compare images and every bind and device
-path before you delete anything. two small scripts against the docker api were
-enough and they found real differences.
+**check the repo file against what is running.** my portainer database had been
+restored from backup at some point, and several stacks in it did not match
+reality. the running container is the source of truth, not portainer's stored
+copy and not your new repo file. before you delete anything, compare the images
+and every bind and device path. two small scripts against the docker api were
+enough.
 
 ## 3. one branch per stack, not main
 
-the obvious setup is point every stack at `main`. don't.
+don't point every stack at `main`. portainer compares the commit, not the file,
+so with every stack on `main`, every commit to `main` redeploys all of them,
+whether their compose changed or not. a typo fix in a readme redeploys the
+lot. an unchanged redeploy restarts nothing, but it still moves every service's
+updated time, and each redeploy is one more chance to fail.
 
-portainer compares the **commit**, not the file. twenty two stacks on `main` means
-every commit to `main` redeploys all twenty two whether their compose changed or
-not. fix a typo in a readme, restart the lot. mostly harmless, but not for a
-database, and not for anything holding a serial device or a dns role.
-
-so each stack points at its own branch:
+each stack points at its own branch instead:
 
 ```
 deploy/swarm/adguard
@@ -111,28 +112,29 @@ deploy/pi-zwave01/zigbee2mqtt
 deploy/pi-zwave01/zwave-js-ui
 ```
 
-one branch per stack directory, same names. nobody commits to them directly, the
-workflow in the next step moves them. change `stacks/swarm/npm/compose.yml`,
-`deploy/swarm/npm` moves, npm redeploys, the other five don't notice.
+there is one branch per stack directory, with the same name. nobody commits to
+them directly; the workflow in the next step moves them. a change to
+`stacks/swarm/npm/compose.yml` moves `deploy/swarm/npm` and redeploys npm, and
+the other five stacks stay as they are.
 
-the `pi-zwave01` branches above are a **standalone docker host**, not the swarm: a raspberry pi
-running the Portainer agent, holding the radios. see
+the `pi-zwave01` branches above are for a standalone docker host, not the swarm:
+a raspberry pi that holds the radios and runs the Portainer agent. see
 [the pi's stacks](../raspberry-pi/stacks.md).
 
-the repo layout, the branches and the workflow in the next step are the same for
-it. the cutover in [step 6](#6-cut-a-stack-over) is not: that captures swarm
-service state and waits out an overlay network, where a standalone host has
-compose containers and neither. the compose files differ too, since a standalone
+the repo layout, the branches and the workflow in the next step work the same
+for it. the cutover in [step 6](#6-cut-a-stack-over) does not. it captures swarm
+service state and waits out an overlay network, and a standalone host has
+neither, only compose containers. the compose files differ too: a standalone
 host honours `container_name`, `restart` and `devices`, which swarm ignores.
 
-`main` is never deployed by anything. merging to main is a promotion, not a
-deployment.
+nothing deploys from `main` itself. a merge to main moves the deploy branches of
+the stacks it changed, and portainer deploys from those.
 
 ## 4. the workflow that moves the branches
 
-`.github/workflows/promote.yml`. it works out which stack directories the push
-touched and fast forwards those deploy branches. it never talks to portainer, it
-only pushes refs, so it needs no credentials, no path to your lan and no self
+`.github/workflows/promote.yml` works out which stack directories the push
+touched and fast forwards those deploy branches. it only pushes refs and never
+talks to portainer, so it needs no credentials, no path to your lan and no self
 hosted runner. portainer's polling does the rest.
 
 ```yaml
@@ -181,49 +183,52 @@ jobs:
             fi
           done < <(find stacks -mindepth 2 -maxdepth 2 -type d | sort)
 
-          [ -z "$refs" ] && { echo "no stack dirs changed"; exit 0; }
+          [ -z "$refs" ] && { echo "no stack directories changed"; exit 0; }
 
           # ONE push, all refs, --atomic. a plain multi ref push is NOT all or
           # nothing: refuse one ref and the others still land
           git push --atomic origin $refs
 ```
 
-`find stacks -mindepth 2 -maxdepth 2 -type d` is what makes it generic, it picks
-up `stacks/<env>/<stack>` and nothing else, so adding a stack needs no edit here.
-add the directory, create its deploy branch, point portainer at it.
+`find stacks -mindepth 2 -maxdepth 2 -type d` picks up `stacks/<env>/<stack>`
+and nothing else, so adding a stack needs no edit here. add the directory and
+merge it, and the workflow creates its deploy branch on that push. then point
+portainer at it.
 
-**deleting a stack directory retires nothing.** the `find` only sees directories
-that still exist, so if a commit deletes `stacks/swarm/adguard/` the workflow
-matches nothing, promotes nothing, and prints "no stack directories changed" even
-though a stack file clearly did change. `deploy/swarm/adguard` stays where it is
-and portainer carries on serving the last commit it saw, indefinitely.
+deleting a stack directory retires nothing. the `find` only sees directories
+that still exist. if a commit deletes `stacks/swarm/adguard/`, the workflow
+matches nothing, promotes nothing and prints "no stack directories changed",
+even though a stack file did change. `deploy/swarm/adguard` stays where it is,
+and portainer carries on serving the last commit it saw, indefinitely. mine also
+prints a warning while a removed directory's deploy branch still exists.
 
-promoting the deletion would not help either, portainer would just fetch a commit
-with no compose file at the configured path and error. retiring a stack is manual:
+promoting the deletion would not help either: portainer would fetch a commit
+with no compose file at the configured path and error. retiring a stack is
+manual:
 
 1. delete the stack in portainer
 2. delete `deploy/<env>/<stack>`: `git push origin --delete deploy/<env>/<stack>`
 3. then remove the directory from git
 
-renaming has the mirror problem: the new directory looks like a change so the
-push creates `deploy/<env>/<newname>`, which nothing polls, and the old branch is
-left stale.
+renaming has the mirror problem. the new directory looks like a change, so the
+push creates `deploy/<env>/<newname>`, which nothing polls, and the old branch
+is left stale.
 
-**`--atomic` is not optional.** without it, a push that has one ref refused still
+`--atomic` is not optional. without it, a push that has one ref refused still
 lands the others, so a commit touching two stacks gets half of itself into
 production. with it, every branch moves or none do.
 
-worked example, a commit that edits `stacks/swarm/npm/compose.yml` and
-`stacks/pi-zwave01/ser2net/compose.yml` and a readme:
+a commit that edits `stacks/swarm/npm/compose.yml`,
+`stacks/pi-zwave01/ser2net/compose.yml` and a readme prints:
 
 ```
   stacks/pi-zwave01/ser2net -> deploy/pi-zwave01/ser2net
   stacks/swarm/npm -> deploy/swarm/npm
 ```
 
-two branches move, four don't, the readme moves nothing.
+two branches move, the other four don't, and the readme moves nothing.
 
-## 5. protect the deploy branches (and check it actually applies)
+## 5. protect the deploy branches
 
 block force pushes on `deploy/*` so a deploy branch can only ever move forward,
 onto a commit that passed ci. that makes rollback a revert rather than a
@@ -233,26 +238,25 @@ leave deletions allowed. a deploy branch only ever points at a commit that is
 also on `main`, so deleting one loses nothing, and retiring a stack stays one
 push.
 
-the trap: a ruleset targeting `deploy/**` matches **nothing**, because of how
-github's `**` matching works. it shows as active and enforces nothing at all. you
-need both patterns:
+a ruleset targeting `deploy/**` matches nothing, because of how github's `**`
+matching works. it shows as active and enforces nothing. you need both patterns:
 
 ```
 deploy/*
 deploy/**/*
 ```
 
-that is what you type in the UI. the API stores them prefixed as
-`refs/heads/deploy/*`, so don't be thrown when `gh api repos/<owner>/<repo>/rulesets/<id>`
-reads back differently to what you entered.
+you type those in the UI. the API stores them prefixed, as
+`refs/heads/deploy/*`, so `gh api repos/<owner>/<repo>/rulesets/<id>` reads
+back differently from what you entered.
 
-green status is not proof. the useful tell is the **applies to N targets** line
-under the patterns: if that reads 0, or fewer than you have deploy branches, the
-pattern is wrong however active the ruleset says it is. then try to push
-something the rule should forbid and confirm you get refused.
+check the **applies to N targets** line under the patterns. it should equal
+your number of deploy branches. if it reads less, the pattern is wrong, whatever
+the ruleset's status says. then try to push something the rule should forbid
+and confirm you are refused.
 
-the rules for `main` itself, require a PR and require your ci check, are worth
-doing once renovate is opening PRs, see
+once renovate is opening PRs, add rules for `main` itself: require a PR, and
+require your ci check. see
 [image updates with renovate](image-updates-renovate.md#lock-the-branches-down-last).
 
 ![the deploy branches ruleset, active, with both target patterns deploy/* and deploy/**/*, applying to 31 branches](../assets/img/gitops-ruleset-targets.png)
@@ -273,9 +277,10 @@ then per stack:
 
 1. confirm the hardware is present if the stack needs it, `ls -l /dev/serial/by-id/`
 2. confirm every secret and config the compose references already exists
-3. note the exact stack name, you must reuse it, service dns is `<stack>_<service>`
+3. note the exact stack name. you must reuse it, because service dns is
+   `<stack>_<service>`
 4. delete the stack in portainer
-5. wait for the overlay network to actually go away, see below
+5. wait for the overlay network to go away, see below
 6. Stacks > Add stack > **same name** > Git repository, then
 
     | field | value, for adguard |
@@ -285,30 +290,30 @@ then per stack:
     | Compose path | `stacks/swarm/adguard/compose.yml` |
     | GitOps updates | on, polling, 5m |
 
-    the reference dropdown lists every ref on the repo, including a
+    the reference dropdown lists every ref on the repo. that includes a
     `refs/pull/<n>/head` for every PR ever opened, and github never removes
     them. type part of the branch name to filter it. it starts on
     `refs/heads/main`, so check it again just before you deploy. never pick a
-    `refs/pull` ref, it can be a commit nobody reviewed and your ruleset doesn't
-    cover it
+    `refs/pull` ref: it can be a commit nobody reviewed, and your ruleset
+    doesn't cover it
 
 7. diff `docker service inspect` against the capture you took above
 
-the same fields on a stack that is already git backed, so you can see what it
-looks like once it is working. note `Re-pull image` and `Force redeployment` are
-both **off**. renovate changes the tag in git, so portainer has nothing to
-re-pull behind your back, and force redeployment redeploys on every poll whether
-git changed or not, per portainer's own tooltip: a regular stack is "redeployed
-whenever triggered, without checking for docker-compose file changes". it does
-put back a stack that was changed or removed outside git, which polling cannot
-see, but that is rare and `pull and redeploy` fixes it when it happens.
+the screenshot below shows the same fields on a stack that is already git
+backed and working. `Re-pull image` and `Force redeployment` are both off.
+renovate changes the tag in git, so portainer has nothing to re-pull behind your
+back. force redeployment redeploys on every poll whether git changed or not:
+portainer's tooltip says a regular stack is "redeployed whenever triggered,
+without checking for docker-compose file changes". it does put back a stack that
+was changed or removed outside git, which polling cannot see, but that is rare,
+and `pull and redeploy` fixes it when it happens.
 
 ![portainer stack details for adguard, gitops updates on, polling every 5m, watching refs/heads/deploy/swarm/adguard](../assets/img/gitops-portainer-stack-details.png)
 
 ## 7. rolling back a compose
 
-deploy branches are fast forward only, so a rollback is **not** a force push. its
-a revert on `main` that gets promoted forward like any other change:
+deploy branches are fast forward only, so a rollback is not a force push. its a
+revert on `main` that gets promoted forward like any other change:
 
 ```
 git checkout -b revert/npm-bad-change
@@ -317,17 +322,18 @@ git push origin revert/npm-bad-change
 gh pr create --fill && gh pr merge --rebase
 ```
 
-promote moves `deploy/swarm/npm` forward to the revert and portainer picks it up
-on the next poll, so under five minutes from merge.
+promote moves `deploy/swarm/npm` forward to the revert, and portainer picks it
+up on the next poll, under five minutes after the merge.
 
 a revert keeps the history, and the deploy branches only ever point at a commit
 that passed ci. the cost is speed: it needs a PR and a ci run. if something is
 broken right now:
 
-1. **stop the stack in portainer.** instant, stops the bleeding, do the proper
-   revert after
-2. **roll forward** if the fault is obvious and small
-3. **break glass**, suspend the ruleset, force push, put it back:
+1. stop the stack in portainer. it takes effect at once, and you do the revert
+   after. a stopped stack isn't polled, so once the revert is merged,
+   `pull and redeploy` it
+2. roll forward, if the fault is obvious and small
+3. suspend the ruleset, force push, and put the ruleset back:
 
    ```
    gh api repos/<owner>/<repo>/rulesets                       # get the id
@@ -336,39 +342,35 @@ broken right now:
    gh api -X PUT repos/<owner>/<repo>/rulesets/<id> -F enforcement=active
    ```
 
-**a compose revert is not a data revert.** reverting the image tag on something
-that ran a schema migration on startup gets you the old binary against the new
-schema. for databases, take the backup before you merge the bump, not after.
+reverting the image tag on something that ran a schema migration on startup
+gets you the old binary against the new schema. **for databases, take the backup
+before you merge the bump**, not after.
 
 ## traps
 
 - **check hardware is present before cutting over a device dependent stack.**
   create always deploys, and if the deploy fails the rollback fails the same way
-  and the stack record is gone. i lost my `zigbee2mqtt` stack this way, dongle
-  wasn't plugged in. cost me a rebuild because the compose was already in git,
-  had it only been in the web editor it was gone
-- **deleting a stack races its own overlay network.** `<name>_default` takes a
-  moment to tear down and recreating too fast fails on a network that still
-  exists while being deleted. the rollback hits the same race. wait for it:
+  and the stack record is gone. a compose that is only in the web editor goes
+  with it
+- deleting a stack races its own overlay network. `<name>_default` takes a
+  moment to tear down, and recreating too fast fails on a network that is still
+  being deleted. the rollback hits the same race. wait for the network to go:
 
   ```
   docker network ls --filter name=<stack>_default
   ```
 
-- **a stopped stack stops tracking git entirely.** portainer doesn't poll stopped
-  stacks, so they sit at their last deployed commit and fall behind while looking
-  fine in the stack list
-- **external stuff isn't in the compose.** my adguard macvlan networks are
-  `external: true` deliberately so deleting a stack can't destroy them, but that
-  means git can't recreate them either. keep a script. config-only networks are
-  per node and must exist on every node before the swarm scoped one can be
-  created on a manager, order matters
-- same goes for node labels if you use placement constraints. mine are generated
-  by a labelling container so they rebuild themselves, a hand applied label exists
-  nowhere but the raft log
-- comment only changes are free on a standalone host, compose compares the
-  resolved config. on swarm the file hash changes and the stack updates, so the
-  behaviour differs
+- a stopped stack stops tracking git. portainer doesn't poll stopped stacks, so
+  they sit at their last deployed commit and fall behind while looking fine in
+  the stack list
+- anything external isn't in the compose. my adguard macvlan networks are
+  `external: true` so that deleting a stack can't destroy them, which also means
+  git can't recreate them. keep a script. config-only networks are per node, and
+  they must exist on every node before the swarm scoped one can be created on a
+  manager
+- the same goes for node labels, if you use placement constraints. mine are
+  generated by a labelling container, so they rebuild themselves. a hand applied
+  label exists nowhere but the raft log
 
 ## next
 

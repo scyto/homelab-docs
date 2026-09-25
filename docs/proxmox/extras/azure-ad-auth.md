@@ -1,5 +1,5 @@
 ---
-title: "Azure Active Directory (AAD) Auth"
+title: "Entra ID (Azure AD) Auth"
 source_gist: https://gist.github.com/scyto/038b35c913018ee1cbd4dc62e49a6355
 ---
 
@@ -36,14 +36,14 @@ All of these steps will be done in the Azure Portal AAD UI
     ```
     https://pve1.mydomain.com:8006
     https://pve2.mydomain.com:8006
-    https://pve2.mydomain.com:8006
+    https://pve3.mydomain.com:8006
     https://pbs.mydomain.com:8007
     https://cluster1.mydomain.com  
     ```  
 
 16. nothing else needs to be changed here so click save once these have been added
-17 navigate to overview > endpoints
-18 Copy the OpenID Connect metadata document link and remove /.well-known/openid-configuration this part from the link, so you end up with something like this https://login.microsoftonline.com/{Your-Tenant-ID}/v2.0
+17. navigate to overview > endpoints
+18. Copy the OpenID Connect metadata document link and remove /.well-known/openid-configuration this part from the link, so you end up with something like this https://login.microsoftonline.com/{Your-Tenant-ID}/v2.0
 
 
 ## Add realm on PVE Cluster
@@ -71,10 +71,10 @@ All of these steps will be done in the Azure Portal AAD UI
 6. propogate = checked
 
 ## create user
-1. user name = name@domain.com
+1. user name = name@mydomain.com
 2. realm = Azure AAD
 3. Group = Admins
 4. name = folks names of course
-5. email = ususally the same as name@domain.com
+5. email = ususally the same as name@mydomain.com
 
 ## login with AAD!

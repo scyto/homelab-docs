@@ -13,7 +13,7 @@ All installation done via command line due to gui not understanding the mesh net
 
 This setup doesn't attempt to seperate the ceph public network and ceph cluster network (not same as proxmox clutser network),  The goal is to get an easy working setup.
 
-**2025.04.24 NOTE: some folks had to switch to IPv6 for ceph due to IPv4 unreliability issues, we think as of pve 8.4.1 and all the input the community has give to update this set of gsists - that IPv4 is now reliable even on MS-01.  As such i advising everyone to use IPv4 for ceph as if you have IPv6 you will have issues with SDN at this time (if you don't use SDN this is not an issue).
+**2025.04.24 NOTE: some folks had to switch to IPv6 for ceph due to IPv4 unreliability issues, we think as of pve 8.4.1 and all the input the community has give to update this set of gsists - that IPv4 is now reliable even on MS-01.  As such i advising everyone to use IPv4 for ceph as if you have IPv6 you will have issues with SDN at this time (if you don't use SDN this is not an issue).**
 
 [this gist is part of this series](index.md)
 
@@ -32,7 +32,7 @@ If not you probably have something wrong in your network, check all settings.
 ## Add Addtional managers
 1. On any node go to ` Datacenter > nodename > ceph > monitor` and click `create` manager in the *manager* section.
 2. Selecty an node that doesn't have a manager from the drop dwon and click `create`
-3 repeat step 2 as needed
+3. repeat step 2 as needed
 If this fails it probably means your networking is not working
 
 ## Add OSDs
@@ -58,23 +58,7 @@ If you find there are no availale disks when you try to add it probably means yo
 3. Set `HA Settings` to `shutdown_policy=migrate` (this will migrate VMs and CTs if you gracefully shutdown a node).
 4. Set `migration settings` leave as default (seperate gist will talk about seperating migration network later) 
 
-## make ceph hard dependent on frr service (added 2025.04.20)
-
-this is my blind attempt at ensuring ceph doesn't try and start until frr service is up - i don't have any tests in the startup to make sure the interfaces are up so it may not make too much diff to MS-01 users. but anyhoo here it is...
-
-edit `/usr/lib/systemd/system/ceph.target` to look like this
-
-```
-[Unit]
-Description=ceph target allowing to start/stop all ceph*@.service instances at once
-After=frr.service
-Requires=frr.service
-
-
-[Install]
-WantedBy=multi-user.target
-```
-note: i need to revise this as this file could be overwritten on upgrade)
+Update as of 2026.09.24: [cluster setup](cluster-setup.md#define-migration-network) sets the migration network.
 
 ## make sure VMs don't try and start before ceph service is present
 ### note this will stop any VMs on local storage starting too - just be aware
@@ -87,6 +71,7 @@ note: i need to revise this as this file could be overwritten on upgrade)
     [Unit]
     After=pve-storage.target
     ```
+
 4. save
 
 (note i am ucnlear if this currently works despite this being the recommended answer)

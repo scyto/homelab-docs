@@ -6,74 +6,103 @@ comments: true
 
 # portainer
 
-one portainer runs the swarm and the three [standalone hosts](standalone/index.md), six nodes in all, from one UI.
+one portainer runs all six nodes from one UI: the swarm's three and the three [standalone hosts](standalone/index.md).
 
-i run the business edition on the paid **home & student** licence: US$155 a year, up to 15 nodes, every business feature, personal use only. the free business licence covers 3 nodes and i have 6, which is why it's the paid one.
+i run the business edition on the paid home & student licence. it costs US$155 a year and covers up to 15 nodes with every business feature, for personal use only. i pay for it because the free business licence covers 3 nodes and i have 6.
 
-the business feature this setup depends on is role based access: the [homepage dashboard](../monitoring/homepage.md)'s api token belongs to a user with the helpdesk role on every environment, so it can see everything and change nothing.
+the business feature this setup depends on is role based access. the [homepage dashboard](../monitoring/homepage.md)'s api token belongs to a user who has read access through the helpdesk role on every environment.
+
+on the swarm it is two stacks: the server, and an agent on every node. together they replace portainer's [stock swarm file](https://downloads.portainer.io/ee-lts/portainer-agent-stack.yml).
+
+--8<-- "blocks/swarm/portainer/compose.yml.md"
+
+--8<-- "blocks/swarm/agent/compose.yml.md"
+
+apart from names, the server's file differs from the stock one in three ways: it has no agent service, the image is pinned to a version instead of `lts`, and the data volume is bound to the replicated storage. that lets the server start on any manager and find its database.
 
 ## install on the swarm
 
-on a manager node:
+on one manager:
 
-```
-curl -L https://downloads.portainer.io/ee-lts/portainer-agent-stack.yml -o portainer-agent-stack.yml
-docker stack deploy -c portainer-agent-stack.yml portainer
-```
+1. create the data folder on the cephfs mount:
 
-that deploys the server on a manager and the agent as a global service on every node. the UI is on `https://<node>:9443`. port `8000` is the tunnel for edge agents, i don't use them.
+    ```
+    sudo mkdir -p /mnt/docker-cephFS/portainer_data
+    ```
 
-browse to it, create the admin user and enter the licence key.
+    - a missing folder fails the task, because the data volume binds its folder by path
 
-one change from the stock file: the data volume is a bind to the replicated storage, so the server can start on any manager and find its database.
+2. delete the `command:` line (`-H tcp://tasks.agent:9001 --tlsskipverify`) from the downloaded file, then deploy the server from it:
 
-```yaml
-volumes:
-  data:
-    driver: local
-    driver_opts:
-      type: none
-      device: "/mnt/docker-cephFS/portainer_data"
-      o: bind
-```
+    ```
+    docker stack deploy -c portainer-compose.yml portainer
+    ```
+
+    - the line is left from the stock file. it names an agent the server can't resolve, and the server only reads it on a first start, before it has an environment. without the line the server starts with no environment, and step 5 adds one
+    - the UI is on `https://<node>:9443`. `9000` serves it over plain http, and `8000` is the tunnel for edge agents, which i don't use
+
+3. browse to it, create the admin user and enter the licence key
+4. start a temporary agent on a spare port:
+
+    ```
+    docker run -d --name temp-agent -p 9002:9001 \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v /var/lib/docker/volumes:/var/lib/docker/volumes \
+      portainer/agent:2.45.1
+    ```
+
+    - portainer creates a stack through an environment's agent, so the agent stack needs an agent before it exists
+    - `9002` leaves `9001` free for the agent stack, which publishes it on every node
+
+5. in portainer, add a docker swarm environment using the agent, at `<manager>:9002`
+6. create the `agent` stack from git, as in [cut a stack over](gitops-with-portainer.md#6-cut-a-stack-over): reference `refs/heads/deploy/swarm/agent`, compose path `stacks/swarm/agent/compose.yml`
+7. point the environment at the keepalived VIP, `192.168.1.45:9001`, and check the agent runs on every node:
+
+    ```
+    docker stack services agent
+    ```
+
+    - `REPLICAS` reads `3/3`, one task on each of the three nodes
+
+8. remove the temporary agent:
+
+    ```
+    docker rm -f temp-agent
+    ```
+
+9. add the standalone hosts, see [add a host](standalone/add-a-host.md)
 
 ## agents on every endpoint
 
 | environment | agent | how it is installed |
 | --- | --- | --- |
-| swarm | global service, `9001` published `mode: host` on each node | the stack above |
+| swarm | a global service, on `9001` on each node | the agent stack above, from git |
 | truenas1 | truenas custom app | [truenas apps](../truenas/apps.md) |
 | syn02, pi-zwave01 | a container, `restart: always` | [add a host](standalone/add-a-host.md) |
 
-- keep every agent on the same version as the server. portainer's upgrade docs
-  say to update the server first: it can talk to older agents, the reverse is
-  not guaranteed
-- **each environment points at an address on 9001**, the swarm's at the keepalived
-  VIP and the standalone ones at the host. the stock file starts the server with
-  `-H tcp://tasks.agent:9001`, which reads like the server finds the agents over
-  the overlay, but the environment's own address is what is used. worth knowing
-  before you delete an agent: that is how portainer reaches the swarm at all
+each environment points at an address on 9001. the swarm's is the keepalived VIP, and each standalone host's is the host itself. portainer reaches the swarm through that address, and removing the agent stack cuts it off.
 
-## portainer is not in git, the agent is
+## what deploys from git
 
-**portainer itself** is the one stack not deployed [from git](gitops-with-portainer.md).
-it would be applying changes to itself, and a bad commit leaves no UI to fix it
-with. upgrades are deliberate, with a [cold copy](../backups/portainer-s3.md#cold-copies-before-an-upgrade)
-taken first.
+portainer itself is the one stack not deployed [from git](gitops-with-portainer.md). it would be applying changes to itself, and a bad commit leaves no UI to fix it with.
 
-**the agent moved into git**, because portainer applying a change there is an
-ordinary service update: it hands the update to the swarm manager, which
-finishes it whether or not portainer's own connection blips while the agents
-roll. two things to know if you do the same:
+the agent deploys from git like any other stack. a change to it is an ordinary service update, which the swarm manager finishes even if portainer's connection drops while the agents restart.
 
-- **converting it needs a temporary agent.** portainer reaches the swarm
-  *through* the agents, and converting a stack to git deletes it before
-  recreating it. run a standalone agent on a manager on a spare port, point the
-  environment at it for the window, convert, point back, remove it
-- **a broken agent compose reaches every node a few minutes after it merges**,
-  and takes portainer's view of the swarm with it. recovery is that same
-  standalone agent. that is the trade for having the definition in git, where
-  drift cannot hide
+a broken agent compose reaches every node a few minutes after it merges, and portainer loses its view of the swarm. to recover, point the environment at the temporary agent from [install step 4](#install-on-the-swarm) while a fixed or reverted compose deploys.
 
-renovate proposes bumps for both, but only through the dependency dashboard, so
-restarting the control plane is always a decision.
+## upgrades
+
+- upgrade the server first, then the agents, and keep them on the same version. a newer server can talk to older agents, but the reverse is not guaranteed
+- take a [cold copy](../backups/portainer-s3.md#cold-copies-before-an-upgrade) of the server's data before upgrading it
+- renovate proposes bumps for both only through its dependency dashboard, so neither restarts until i approve it
+
+## checking it
+
+on a manager:
+
+```
+docker stack services portainer
+docker stack services agent
+```
+
+`REPLICAS` reads `1/1` for the server and `3/3` for the agent.
