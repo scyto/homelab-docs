@@ -1,0 +1,16 @@
+services:
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf-simple:2.8.8
+    environment:
+      - TZ=America/Los_Angeles
+    ports:
+      - 8091:8080
+    deploy:
+      labels:
+        - homepage.group=Tools
+        - homepage.name=BentoPDF
+        - homepage.icon=bentopdf.png
+        - homepage.href=http://192.168.1.45:8091
+        - homepage.description=PDF toolkit in the browser
+      mode: replicated
+      replicas: 1

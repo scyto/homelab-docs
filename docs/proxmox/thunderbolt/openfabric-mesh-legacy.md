@@ -1,9 +1,13 @@
 ---
-title: "THIS GIST IS NOW DEPRECATED NEW ONE IS AVAILABLE [HERE](openfabric-mesh.md) I WONT BE UPDATING THIS ONE OR REPLYING TO COMMENTS ON THIS ONE (COMMENTS NOW DISABLED)."
+title: "Enable Dual Stack (IPv4 and IPv6) OpenFabric Routing (deprecated v1)"
 source_gist: https://gist.github.com/scyto/4c664734535da122f4ab2951b22b2085
 ---
 
-# THIS GIST IS NOW DEPRECATED NEW ONE IS AVAILABLE [HERE](openfabric-mesh.md) I WONT BE UPDATING THIS ONE OR REPLYING TO COMMENTS ON THIS ONE (COMMENTS NOW DISABLED).
+# enable dual stack (IPv4 and IPv6) OpenFabric routing (deprecated v1)
+
+!!! warning "no longer used"
+    replaced by the current [openfabric mesh](openfabric-mesh.md).
+
 
 
 # Enable Dual Stack (IPv4 and IPv6) OpenFabric Routing
@@ -81,33 +85,35 @@ this has been verified to be required due to timing issues see on those units, e
 3. enter the configure mode with `configure`
 4. Apply the bellow configuration (it is possible to cut and paste this into the shell instead of typing it manually, you may need to press return to set the last !.  Also check there were no errors in repsonse to the paste text.).
 
-**Note: the X should be the number of the node you are working on, as an example -  0.0.0.1, 0.0.0.2 or 0.0.0.3.**
-```
-ip forwarding
-ipv6 forwarding
-!
-interface en05
-ip router openfabric 1
-ipv6 router openfabric 1
-exit
-!
-interface en06
-ip router openfabric 1
-ipv6 router openfabric 1
-exit
-!
-interface lo
-ip router openfabric 1
-ipv6 router openfabric 1
-openfabric passive
-exit
-!
-router openfabric 1
-net 49.0000.0000.000X.00
-exit
-!
+    **Note: the X should be the number of the node you are working on, as an example -  0.0.0.1, 0.0.0.2 or 0.0.0.3.**
 
-```
+    ```
+    ip forwarding
+    ipv6 forwarding
+    !
+    interface en05
+    ip router openfabric 1
+    ipv6 router openfabric 1
+    exit
+    !
+    interface en06
+    ip router openfabric 1
+    ipv6 router openfabric 1
+    exit
+    !
+    interface lo
+    ip router openfabric 1
+    ipv6 router openfabric 1
+    openfabric passive
+    exit
+    !
+    router openfabric 1
+    net 49.0000.0000.000X.00
+    exit
+    !
+
+    ```
+
 5. you may need to pres return after the last `!` to get to a new line - if so do this
 6. exit the configure mode with the command `end`
 7. save the configu with `write memory`

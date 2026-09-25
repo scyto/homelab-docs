@@ -4,6 +4,10 @@ source_gist: https://gist.github.com/scyto/46fa1f8d1b73663dc6cce5d8b2a4826a
 ---
 
 # Portception - deploying portainer with portainer in a swarm
+
+!!! warning "no longer used"
+    portainer runs as two stacks of its own, set up as in [portainer](../../docker/portainer.md).
+
 ## No one should be like scyto, no one should do this..... be prepared to see your portainer disappear in a puff of smoke if you get this wrong
 
 

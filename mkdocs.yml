@@ -18,6 +18,8 @@ theme:
     - navigation.sections
     - navigation.indexes
     - navigation.top
+    # previous and next links under every page, in nav order
+    - navigation.footer
     - toc.follow
     # the page's contents in the left sidebar, under the section nav, on every
     # page -- not a second column on the right
@@ -92,6 +94,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
+  # the generated file blocks: one details block per published file, which
+  # takes open: and type:, and an html section that keeps a long file out of
+  # the search index (see the generator's render())
+  - pymdownx.blocks.details
+  - pymdownx.blocks.html
   - pymdownx.superfences:
       custom_fences:
         # ```mermaid blocks render as diagrams; Material loads mermaid itself
@@ -101,6 +108,13 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  # the published stack and config files, generated from the private stacks/
+  # under the redaction rules: includes/blocks/ holds one annotated block per
+  # file for the pages to include, docs/files/ the clean copy for download.
+  # check_paths fails the build when a generated block is missing
+  - pymdownx.snippets:
+      base_path: [includes]
+      check_paths: true
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tilde
@@ -111,6 +125,16 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+# a link to a heading that no longer exists is a warning, so --strict fails
+# on it. without this, mkdocs checks that the page exists and not the anchor
+validation:
+  links:
+    anchors: warn
+
+# mkdocs serve rebuilds when the generated blocks change, not only docs/
+watch:
+  - includes
 
 extra_css:
   - assets/css/extra.css
@@ -135,50 +159,53 @@ nav:
           - VM Access to the Mesh: proxmox/thunderbolt/vm-access-to-mesh.md
           - LAN Access to the Mesh: proxmox/thunderbolt/lan-access-to-mesh.md
           - CephFS on a LAN Client: proxmox/thunderbolt/cephfs-client-mount.md
-          - "Deprecated: Openfabric Mesh (v1)": proxmox/thunderbolt/openfabric-mesh-legacy.md
+          - "Enable Dual Stack (IPv4 and IPv6) OpenFabric Routing (deprecated v1)": proxmox/thunderbolt/openfabric-mesh-legacy.md
           - "Deprecated: OSPF6d Mesh": proxmox/thunderbolt/ospf6d-mesh-legacy.md
       - Cluster Setup: proxmox/cluster-setup.md
       - Ceph & High Availability: proxmox/ceph-and-ha.md
       - CephFS & ISO/Template Storage: proxmox/cephfs-and-storage.md
       - CephFS via VirtioFS: proxmox/cephfs-virtiofs-passthrough.md
+      - CephFS Start Guards: proxmox/cephfs-start-guards.md
       - HA Windows VM + TPM: proxmox/ha-windows-vm-tpm.md
       - Migrating from Hyper-V:
+          - proxmox/migration/index.md
           - Windows Gen2 VMs: proxmox/migration/windows-gen2-from-hyperv.md
-          - "Domain Controller 1 (FSMO/CA)": proxmox/migration/domain-controller-1.md
           - Domain Controller 2: proxmox/migration/domain-controller-2.md
+          - "Domain Controller 1 (FSMO/CA)": proxmox/migration/domain-controller-1.md
           - Windows Admin Center VM: proxmox/migration/admin-center-vm.md
           - Home Assistant: proxmox/migration/home-assistant.md
-          - Docker Swarm VMs: proxmox/migration/docker-swarm-vms.md
+          - Migrating the Docker Swarm VMs: proxmox/migration/docker-swarm-vms.md
           - EFI / BIOS Changes: proxmox/migration/docker-swarm-vms-efi-bios.md
       - Extra Credit:
-          - vGPU Passthrough:
+          - "Deprecated: vGPU Passthrough":
               - proxmox/extras/vgpu/index.md
-              - Privileged Container Guest: proxmox/extras/vgpu/privileged-container.md
+              - vGPU in an LXC Container: proxmox/extras/vgpu/privileged-container.md
               - Windows VM Guest: proxmox/extras/vgpu/windows-vm.md
           - "Let's Encrypt via Cloudflare": proxmox/extras/lets-encrypt-cloudflare.md
-          - Azure AD Auth: proxmox/extras/azure-ad-auth.md
+          - Entra ID (Azure AD) Auth: proxmox/extras/azure-ad-auth.md
           - "Deprecated: PBS on Synology": proxmox/extras/proxmox-backup-server.md
-          - Postfix O365 Mail Relay: proxmox/extras/postfix-o365-relay.md
+          - "Deprecated: Postfix O365 Mail Relay": proxmox/extras/postfix-o365-relay.md
       - Troubleshooting: proxmox/troubleshooting.md
   - Docker:
       - docker/index.md
       - Swarm:
-          - Debian VM Install: docker/swarm/debian-vm-install.md
+          - Installing Debian as VM: docker/swarm/debian-vm-install.md
           - Install Docker: docker/swarm/install-docker.md
           - Configure Swarm: docker/swarm/configure-swarm.md
           - KeepaliveD: docker/swarm/keepalived.md
+      - IPv6: docker/ipv6.md
+      - Portainer & GitOps:
+          - Portainer: docker/portainer.md
+          - Stacks in Git: docker/gitops-with-portainer.md
+          - Config from Git: docker/config-from-git.md
+          - Image Updates with Renovate: docker/image-updates-renovate.md
+      - Stack Conventions: docker/conventions.md
       - Standalone Hosts:
           - docker/standalone/index.md
           - Add a Host: docker/standalone/add-a-host.md
           - truenas1: docker/standalone/truenas1.md
           - syn02: docker/standalone/syn02.md
           - pi-zwave01: docker/standalone/pi-zwave01.md
-      - IPv6: docker/ipv6.md
-      - Portainer & GitOps:
-          - Portainer: docker/portainer.md
-          - Stacks in Git: docker/gitops-with-portainer.md
-          - Image Updates with Renovate: docker/image-updates-renovate.md
-      - Stack Conventions: docker/conventions.md
       - Troubleshooting: docker/troubleshooting.md
       - Deprecated:
           - GlusterFS Install: docker/deprecated/glusterfs-install.md
@@ -207,8 +234,8 @@ nav:
       - No Longer Used:
           - Watchtower: apps/retired/watchtower.md
           - Shepherd: apps/retired/shepherd.md
-          - Traefik: apps/retired/traefik.md
-          - "Not Recommended: Portainer Agent": apps/retired/portainer-agent.md
+          - Traefik Swarm Template: apps/retired/traefik.md
+          - Portainer Agent Managed by Portainer: apps/retired/portainer-agent.md
           - "Do Not Attempt: Portception": apps/retired/portception.md
   - Monitoring:
       - monitoring/index.md
@@ -219,6 +246,7 @@ nav:
   - Secrets:
       - secrets/index.md
       - Background: secrets/background.md
+      - Key-manager Reference: secrets/key-manager.md
       - Add a Secret: secrets/add.md
       - Rotate a Secret: secrets/rotate.md
       - Retire a Secret: secrets/retire.md
@@ -233,7 +261,7 @@ nav:
       - Containers: truenas/containers.md
       - Boot Environments: truenas/boot-environments.md
       - S3 with Versity Gateway: truenas/s3-versity-gateway.md
-      - Virtualized on Proxmox: truenas/virtualized-on-proxmox.md
+      - "Deprecated: Virtualized on Proxmox": truenas/virtualized-on-proxmox.md
   - Raspberry Pi:
       - raspberry-pi/index.md
       - Docker & Stacks: raspberry-pi/stacks.md
@@ -242,6 +270,8 @@ nav:
       - PoE HAT OLED: raspberry-pi/poe-oled.md
   - Thread:
       - thread/index.md
+      - ESP Border Router: thread/esp-border-router.md
+      - Checking the Mesh: thread/checking-the-mesh.md
   - Backups:
       - backups/index.md
       - Proxmox Backup Server: backups/pbs-server.md

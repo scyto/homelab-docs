@@ -1,0 +1,340 @@
+services:
+
+  prowlarr:
+    image: linuxserver/prowlarr@sha256:c96b56d94d116a9f4de94bc23d3381689492e6c3cfb7435320e8d982e406f99a
+    environment:
+      - TZ=America/Los_Angeles
+    container_name: prowlarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 http://127.0.0.1:9696/ping >/dev/null || { echo "prowlarr /ping failed"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Prowlarr
+      - homepage.icon=prowlarr.png
+      - homepage.href=http://192.168.1.86:9696
+      - homepage.description=Indexer manager
+      - homepage.widget.type=prowlarr
+      - homepage.widget.url=http://192.168.1.86:9696
+      - homepage.widget.key={{HOMEPAGE_FILE_PROWLARR_KEY}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 9696:9696
+    volumes:
+      - /mnt/fast/configs/prowlarr:/config
+
+  radarr:
+    image: linuxserver/radarr@sha256:c960f2b52ec6542dbe6707c5a21e696a7c74fd8b17997454f4d10a55dacee133
+    container_name: radarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 http://127.0.0.1:7878/ping >/dev/null || { echo "radarr /ping failed"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Radarr
+      - homepage.icon=radarr.png
+      - homepage.href=http://192.168.1.86:7878
+      - homepage.description=Film management
+      - homepage.widget.type=radarr
+      - homepage.widget.url=http://192.168.1.86:7878
+      - homepage.widget.key={{HOMEPAGE_FILE_RADARR_KEY}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 7878:7878
+    environment:
+      - PUID=568
+      - PGID=568
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/fast/configs/radarr:/config
+      - /mnt/rust/media:/media
+
+  sonarr:
+    image: linuxserver/sonarr@sha256:a5c1a5fecbef946927ab90ad68df319ac5fe644057e5fc18cd993f01ac07b2b2
+    container_name: sonarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 http://127.0.0.1:8989/ping >/dev/null || { echo "sonarr /ping failed"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Sonarr
+      - homepage.icon=sonarr.png
+      - homepage.href=http://192.168.1.86:8989
+      - homepage.description=TV series management
+      - homepage.widget.type=sonarr
+      - homepage.widget.url=http://192.168.1.86:8989
+      - homepage.widget.key={{HOMEPAGE_FILE_SONARR_KEY}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 8989:8989
+    environment:
+      - PUID=568
+      - PGID=568
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/fast/configs/sonarr:/config
+      - /mnt/rust/media:/media
+
+  bazarr:
+    image: linuxserver/bazarr@sha256:d24bd0048c759a468970989e9df11a6b96a7628d556d00f923e60a35ba59237b
+    container_name: bazarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 http://127.0.0.1:6767/api/system/ping | grep -q OK || { echo "bazarr /api/system/ping failed"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Bazarr
+      - homepage.icon=bazarr.png
+      - homepage.href=http://192.168.1.86:6767
+      - homepage.description=Subtitles for Sonarr and Radarr
+      - homepage.widget.type=bazarr
+      - homepage.widget.url=http://192.168.1.86:6767
+      - homepage.widget.key={{HOMEPAGE_FILE_BAZARR_KEY}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 6767:6767
+    environment:
+      - PUID=568
+      - PGID=568
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/fast/configs/bazarr:/config
+      - /mnt/rust/media:/media
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin@sha256:0f42497a69fa0441bfd5f9d6bba8694f2a656ec984e571d0ac04c6dd91250039
+    container_name: jellyfin
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'b=$$(curl -fsS --max-time 10 http://127.0.0.1:8096/health) || { echo "jellyfin /health unreachable"; exit 1; }; [ "$$b" = Healthy ] || { echo "jellyfin /health returned: $$b"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 180s
+    labels:
+      - homepage.group=Media
+      - homepage.name=Jellyfin
+      - homepage.icon=jellyfin.png
+      - homepage.href=http://192.168.1.86:8096
+      - homepage.description=Media server
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - '8096:8096'
+    environment:
+      - PUID=568
+      - PGID=568
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/fast/configs/jellyfin:/config
+      - /mnt/rust/media:/media
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr@sha256:f4768de5f616248d723e05891f3345a1402123775d03bf0890dbfedc0831bda1
+    container_name: seerr
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Seerr
+      - homepage.icon=jellyseerr.png
+      - homepage.href=http://192.168.1.86:5055
+      - homepage.description=Requests
+      - homepage.widget.type=seerr
+      - homepage.widget.url=http://192.168.1.86:5055
+      - homepage.widget.key={{HOMEPAGE_FILE_SEERR_KEY}}
+    restart: unless-stopped
+    user: "568:568"
+    init: true
+    networks: [arrstack]
+    ports:
+      - 5055:5055
+    environment:
+      - LOG_LEVEL=info
+      - TZ=America/Los_Angeles
+      - PORT=5055
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    volumes:
+      - /mnt/fast/configs/seerr:/app/config
+
+  profilarr:
+    image: ghcr.io/dictionarry-hub/profilarr@sha256:ddcdd0f340043c2ec0a85ca74b9a6be9be42b1c0288c75fc36a26a43f695860b
+    container_name: profilarr
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Profilarr
+      - homepage.icon=profilarr.png
+      - homepage.href=http://192.168.1.86:6868
+      - homepage.description=Quality profiles
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - "6868:6868"
+    environment:
+      - PUID=568
+      - PGID=568
+      - UMASK=022
+      - TZ=America/Los_Angeles
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+        bind:
+          create_host_path: false
+      - /mnt/fast/configs/profilarr:/config
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr@sha256:c80ae007ce2ccdcd217a12426e4f039ef763ff90738c808d38810c3e59323767
+    container_name: flaresolverr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'b=$$(curl -fsS --max-time 10 http://127.0.0.1:8191/health) || { echo "flaresolverr /health unreachable"; exit 1; }; echo "$$b" | grep -q ok || { echo "flaresolverr /health returned: $$b"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 8191:8191
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+      - TZ=America/Los_Angeles
+
+  qbittorrent:
+    image: ghcr.io/hotio/qbittorrent@sha256:3d61c8f205ed5edd5263ff24c4028b86486db8d330b63fe05582c7980f20aabe
+    container_name: qbittorrent
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 http://127.0.0.1:8080/ >/dev/null || { echo "qbittorrent web ui not answering"; exit 1; }; wg show wg0 latest-handshakes | awk -v now=$$(date +%s) ''{ if ($$2 > 0 && now - $$2 < 300) ok=1 } END { exit ok?0:1 }'' || { echo "wireguard wg0 handshake stale or missing"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 180s
+    labels:
+      - homepage.group=Downloads
+      - homepage.name=qBittorrent
+      - homepage.icon=qbittorrent.png
+      - homepage.href=http://192.168.1.86:8080
+      - homepage.description=Torrent client, via its own VPN
+      - homepage.widget.type=qbittorrent
+      - homepage.widget.url=http://192.168.1.86:8080
+      - homepage.widget.username=admin
+      - homepage.widget.password={{HOMEPAGE_FILE_QBITTORRENT_PASSWORD}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 8080:8080
+    environment:
+      - PUID=568
+      - PGID=568
+      - UMASK=002
+      - TZ=America/Los_Angeles
+      - WEBUI_PORTS=8080/tcp,8080/udp
+      - VPN_ENABLED=true
+      - VPN_CONF=wg0
+      - VPN_PROVIDER=generic
+      - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_LEAK_ENABLED=false
+      - VPN_EXPOSE_PORTS_ON_LAN=
+      - VPN_PORT_REDIRECTS=
+      - VPN_FIREWALL_TYPE=auto
+      - VPN_HEALTHCHECK_ENABLED=false
+      - VPN_NAMESERVERS=wg
+      - PRIVOXY_ENABLED=false
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    volumes:
+      - /mnt/fast/configs/qbittorrent:/config
+      - /mnt/rust/media:/media
+
+  sabnzbd:
+    image: ghcr.io/hotio/sabnzbd@sha256:ce9930087e0f6ba3ba375ab8005e6b6015a73252bbb7d98ef5b4a01008e1877e
+    container_name: sabnzbd
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl -fsS --max-time 10 "http://127.0.0.1:8080/api?mode=version" >/dev/null || { echo "sabnzbd api not answering"; exit 1; }; wg show wg0 latest-handshakes | awk -v now=$$(date +%s) ''{ if ($$2 > 0 && now - $$2 < 300) ok=1 } END { exit ok?0:1 }'' || { echo "wireguard wg0 handshake stale or missing"; exit 1; }'
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 180s
+    labels:
+      - homepage.group=Downloads
+      - homepage.name=SABnzbd
+      - homepage.icon=sabnzbd.png
+      - homepage.href=http://192.168.1.86:8081
+      - homepage.description=Usenet client, via its own VPN
+      - homepage.widget.type=sabnzbd
+      - homepage.widget.url=http://192.168.1.86:8081
+      - homepage.widget.key={{HOMEPAGE_FILE_SABNZBD_KEY}}
+    restart: unless-stopped
+    networks: [arrstack]
+    ports:
+      - 8081:8080
+    environment:
+      - PUID=568
+      - PGID=568
+      - UMASK=002
+      - TZ=America/Los_Angeles
+      - WEBUI_PORTS=8080/tcp,8080/udp
+      - VPN_ENABLED=true
+      - VPN_CONF=wg0
+      - VPN_PROVIDER=generic
+      - VPN_LAN_NETWORK=192.168.1.0/24,10.8.0.0/24
+      - VPN_LAN_LEAK_ENABLED=false
+      - VPN_EXPOSE_PORTS_ON_LAN=
+      - VPN_AUTO_PORT_FORWARD=false
+      - VPN_PORT_REDIRECTS=
+      - VPN_FIREWALL_TYPE=auto
+      - VPN_HEALTHCHECK_ENABLED=false
+      - VPN_NAMESERVERS=wg
+      - PRIVOXY_ENABLED=false
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    volumes:
+      - /mnt/fast/configs/sabnzbd:/config
+      - /mnt/rust/media:/media
+
+networks:
+  arrstack:
+    driver: bridge

@@ -24,3 +24,48 @@
 [data-md-color-scheme="slate"][data-md-color-primary="indigo"] {
   --md-typeset-a-color: #9fa8da;
 }
+
+/*
+ * A published file longer than a screen scrolls inside its block, so opening
+ * it does not push the rest of the page down by hundreds of lines.
+ */
+.md-typeset details .highlight {
+  max-height: 36rem;
+  overflow-y: auto;
+}
+
+/*
+ * The legend at the top of an annotated file block: Material's own
+ * annotation icon, drawn inline, so the reader knows what the markers in the
+ * code look like before meeting one.
+ */
+.md-typeset .file-note-marker {
+  display: inline-block;
+  width: 2.2ch;
+  height: 2.2ch;
+  vertical-align: text-bottom;
+  background-color: var(--md-default-fg-color--lighter);
+  -webkit-mask-image: var(--md-annotation-icon);
+  mask-image: var(--md-annotation-icon);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/*
+ * The legend and download line sits close to the code it describes: the
+ * code table already brings its own top margin.
+ */
+.md-typeset .file-legend {
+  margin-bottom: 0;
+}
+
+/* the "started as a gist" line at the foot of a page (overrides/partials/comments.html) */
+.md-typeset .source-gist {
+  margin-top: 2.5em;
+  font-size: 0.8em;
+  color: var(--md-default-fg-color--light);
+}

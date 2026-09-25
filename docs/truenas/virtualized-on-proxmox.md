@@ -5,40 +5,41 @@ source_gist: https://gist.github.com/scyto/305224b5e651f6d3c318744bfde99974
 
 # virtualized on proxmox
 
-for about a year truenas1 was a VM. it ran on **pve-nas1**, a single Proxmox host
-that was never a member of the [cluster](../proxmox/index.md), and every drive it
-used reached it by PCIe passthrough. ZFS in the VM talked to real controllers and
-real disks, with no virtual disk anywhere in the storage path.
+!!! warning "no longer used"
+    truenas1 runs on bare metal now: see [hardware and base install](hardware-and-base-install.md).
 
-pve-nas1 is an AMD Epyc 9155 (Turin) on an ASRock Rack GENOAD8UD-2T/X550. that
-matters more than it sounds, because the bulk storage hangs off MCIO connectors,
-and how those enumerate shapes a lot of what follows.
 
-it runs on bare metal now. **this page is kept for information.** it is the
-configuration as it was, and it is what i would start from if i virtualized it
-again. devices came and went over that year, so read the tables as the shape of
-the thing rather than a parts list.
+for about a year truenas1 was a VM on pve-nas1, a single Proxmox host that was
+never a member of the [cluster](../proxmox/index.md). every drive it used reached
+it by PCIe passthrough. ZFS in the VM talked to real controllers and real disks,
+with no virtual disk anywhere in the storage path.
+
+pve-nas1 is an AMD Epyc 9115 (Turin) on an ASRock Rack GENOAD8UD-2T/X550. the
+bulk storage hangs off MCIO connectors, and how those enumerate shapes a lot of
+what follows.
+
+this is the configuration as it was, and what i would start from if i
+virtualized it again. devices came and went over that year, so the tables show
+the layout, not a parts list.
 
 ## key principle
 
-anything the VM uses must be bound to `vfio-pci` on the host **before any host
-driver can claim it**, and anything the host uses must never appear in the vfio
-list. there are two ways to get this wrong and they fail differently:
+anything the VM uses must be bound to `vfio-pci` on the host before any host
+driver can claim it, and anything the host uses must never appear in the vfio
+list. getting this wrong fails in one of two ways:
 
-- **the host claims the device.** `nvme` or `ahci` grabs the drive at boot,
+- the host claims the device: `nvme` or `ahci` grabs the drive at boot,
   passthrough fails, and the VM starts without it
-- **the host enumerates the pool.** far worse, and the reason this page exists.
-  proxmox runs ZFS itself, and it will enumerate any pool it can see on a
-  passed-through disk unless that device ID is kept away from it. two kernels
-  with an opinion about one pool is how you lose it, and nothing warns you first
+- the host enumerates the pool, which is far worse. proxmox runs ZFS itself, and
+  it will enumerate any pool it can see on a passed-through disk unless that
+  device ID is kept away from it. two kernels acting on one pool can lose it,
+  and nothing warns you first
 
-people will tell you the second one cannot happen, because the device is assigned
-to a VM and excluded from the host. i am here to tell you it can. early in the
-boot cycle, long before anything to do with virtualization has started, ZFS is
-perfectly capable of claiming those drives.
+the second happens even when the device is assigned to a VM and excluded from
+the host. ZFS can claim those drives early in boot, long before anything to do
+with virtualization has started.
 
-that is why this takes **four** mechanisms and not whichever one you read about
-first:
+keeping the two apart takes four mechanisms:
 
 | | what it does |
 | --- | --- |
@@ -47,21 +48,21 @@ first:
 | `ids=` | names the devices vfio-pci should claim |
 | udev rules | pin awkward devices by address or ID, whatever else happens |
 
-drop the `softdep` lines and the `ids=` line is only a race. winning that race is the entire
-point: a device already bound to `vfio-pci` has no storage driver behind it, so
-the host cannot read a pool it cannot see.
+without the `softdep` lines, the `ids=` line is only a race, and vfio-pci has to
+win it. a device already bound to `vfio-pci` has no storage driver behind it, so
+the host cannot see a pool on it.
 
 !!! danger "never leave a pool exported across a host reboot"
 
     never export a pool in the TrueNAS VM and then reboot the host without
-    importing it again in the VM first. an exported pool is one that nothing
-    claims, and that is precisely the state in which the host will take it.
+    importing it again in the VM first. nothing claims an exported pool, and in
+    that state the host will take it.
 
 ## what was on the bus
 
-everything pve-nas1 could see, in bus order, and who ended up owning it. the
-split in the last column is the whole design: four devices for the host, the rest
-for the VM.
+this table lists everything pve-nas1 could see, in bus order, and what each
+device was bound to. four devices stayed with the host, and the rest went to the
+VM.
 
 | BDF | vendor:device | device | bound to |
 | --- | --- | --- | --- |
@@ -91,23 +92,22 @@ for the VM.
 | `e6:00.0` | `1022:7901` | AMD FCH SATA, phantom | `vfio-pci` |
 | `e6:00.1` | `1022:7901` | AMD FCH SATA, phantom | `vfio-pci` |
 
-- the four Optanes are the SLOG devices, the four Seagates and the disks behind
+- the four Optanes are the SLOG devices. the four Seagates and the disks behind
   the two MCIO connectors are the bulk storage
 - `e6:00.0/.1` are phantom. the chiplet topology exposes them but the board has no
   MCIO wiring behind them, so they get bound along with the real pair and that is
   harmless
-- **the vendor:device IDs are dependable. most of the addresses are not.** the two
-  SATA controllers sit on the FCH at `42:00.0/.1` and the GPU stayed at `21:00.0`
-  for the whole year, but anything on an NVMe carrier moved more than once. a
-  carrier reorder put the Hailo on a completely different bus, and simply adding
-  the second boot NVMe pushed the Mellanox from `c2` to `c3`
-- so the addresses in this table are one snapshot and the IDs are not. that is why
-  everything below binds by ID where it can, and by address only for the two
+- the vendor:device IDs are dependable, and most of the addresses are not. the
+  two SATA controllers sit on the FCH at `42:00.0/.1` and the GPU stayed at
+  `21:00.0` for the whole year, but anything on an NVMe carrier moved more than
+  once. a carrier reorder put the Hailo on a different bus, and adding the second
+  boot NVMe pushed the Mellanox from `c2` to `c3`
+- everything below binds by ID where it can, and by address only for the two
   controllers that never move
 
 ## 1. what stays on the host
 
-four devices, on their normal drivers: the two Micron 7400 PROs that are the
+four devices stay on their normal drivers: the two Micron 7400 PROs that are the
 host's own `rpool` boot mirror, the Mellanox that is its data NIC, the X550 that
 is its management NIC, and the ASPEED BMC console.
 
@@ -116,16 +116,15 @@ their vendor:device IDs are **deliberately absent** from the vfio list in step 2
 - `1344:51c0`, the Micron 7400 PRO. putting this on vfio takes the host's boot
   pool away from it
 - `15b3:1015`, the Mellanox. putting this on vfio takes the host off the network.
-  that is the usual ConnectX-4 Lx ID rather than one i read off this card, so
+  that is the usual ConnectX-4 Lx ID. i did not read it off this card, so
   confirm it with `lspci -nn -s c3:` before trusting it
 
 everything else on the bus goes to the VM.
 
 ## 2. the modprobe rules
 
-one file, `/etc/modprobe.d/vfio-pci.conf`, doing three jobs. i keep them together
-rather than scattered across `blacklist.conf` and friends, because when this goes
-wrong you want to read it all in one place:
+`/etc/modprobe.d/vfio-pci.conf` does three jobs. i keep them in one file, so
+that when this goes wrong it can all be read in one place:
 
 ```conf
 # 1. drivers the host never needs, keep them out entirely
@@ -141,21 +140,20 @@ softdep ahci pre: vfio-pci
 softdep hailo_pci pre: vfio-pci
 
 # 3. what vfio-pci should claim
-options vfio-pci ids=2646:5024,8086:2700,1cc1:8201,1bb1:5018,1e60:2864,1022:7901,10de:2bb1,10de:22e8
+options vfio-pci ids=2646:5024,8086:2700,1cc1:8201,1bb1:5018,1e60:2864,1022:7901,10de:2bb1,10de:22e8,c0a9:5428
 ```
 
-**blacklist where you can, softdep where you cannot.** that is the whole
-distinction:
+blacklist a driver the host never needs, softdep one it does:
 
-- the GPU and the Hailo have host drivers the host has no use for, so those get
+- the host has no use for the GPU's and the Hailo's drivers, so they are
   blacklisted outright
 - `nvme` and `ahci` are different. the host boots off NVMe, so it needs `nvme`
   loaded. a blanket `blacklist nvme` would take the host's own boot pool out
   along with everything else
 - for those two, `softdep nvme pre: vfio-pci` means "before you load `nvme`, load
   `vfio-pci` first". vfio-pci claims everything in `ids=` before the storage
-  driver enumerates anything. it is **ordering, not exclusion**, and it is the
-  line almost every guide leaves out
+  driver enumerates anything. the softdep sets the load order and excludes
+  nothing. almost every guide leaves this line out
 - `hailo_pci` gets both, because it costs nothing and that card caused enough
   trouble already (step 7)
 
@@ -177,33 +175,22 @@ what each ID catches:
 | `1022:7901` | all four AMD FCH SATA controllers (`42:00.0/.1`, `e6:00.0/.1`) |
 | `10de:2bb1` | NVIDIA RTX PRO 6000 Blackwell (`21:00.0`) |
 | `10de:22e8` | Blackwell HDA audio. a no-op while the card is in compute mode, kept so flipping it back to display mode needs no edit |
+| `c0a9:5428` | Crucial T710 NVMe (`84:00.0`) |
 
-!!! warning "one passed-through device is missing from that list"
+- binding by vendor:device covers every identical drive with one ID, so adding
+  another Optane needs no edit and a bus renumber breaks nothing
 
-    `84:00.0`, the Crucial T710, goes to the VM on `hostpci8`, but its ID
-    `c0a9:5428` is **not** in the `ids=` line. that is how it is recorded in both
-    places i have it from, so i have left it rather than quietly correcting the
-    record, but it is a gap either way: nothing stops the host's `nvme` driver
-    claiming that drive at boot. if you are copying this line, add `c0a9:5428`.
-
-    the general check, before you trust any `ids=` line: every device in the
-    `hostpci` map must be covered by an entry here.
-
-- **bind by vendor:device, not by address.** one ID covers every identical drive,
-  so adding another Optane needs no edit and a bus renumber breaks nothing
-
-i worked the original list out with a script rather than by hand, because reading
-`lspci` and missing one device is exactly the mistake that costs you a pool. it
-takes the boot drives out of `zpool status` for `rpool` or `boot-pool`, excludes
-those, and prints every remaining NVMe and SATA device as a `vendor:device` pair:
+i made the original list with a script, because reading `lspci` by hand and
+missing one device can cost you a pool. it takes the boot drives out of
+`zpool status` for `rpool` or `boot-pool`, excludes those, and prints every
+remaining NVMe and SATA device as a `vendor:device` pair:
 [scyto/virtio-fs-detection-and-exlusion](https://github.com/scyto/virtio-fs-detection-and-exlusion).
 
-that repo also has an initramfs hook that binds by address at boot. **i abandoned
-that approach as too fragile**: it carries a hard-coded list of BDFs, and BDFs
-move on their own, so a hook written for one topology silently binds the wrong
-thing after a card goes in. the modprobe and udev binding here replaced it. the
-generator script is still worth keeping, it is the fastest way to get a correct
-ID list on a rebuilt host.
+that repo also has an initramfs hook that binds by address at boot. i don't use
+it: its list of BDFs is hard-coded, and after a card goes in and the bus
+renumbers, it binds the wrong device. the modprobe and udev binding here
+replaced it. the generator script is the fastest way to get a correct ID list on
+a rebuilt host.
 
 ## 3. pin the SATA controllers by address as well
 
@@ -216,9 +203,9 @@ ACTION=="add", SUBSYSTEM=="pci", KERNELS=="0000:42:00.1", ATTR{driver_override}=
 ACTION=="add", SUBSYSTEM=="pci", KERNELS=="0000:42:00.1", RUN+="/bin/sh -c 'modprobe vfio-pci; echo 0000:42:00.1 > /sys/bus/pci/drivers/vfio-pci/bind'"
 ```
 
-these are the two motherboard MCIO connectors, which is where the spinning disks
-live. they are also the only devices whose address i am willing to hardcode: they
-are on the FCH and they have never moved.
+these rules pin the two motherboard MCIO connectors, where the spinning disks
+live. they are the only devices whose address i hardcode, because they are on
+the FCH and have never moved.
 
 - a third layer on top of `1022:7901` and the `ahci` softdep in step 2. these two
   controllers carry the bulk pool, so i want them bound even if something
@@ -227,13 +214,13 @@ are on the FCH and they have never moved.
   controller by the time udev runs, the bind fails, which is why the load
   ordering in step 2 still matters
 - `driver_override` sets the only driver the device will ever accept, and the
-  `RUN+=` line binds it there and then rather than waiting
+  `RUN+=` line binds it straight away
 
-## 4. make sure vfio actually loads, then apply
+## 4. load vfio early, then apply
 
-everything above *configures* vfio-pci. none of it *loads* it, and a `softdep`
-that points at a module the initramfs does not carry buys you nothing. so ask for
-the modules explicitly.
+everything above configures vfio-pci, and none of it loads it. a `softdep` on a
+module the initramfs does not carry does nothing, so list the modules
+explicitly.
 
 `/etc/initramfs-tools/modules`:
 
@@ -252,21 +239,21 @@ udevadm control --reload-rules
 
 reboot for the modprobe changes to take effect.
 
-- it has to be **this** file. modules listed here are included in the initramfs
-  and loaded early in boot, which is the only stage that matters on a host that
-  boots off NVMe: by the time the real root is up, `nvme` has long since loaded
-- the Proxmox wiki points at `/etc/modules-load.d/vfio.conf` instead. that is read
-  by systemd in the real root, so it is too late to win this particular race
+- it has to be this file. modules listed here go into the initramfs and load
+  early in boot. on a host that boots off NVMe that is the only stage that
+  matters, because `nvme` has loaded long before the real root is up
+- the Proxmox wiki points at `/etc/modules-load.d/vfio.conf` instead. systemd
+  reads that in the real root, which is too late to win the race
 - do not assume the module is already in the image. `MODULES=most`, the default,
   covers filesystem, ata, sata, scsi and usb drivers, and `vfio-pci` is none of
   those
-- older guides, mine included, list a fourth module here, `vfio_virqfd`. it was
+- older guides, mine included, list a fourth module here: `vfio_virqfd`. it was
   folded into the vfio core in kernel 6.2 and no longer exists, so drop it
 
 ## 5. the VM itself
 
-VM 100 as it stood. nothing exotic, and the only virtual disk was the one TrueNAS
-booted from:
+this is VM 100 as it stood. the only virtual disk was the one TrueNAS booted
+from:
 
 | | |
 | --- | --- |
@@ -287,8 +274,8 @@ booted from:
 - CPU type `host`, not a model. ZFS wants the real instruction set
 - the 64 GB boot disk lived on the host's `local-zfs`, so it was the one part of
   the NAS the host did own. everything holding data was passed through
-- ballooning on a ZFS box is a matter of taste. the floor is 64 GiB so ARC never
-  gets squeezed below something sensible
+- ballooning on a ZFS box is a matter of taste. the 64 GiB floor keeps ARC from
+  being squeezed too far
 
 ## 6. the hostpci map
 
@@ -324,38 +311,34 @@ args: -set device.hostpci0.x-msix-relocation=bar5 -set device.hostpci1.x-msix-re
 ```
 
 - `x-msix-relocation=bar5` moves the MSI-X tables on the two SATA controllers.
-  without it the VM will not start and you get this, which is what sent me down
-  this road in the first place:
+  without it the VM will not start, and logs this:
 
     ```
     vfio 0000:42:00.0: hardware reports invalid configuration, MSIX PBA outside of specified BAR
     ```
 
-    this is not an ASRock quirk. it appears to be common to EPYC boards of this
-    generation, so expect it on anything similar
+    it appears to be common to EPYC boards of this generation, not an ASRock
+    quirk, so expect it on anything similar
 
-- the Hailo-8 gets its own explicit `pcie-root-port` with `hotplug=off` rather
-  than a `hostpciN` slot. that is a whole story of its own, see step 7
+- the Hailo-8 gets its own explicit `pcie-root-port` with `hotplug=off` in place
+  of a `hostpciN` slot, see step 7
 
-**add the two SATA controllers as discrete devices.** pass `42:00.0` and
-`42:00.1` separately. do not select `42:00` and tick "All Functions", it does not
-work on this board.
+pass the two SATA controllers as separate devices, `42:00.0` and `42:00.1`.
+selecting `42:00` with "All Functions" ticked does not work on this board.
 
-**the slot numbers above are one moment in time.** the bus renumbered more than
-once over the year, as carriers were reordered and cards came and went, and the
-`hostpciN` block had to be rewritten to match each time. read the pattern, not
-the numbers.
+the slot numbers above are from one moment. the bus renumbered more than once
+over the year, as carriers were reordered and cards came and went, and the
+`hostpciN` block had to be rewritten to match each time.
 
-**this block and the `host=` in `args:` are the only things a renumber breaks.**
-they name addresses, so they need editing whenever the bus moves. the modprobe
-rules and the Hailo udev rule name IDs, so they carry over untouched. that is the
-argument for keeping as little as possible keyed on addresses.
+this block and the `host=` in `args:` are the only things a renumber breaks,
+because they name addresses. the modprobe rules and the Hailo udev rule name
+IDs, so they carry over untouched.
 
-!!! warning "a duplicate `hostpciN` key silently drops a device"
+!!! warning "a duplicate `hostpciN` key drops a device without an error"
 
     i once ended up with two `hostpci14` lines after a renumber. nothing
-    complains: the file parses, the VM starts, and one of the two devices simply
-    is not there. if a drive goes missing after you edit the passthrough block,
+    complains: the file parses, the VM starts, and one of the two devices is
+    not there. if a drive goes missing after you edit the passthrough block,
     count the keys before you suspect the hardware.
 
     ```
@@ -364,35 +347,34 @@ argument for keeping as little as possible keyed on addresses.
 
 ## 7. the Hailo-8, FLR and bus resets
 
-the Hailo is the one device that does not sit in a `hostpciN` slot, and it took
-three goes to get right. if you are passing one through, this is the section that
-saves you the time.
+the Hailo is the one device that does not sit in a `hostpciN` slot. it needs its
+own root port, a slot and chassis chosen by hand, and FLR turned off by a udev
+rule.
 
-**why it needs its own root port.** a function level reset makes the Hailo drop
-off the bus and re-enumerate. the hotplug event that follows panics the host at
-BIOS level, so Proxmox's ordinary `hostpci` path is unusable for it. instead it
-gets the explicit `pcie-root-port` with `hotplug=off` from the `args:` line
-above. when that is working the link event is logged and ignored rather than
-acted on:
+a function level reset makes the Hailo drop off the bus and re-enumerate. the
+hotplug event that follows panics the host at BIOS level, so Proxmox's ordinary
+`hostpci` path can't be used for it. it gets the explicit `pcie-root-port` with
+`hotplug=off` from the `args:` line above instead. when that works, the link
+event is logged and ignored:
 
 ```
 pciehp: Slot(20): Link Down/Up ignored
 ```
 
-**choose the slot and chassis by hand.** my first version used `slot=10` and
-`chassis=10`, and the VM started crashing as more devices went in: Proxmox
-generates its own root port per `hostpciN` and those grew into chassis 5 to 16
-and collided with mine. `addr=12.0, chassis=20` sits clear of them.
+choose the slot and chassis by hand. Proxmox generates a root port for each
+`hostpciN`, and as more devices went in those grew into chassis 5 to 16.
+`slot=10` and `chassis=10` collided with them and the VM crashed.
+`addr=12.0, chassis=20` sits clear of them.
 
-**then take FLR off the menu.** even with hotplug off, VM start took about two
-and a half minutes, with this twice in the kernel log:
+even with hotplug off, the VM took about two and a half minutes to start, with
+this twice in the kernel log:
 
 ```
 not ready 65535ms after FLR; giving up
 ```
 
-each attempt burns 65 seconds before falling back to a secondary bus reset on the
-parent port. the fix is to stop offering FLR at all:
+each attempt waits 65 seconds before falling back to a secondary bus reset on
+the parent port. the fix is to stop offering FLR:
 
 ```
 cat /sys/bus/pci/devices/0000:01:00.0/reset_method     # flr bus cxl_bus
@@ -402,10 +384,9 @@ echo bus > /sys/bus/pci/devices/0000:01:00.0/reset_method
 vfio then goes straight to the bus reset and the VM starts promptly. `cxl_bus` in
 that list is irrelevant for this card.
 
-**make it survive renumbering.** that write does not persist, and my first udev
-rule keyed on the BDF, which broke the moment i reshuffled the NVMe carrier and
-everything renumbered. the delay came straight back. key it on the vendor and
-device ID instead, which survives a reshuffle.
+that write does not persist, so a udev rule sets it. key the rule on the vendor
+and device ID. a rule keyed on the BDF broke when i reshuffled the NVMe carrier
+and everything renumbered, and the delay came straight back.
 
 `/etc/udev/rules.d/99-hailo-reset.rules`:
 
@@ -424,17 +405,15 @@ cat /sys/bus/pci/devices/<BDF>/reset_method
 
 - without `udevadm settle` the read races udev, and the first one still shows
   `flr bus cxl_bus`. read it twice before believing it
-- this is the same lesson as the `ids=` line. key on what the device *is*, not on
-  where it happens to sit today
 
 ## what virtualizing costs
 
-mostly nothing, until you have to write to a device's own flash.
+it costs little until you have to write to a device's own flash.
 
-**card firmware cannot be flashed from inside the VM.** vfio passes MMIO through
-but silently drops QSPI writes, so the flash tool reports success and the version
-never changes. i hit this on the MemryX MX3, and its installer now refuses to try
-from a guest at all:
+card firmware cannot be flashed from inside the VM. vfio passes MMIO through but
+drops QSPI writes without an error, so the flash tool reports success and the
+version never changes. i hit this on the MemryX MX3, and its installer now
+refuses to try from a guest at all:
 
 ```
 ERROR: this TrueNAS is a VM (kvm). MX3 firmware CANNOT be flashed from a
@@ -453,9 +432,9 @@ the fix is to do it on the host:
 3. run the vendor's flash tool on the host
 4. **full power cycle**, not a reboot. the card only reads its flash at power-on
 
-the same shape of problem applies to any card whose firmware updater writes to
-onboard flash. check before you assume an in-guest update worked, because the
-failure is silent.
+the same applies to any card whose firmware updater writes to onboard flash.
+check the version before you assume an in-guest update worked, because the
+failure gives no error.
 
 ## sources
 

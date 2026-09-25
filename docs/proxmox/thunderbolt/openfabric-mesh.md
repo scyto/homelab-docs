@@ -12,20 +12,23 @@ comments: true
 
 This assumes you are running Proxmox 8.4 and that the line `source /etc/network/interfaces.d/*` is at the end of the interfaces file (this is automatically added to both new and upgraded installations of Proxmox 8.2).
 
-This changes the previous file design thanks to @NRGNet and @tisayama to make the system much more reliable in general, more maintainable esp for folks using IPv4 on the private cluster network ~(i still recommend the use of the IPv6 FC00 network you will see in these docs)~
+Update as of 2026.09.24: my cluster runs Proxmox VE 9 now, and this mesh is still set up by hand as below, not with PVE 9's SDN fabrics.
+
+This changes the previous file design thanks to @NRGNet and @tisayama to make the system much more reliable in general, more maintainable esp for folks using IPv4 on the private cluster network ~~(i still recommend the use of the IPv6 FC00 network you will see in these docs)~~
 
 Notable changes from original version [here](openfabric-mesh-legacy.md)
 
-- ~move IP address configuration from `interfaces.d/thundebolt` to frr configuration~ i reverted this on 2025.04.27 and improved settings  in interfaces.d/thunderbolt based on recommendations from chatGPT to solve issues i hit it my routed network setup (coming soon)
+- ~~move IP address configuration from `interfaces.d/thundebolt` to frr configuration~~ i reverted this on 2025.04.27 and improved settings  in interfaces.d/thunderbolt based on recommendations from chatGPT to solve issues i hit it my routed network setup (coming soon)
 - new approach to remove dependecy on post-up with new scripts in if-up.d that logs to systemlog
 - reminder to copy frr.conf > frr.conf.local to prevent breakage if you enable Proxmox SDN
 - dependent on the changes to the udev link scripts [here](cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions)
 
 This will result in an IPv4 and IPv6 routable mesh network that can survive any one node failure or any one cable failure. Alls the steps in this section must be performed on each node
 
-> ** NOTES on Dual Stack*
+> **NOTES on Dual Stack**
 > 
 > Having spent 3 days hammering my network and playing with various different routed toplogies i am of the current opinion
+>
 > - i still prefer IPv6 for my mesh but if you setup for IPv4 it should now be fine but my gists will continue to assume you used IPv6 for ceph
 > - i have no opinion on squid and dual stack yet - should be doable... we will seee
 > - if you use ONLY IPv6 for the love-of-god(tm) make sure that `ms_bind_ipv4 = false` is set in ceph.conf or really bad things will eventuall happen
@@ -58,6 +61,7 @@ iface lo inet loopback
     up ip addr add 10.0.0.81/32 dev lo
 ```
 > **Notes:**
+>
 > - doing loopback IP is more reliable in interfaces file than in frr.conf the ip address will always be available for the mon, mgr, and mds processes of ceph to bind to irrespective of frr service status
 > - mtus are super importantor BGP and openfabric seem to have node to node negotiation issues
 > - the `pre-up` and `up` directives were recommended by chatGPT to ensure the interfaces are up before applying the IP address and MTU - should make things more reliable
@@ -65,6 +69,12 @@ iface lo inet loopback
 
 ## Enable IPv4 and IPv6 forwarding
 1. use `nano /etc/sysctl.d/local.conf` to open the file (if it doesn't exist create it and add the lines below)
+
+    ```
+    net.ipv6.conf.all.forwarding=1
+    net.ipv4.ip_forward=1
+    ```
+
 2. uncomment `#net.ipv6.conf.all.forwarding=1` (remove the # symbol)
 3. uncomment `#net.ipv4.ip_forward=1` (remove the # symbol)
 4. save the file
@@ -87,6 +97,7 @@ iface lo inet loopback
 #### create script that is automatically processed when en05/en06 are brougt up to restart frr
 
 > **notes**
+>
 > - this should make IPv4 more stable for all users (i ended up seeing IPv4 issues too, just less commonly than MS-101 users)
 > - i found the chnages i introduced in 2.5 version of this gist make this less needed, occasionally ifreload / ifupdown2 may cause enough changes that frr gets restarted too often and the service will need to be unblocked with systemctl.
 
@@ -148,59 +159,61 @@ make it executable with `chmod +x /etc/network/if-up.d/lo`
 
 ### Configure OpenFabric (perforn on all nodes)
 
-**note: if (and only if) you have already configured SDN you should make these settings in /etc/frr/frr.conf.local and reapply your SDN configuration to have SDN propogate these into frr.conf (you can also make the edits to both files if you prefer) if you make these edits to only frr.conf with SDN active and then reapply the settings it will loose these settings.
+**note: if (and only if) you have already configured SDN you should make these settings in /etc/frr/frr.conf.local and reapply your SDN configuration to have SDN propogate these into frr.conf (you can also make the edits to both files if you prefer) if you make these edits to only frr.conf with SDN active and then reapply the settings it will loose these settings.**
 
 1. enter the FRR shell with `vtysh`
 2. optionally show the current config with `show running-config`
 3. enter the configure mode with `configure`
 4. Apply the bellow configuration (it is possible to cut and paste this into the shell instead of typing it manually, you may need to press return to set the last !.  Also check there were no errors in repsonse to the paste text.).
 
-**Note: the X should be the number of the node you are working on** For example node 1 would use 1 in place of X
-```
-ip forwarding
-ipv6 forwarding
+    **Note: the X should be the number of the node you are working on** For example node 1 would use 1 in place of X
 
-interface en05
- ip router openfabric 1
- ipv6 router openfabric 1
- openfabric hello-interval 1
- openfabric hello-multiplier 3
- openfabric csnp-interval 5
- openfabric psnp-interval 2
-exit
+    ```
+    ip forwarding
+    ipv6 forwarding
 
-interface en06
- ip router openfabric 1
- ipv6 router openfabric 1
- openfabric hello-interval 1
- openfabric hello-multiplier 3
- openfabric csnp-interval 5
- openfabric psnp-interval 2
-exit
+    interface en05
+     ip router openfabric 1
+     ipv6 router openfabric 1
+     openfabric hello-interval 1
+     openfabric hello-multiplier 3
+     openfabric csnp-interval 5
+     openfabric psnp-interval 2
+    exit
 
-interface lo
- ip router openfabric 1
- ipv6 router openfabric 1
- openfabric hello-interval 1
- openfabric hello-multiplier 3
- openfabric csnp-interval 5
- openfabric psnp-interval 2
- openfabric passive
-exit
+    interface en06
+     ip router openfabric 1
+     ipv6 router openfabric 1
+     openfabric hello-interval 1
+     openfabric hello-multiplier 3
+     openfabric csnp-interval 5
+     openfabric psnp-interval 2
+    exit
 
-router openfabric 1
-net 49.0000.0000.000x.00
-lsp-gen-interval 5
-exit
-!
-exit
+    interface lo
+     ip router openfabric 1
+     ipv6 router openfabric 1
+     openfabric hello-interval 1
+     openfabric hello-multiplier 3
+     openfabric csnp-interval 5
+     openfabric psnp-interval 2
+     openfabric passive
+    exit
 
-```
+    router openfabric 1
+    net 49.0000.0000.000x.00
+    lsp-gen-interval 5
+    exit
+    !
+    exit
+
+    ```
+
 5. you may need to press return after the last `exit` to get to a new line - if so do this
 6. save the configu with `write memory`
 7. show the configure applied correctly with `show running-config` - note the order of the items will be different to how you entered them and thats ok.  (If you made a mistake i found the easiest way was to edt `/etc/frr/frr.conf` - but be careful if you do that.)
 8. use the command `exit` to leave setup
-9. repeat steps 1 to 9 on the other 3 nodes
+9. repeat steps 1 to 8 on the other 2 nodes
 10. once you have configured all 3 nodes issue the command `vtysh -c "show openfabric topology"` if you did everything right you will see (note it may take 45 seconds for for all routes to show if you just restarted frr for any reason):
 ```
 Area 1:
@@ -231,6 +244,6 @@ Now you should be in a place to ping each node from evey node across the thunder
 ### IMPORTAT - you need to do this to stop SDN breaking you in future 
 if all is working issue a `cp /etc/frr/frr.conf /etc/frr/frr.conf.local` this is because when enabling proxmox SDN proxmox will overwrite frr.conf - however it will read the .local file and apply that.
 
-**note: if you already have SDN configured do not do the step above as you will mess both your SDN and this openfabric topology (see note at start of frr instructions)
+**note: if you already have SDN configured do not do the step above as you will mess both your SDN and this openfabric topology (see note at start of frr instructions)**
 
 based on this response https://forum.proxmox.com/threads/relationship-of-frr-conf-and-frr-conf-local.165465/ if you have SDN all local (non SDN) configuration changes should be made in .local, this should be read next time SDN apply is used. do not copy frr.conf > frr.conf.local after doing anything with SDN or when you tear down SDN the settings will not be removed from frr.conf

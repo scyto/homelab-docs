@@ -1,7 +1,10 @@
 ---
-title: "Don't be like scyto"
+title: "Domain Controller 2"
 source_gist: https://gist.github.com/scyto/f8b0a1b06ae62f03db3182f8bd23abda
 ---
+
+# domain controller 2
+
 
 # Don't be like scyto
 ## Don't do all the restoring crap below
@@ -65,7 +68,7 @@ Then the VM - make new HDD IDE - need to be same size as the parititons added to
 Make network virtuio
 mount the recovery CD and the virtio CD
 boot from recover CD
-adn the NetKVM driver and and vstor driver when prompted (browse the virtio cd)
+adn the NetKVM driver and and viostor driver when prompted (browse the virtio cd)
 choose if you want to restore all partitions (i seemed to have two recovery parts and i never use those, so i decided to see what would happen if i restrored just the system and EFI partitions....
 
 Well thats cool, and it only took 3 minutes to complete

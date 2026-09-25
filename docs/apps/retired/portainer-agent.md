@@ -1,9 +1,13 @@
 ---
-title: "migrate portainer agent to be managed by portainer"
+title: "Portainer Agent Managed by Portainer"
 source_gist: https://gist.github.com/scyto/c2f1dbe119cc742d220dc13b50689ec8
 ---
 
 # migrate portainer agent to be managed by portainer
+
+!!! warning "no longer used"
+    the agent is its own stack now, deployed from git: see [portainer](../../docker/portainer.md).
+
 
 ## Description
 This template deploys the portainer agent via portainer.  I wanted a way to update the agent independently from the portainer web app.
@@ -22,6 +26,7 @@ this makes the network 'external' to the stack
 ### DO NOT DELETE OR STOP OLD AGENTS UNTIL YOU KNOW NEW AGENTS WORK
 
 i reccommend that you:
+
   1. make the new portainer network overlay
   2. you make it attachable
   3. you use the portainer UI to attach your running portainer web app service / container instance to this new network in addition to its default

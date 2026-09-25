@@ -22,8 +22,10 @@ I thought setting up cedph for these would be a great idea (and it is).
 ## set storage use 
 2. Click `Datacenter > storage`
 3. Select `ISOs-Templates`
-4. 5. Edit the content section to remove VZDump Backup file and snippets
+4. Edit the content section to remove VZDump Backup file and snippets
 6. edit backup settings as you prefer and click `ok`
+
+Update as of 2026.09.24: keep snippets on ISOs-Templates if you use the [virtiofs hook script](cephfs-start-guards.md). it lives in `ISOs-Templates/snippets`, and proxmox only creates that folder while snippets is enabled.
 
 <p align="center">
 <img width="577" alt="image" src="../../assets/img/7918a644aa52.png">

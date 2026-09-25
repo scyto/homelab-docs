@@ -1,0 +1,244 @@
+endpoints:
+  - name: mosquitto
+    group: plumbing
+    url: "tcp://192.168.1.45:1883"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: oauth2 proxy
+    group: plumbing
+    url: "http://192.168.1.45:4180/ping"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == OK"
+
+  - name: docker proxy swarm
+    group: plumbing
+    url: "http://dockerproxy:2375/version"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].ApiVersion) == true"
+
+  - name: config sync gatus
+    group: plumbing
+    url: "http://gatus-git-sync:8080/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: config sync homepage
+    group: plumbing
+    url: "http://homepage-git-sync:8080/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: docker proxy truenas1
+    group: plumbing
+    url: "http://192.168.1.86:2375/version"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].ApiVersion) == true"
+
+  - name: portainer agent truenas1
+    group: plumbing
+    url: "tcp://192.168.1.86:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: portainer agent docker01
+    group: plumbing
+    url: "tcp://192.168.1.41:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: portainer agent docker02
+    group: plumbing
+    url: "tcp://192.168.1.42:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: portainer agent docker03
+    group: plumbing
+    url: "tcp://192.168.1.43:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: dozzle agent docker01
+    group: plumbing
+    url: "tcp://192.168.1.41:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: dozzle agent docker02
+    group: plumbing
+    url: "tcp://192.168.1.42:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: dozzle agent docker03
+    group: plumbing
+    url: "tcp://192.168.1.43:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: dozzle agent truenas1
+    group: plumbing
+    url: "tcp://192.168.1.86:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: flaresolverr
+    group: plumbing
+    url: "http://192.168.1.86:8191/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].msg == pat(*FlareSolverr is ready*)"
+
+  - name: ollama
+    group: plumbing
+    url: "http://192.168.1.86:30068/api/tags"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "len([BODY].models) > 0"
+
+  - name: dozzle agent syn02
+    group: plumbing
+    url: "tcp://192.168.1.31:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: dozzle agent pi-zwave01
+    group: plumbing
+    url: "tcp://192.168.1.96:7007"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: portainer agent syn02
+    group: plumbing
+    url: "tcp://192.168.1.31:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: portainer agent pi-zwave01
+    group: plumbing
+    url: "tcp://192.168.1.96:9001"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CONNECTED] == true"]
+
+  - name: npm database
+    group: plumbing
+    url: "http://192.168.1.45:181/api/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == OK"
+      - "[BODY].setup == true"
+
+  - name: wordpress database
+    group: plumbing
+    url: "http://192.168.1.45:8180/wp-json/"
+    headers:
+      Host: mydomain.com
+    client:
+      ignore-redirect: true
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].name) == true"
+
+  - name: open webui redis
+    group: plumbing
+    url: "http://192.168.1.86:31028/ready"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == true"
+
+  - name: cloudflare ddns
+    group: plumbing
+    url: "https://portainer.mydomain.com/api/system/status"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].InstanceID) == true"
+
+  - name: acme synology
+    group: plumbing
+    url: "https://syn02.mydomain.com:5101/"
+    interval: 1h
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CERTIFICATE_EXPIRATION] > 504h"]
+
+  - name: acme asrock bmc
+    group: plumbing
+    url: "https://asrock-bmc.mydomain.com/"
+    interval: 1h
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[CERTIFICATE_EXPIRATION] > 504h"]
+
+  - name: docker autolabel
+    group: plumbing
+    url: "http://dockerproxy:2375/nodes"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*\"running_adguard1\":\"1\"*)"
+      - "[BODY] == pat(*\"running_adguard2\":\"1\"*)"

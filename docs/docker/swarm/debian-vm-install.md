@@ -1,7 +1,10 @@
 ---
-title: "This file describes the network interfaces available on your system"
+title: "Installing Debian as VM"
 source_gist: https://gist.github.com/scyto/b714ba6ebacc15843d3d7a873ce9597e
 ---
+
+# installing debian as VM
+
 
 This is the base of all my linux VM installs I use for docker etc
 
@@ -9,10 +12,10 @@ This is the base of all my linux VM installs I use for docker etc
 - Download netinst ISO from debian website
 - Create a VM on your hypervsor 
 - VM Machine Spec:
-   - 200GB
-   - 2 CPU
-   - 4GB RAM
-   - Attach to external network
+    - 200GB
+    - 2 CPU
+    - 4GB RAM
+    - Attach to external network
 - Boot from ISO
 
 ## Debian Install (hints)
@@ -29,7 +32,7 @@ Login as root on console, install basics
 apt-get update
 apt-get upgrade
 apt-get install nano sudo curl
-apt-get install --no-install-recommends qemu-system libvirt-clients libvirt-daemon-system
+apt-get install qemu-guest-agent
 ```
 ### Make sure you can do sudo  
 Add user to sudo group 
@@ -46,11 +49,11 @@ This assumes your ethernet adapter is eth0 in the VM, change as needed.
 ```
 sudo nano /etc/network/interfaces   
 ```
+
 - Edit `iface eth0 inet dhcp` and change to `iface eth0 inet static`
 - add your static config (i prefer this approach as a failed DHCP server with static leases can't bring your swarm down...) as an example here is my complete file for my first node, you would increment the IP for each node.
 
 ```
-  GNU nano 5.4                       /etc/network/interfaces *                                                                              
 # This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
 
@@ -98,6 +101,7 @@ sudo nano /etc/NetworkManager/NetworkManager.conf
 ```
 sudo nano /etc/network/interfaces
 ```
+
 - Comment out all eth0 lines
 - save and exit
 
@@ -105,6 +109,7 @@ sudo nano /etc/network/interfaces
 sudo systemctl start NetworkManager
 sudo systemctl enable NetworkManager
 ```
+
 - Reboot now
 
 ## Network Manager configuration - Second Login

@@ -8,6 +8,8 @@ source_gist: https://gist.github.com/scyto/650749b7297587e8c51be08c027d8b2c
 ## Description
 This template runs mqtt for use with home automation
 
+Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
+
 ## State Considerations for SWARM
 With the latest version of mosquitto a single config is required to enable it to listen.
 You can do this by mapping thevconfig in a volume mount as per normal.
@@ -45,3 +47,12 @@ Use the portainer UI to create a config - note once created they cannot be edite
 listener 1883
 allow_anonymous true
 ```
+
+## what i run now
+
+- the config is `mosquitto.conf` in git. it deploys as a swarm config with a version in its name, see [stack conventions](../docker/conventions.md#swarm-configs-are-versioned-by-name)
+- the image is pinned to `eclipse-mosquitto:2.1.2-alpine`
+
+--8<-- "blocks/swarm/mqtt/compose.yml.md"
+
+--8<-- "blocks/swarm/mqtt/mosquitto.conf.md"

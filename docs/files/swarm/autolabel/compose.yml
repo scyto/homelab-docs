@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  dockerautolabel:
+    build: .
+    image: davideshay/dockerautolabel:latest
+    environment:
+      - TZ=America/Los_Angeles
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - /var/run/docker.sock:/var/run/docker.sock
+    configs:
+      - source: dockerautolabel_config
+        target: /config/servicelist.txt
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [ node.role == manager]
+
+configs:
+  dockerautolabel_config:
+    file: ./servicelist.txt
+    name: dockerautolabel_config_v4

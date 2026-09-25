@@ -1,0 +1,56 @@
+services:
+  glances:
+    container_name: glances
+    image: nicolargo/glances:4.5.6@sha256:1d41d61685b620256a8189ca6761129d30c76eb2ef50f100b9dc6265d977f1a3
+    restart: unless-stopped
+    environment:
+      - GLANCES_OPT=--webserver --port 61208
+      - TZ=America/Los_Angeles
+    network_mode: host
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        v() { sed -n "s/^$$1=\"\(.*\)\"$$/\1/p" /dsm/VERSION; }
+        printf "NAME=\"Synology DSM\"\nID=dsm\nVERSION_ID=\"%s\"\nPRETTY_NAME=\"Synology DSM %s-%s\"\n" "$$(v productversion)" "$$(v productversion)" "$$(v buildnumber)" > /etc/os-release
+        /venv/bin/python3 - <<'PY'
+        import configparser
+        p = "/etc/glances/glances.conf"
+        c = configparser.ConfigParser(interpolation=None)
+        c.read(p)
+        c["network"]["hide"] = "veth.*,docker.*,br-.*,lo"
+        c["fs"]["show"] = "/host/.*"
+        c["fs"]["allow"] = "virtiofs"
+        c.write(open(p, "w"))
+        PY
+        exec /venv/bin/python$${PYTHON_VERSION} -m glances $${GLANCES_OPT}
+    volumes:
+      - type: bind
+        source: /etc/VERSION
+        target: /dsm/VERSION
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /var/lib/glances-probe
+        target: /host/root
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /volume1/docker/glances-probe
+        target: /host/volume1
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD
+        - /venv/bin/python3
+        - -c
+        - "import json,urllib.request as u; m=json.load(u.urlopen('http://127.0.0.1:61208/api/4/quicklook',timeout=5)).get('mem',0); print('mem',m); raise SystemExit(0 if m>0 else 1)"
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

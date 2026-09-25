@@ -18,4 +18,4 @@ a truenas custom app rather than a `docker run`, so truenas manages it with its 
 
 ## run by truenas, not portainer
 
-grafana, prometheus, ollama, open-webui, searxng and versitygw are truenas catalogue apps, and a docker socket proxy is a custom app. they are managed in the truenas UI, not from git, see [truenas apps](../../truenas/apps.md).
+grafana, prometheus, ollama, open-webui, searxng and versitygw are truenas catalog apps, and a docker socket proxy is a custom app. they are managed in the truenas UI, not from git, see [truenas apps](../../truenas/apps.md).

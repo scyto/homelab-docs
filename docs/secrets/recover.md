@@ -33,7 +33,7 @@ On any Swarm manager, from a workstation with ssh or on the manager itself.
 this on the manager:
 
 ```bash
-docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 ghcr.io/scyto/key-manager:latest
+docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e HOMELAB_REPO_URL=https://github.com/you/your-repo.git ghcr.io/scyto/key-manager:latest
 ```
 
 **1.2** At `No repo in /repo. Sign in to GitHub and clone it now? [Y/n]`, press
@@ -115,12 +115,21 @@ export SOPS_AGE_KEY_FILE=/work/age-key
 list
 ```
 
-> **`no identity matched any of the recipients`** means the key was mistyped.
-> age keys carry a checksum, so a typo fails rather than giving a wrong key.
+> **`identity did not match any of the recipients`**, or
+> `no identity matched any of the recipients` when sops tried more than one
+> key, means the key is a valid age key, but not one this store is encrypted
+> to: an old key, or another store's. It is not a typo. A mistyped key never
+> gets that far: age keys carry a checksum, so it fails first, as a
+> `malformed secret key`, usually with `invalid checksum`.
 >
 > **Do not use `SOPS_AGE_KEY`** for this. sops accepts the key in that
-> environment variable, but environment variables can be read with
-> `docker inspect`.
+> environment variable, but setting it leaves the key behind. Passed with
+> `docker run -e`, it is in the container's configuration, which
+> `docker inspect` shows to anyone with the Docker socket, and on the
+> `docker run` command line, which `ps` shows on the host. Typed as
+> `export SOPS_AGE_KEY=...` at the prompt, it is on a command line inside the
+> container, and bash saves that to `~/.bash_history`, on the container's disk,
+> when you exit. `cat` into `/work` puts it in neither place.
 >
 > `/work` is a tmpfs: the file is in RAM and gone when the container exits.
 
@@ -144,7 +153,13 @@ Then once, on a manager:
 
 ```bash
 ./bootstrap/networks.sh swarm
+./bootstrap/networks.sh overlay
 ```
+
+`swarm` makes the AdGuard macvlans from the per-node configs, so it needs
+`config-only` done everywhere first. `overlay` makes `discovery`, the
+attachable overlay that Homepage and Gatus use to reach `dockerproxy`, and
+depends on neither.
 
 **4.3** On a manager, start the container and read the store, as in section 1
 or 2.
@@ -258,22 +273,47 @@ age-keygen -y
 A typo gives `invalid checksum` rather than a silently wrong key, because the
 key format carries a checksum.
 
-**5.4** Create the vault, with soft-delete and purge protection:
+**5.4** Create the vault, with Azure RBAC, soft-delete and purge protection:
 
 ```bash
-az keyvault create --name <vault> --resource-group <resource group> --location <region> --enable-purge-protection true --retention-days 90
+az keyvault create --name <vault> --resource-group <resource-group> --location <region> --enable-rbac-authorization true --enable-purge-protection true --retention-days 90
 ```
 
-**5.5** Push everything offsite and check it:
+RBAC is the CLI's default now, but older versions default to access policies,
+and 5.5 needs RBAC. Saying it keeps the command right on either.
+
+**5.5** Give yourself the right to read and write its secrets. Creating an
+RBAC vault grants you nothing inside it, so until this every read or write of a
+secret is refused:
 
 ```bash
-key-manager backup --apply
-key-manager backup --verify
+az role assignment create --role "Key Vault Secrets Officer" --assignee <your-sign-in-name> --scope /subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.KeyVault/vaults/<vault>
+```
+
+A new role assignment can take a few minutes to apply.
+
+**5.6** In the key-manager container, started and cloned as in 1.1 and 1.2 so
+the new store is in `/repo`, put the identity in `/work` as in
+[3.2 and 3.3](#3-without-key-vault).
+
+**5.7** Push everything offsite and check it:
+
+```
+backup --apply
+backup --verify
 ```
 
 > `backup` uploads each secret, the age identity, so a bare machine can
 > bootstrap from the vault, and the whole encrypted store, so a restore
 > reproduces notes and flags exactly.
+>
+> **The identity goes up only from a file**, which is why 5.6 puts it in
+> `/work`. Without one, `backup` prints `identity skipped: no local key file`
+> and uploads the rest.
+>
+> **`backup --apply` signs you in to Key Vault itself.** `az-login` would too,
+> but on a vault with no `age-identity` yet it ends with
+> `could not read age-identity`: 5.7 is what creates it.
 >
 > Without purge protection, one admin action destroys the backup permanently.
 

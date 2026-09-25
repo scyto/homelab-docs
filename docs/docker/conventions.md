@@ -4,7 +4,7 @@ title: "Stack Conventions"
 
 # stack conventions
 
-the rules every stack in my repo follows, swarm and [standalone](standalone/index.md) alike.
+every stack in my repo follows these rules, swarm and [standalone](standalone/index.md) alike.
 
 ## one directory per stack
 
@@ -27,12 +27,12 @@ volumes:
       o: bind
 ```
 
-- if the path is missing, the task refuses to start. a plain bind mount creates an empty directory and the app starts against empty storage with no error, which on a swarm means a blank copy on whichever node it landed on
+- if the path is missing, the task refuses to start. a plain bind mount creates an empty directory, and the app starts against empty storage with no error. on a swarm that is a blank copy on whichever node the task landed on
 - `docker volume rm` and `prune` remove the volume object, never the data at `device`
 - the directory has to exist before the first deploy
 - the path is always absolute. a relative path resolves inside portainer's clone of the repo, not on the host
 
-on standalone hosts, where a plain bind is sometimes simpler, add `create_host_path: false` so a missing source fails the same way. from syn02's dozzle agent:
+on standalone hosts a plain bind is sometimes simpler. to make a missing source fail the same way, add `create_host_path: false`. this one is from syn02's dozzle agent:
 
 ```yaml
     volumes:
@@ -66,8 +66,8 @@ labels on the container aren't visible to anything reading the swarm's services,
 
 ```yaml
     ports:
-      - target: 61208
-        published: 61208
+      - target: 7007
+        published: 7007
         mode: host
     deploy:
       mode: global
@@ -78,7 +78,7 @@ labels on the container aren't visible to anything reading the swarm's services,
 
 ## no healthchecks on swarm services
 
-on the swarm an unhealthy task gets killed and rescheduled, so a healthcheck is an actuator, not a check. health is checked from outside instead, by [gatus](../monitoring/gatus.md). on a standalone host docker only reports health, so healthchecks are fine there, and mine say why they failed.
+on the swarm a failing healthcheck gets the task killed and rescheduled. [gatus](../monitoring/gatus.md) checks health from outside instead. on a standalone host docker only reports health, so healthchecks are fine there, and mine say why they failed.
 
 ## every container runs in my time zone
 
@@ -87,7 +87,7 @@ on the swarm an unhealthy task gets killed and rescheduled, so a healthcheck is 
       - TZ=America/Los_Angeles
 ```
 
-images without tzdata ignore `TZ` without complaint, so they get the host's zoneinfo read-only:
+images without tzdata ignore `TZ` with no error, so they get the host's zoneinfo read-only:
 
 ```yaml
     volumes:
@@ -101,7 +101,7 @@ check the app's own log timestamps after deploying. some images' `date` can't re
 
 ## secrets are never in the compose file
 
-- passwords reach a container as a docker secret, read from a file, never as an environment variable value
+- passwords reach a container as a docker secret that the app reads from a file, never as the value of an environment variable. oauth2-proxy's cookie secret is the one exception
 - secrets are listed by name only, under `x-secrets`, so a scan can tell a name from a value
 - no labels holding credentials: labels are readable by anything that can read the service
 
@@ -115,4 +115,4 @@ configs:
     file: ./sync-config.sh
 ```
 
-a swarm config can't be changed in place, a deploy that changes one is refused. bump the suffix when the file changes, which also restarts only the services that use it.
+a swarm config can't be changed in place. a deploy that changes one fails with `only updates to Labels are allowed`. no service in the stack is updated, so the old content keeps running. bump the suffix when the file changes, which also restarts only the services that use it.

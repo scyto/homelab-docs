@@ -18,6 +18,6 @@ a `docker run` like the pi's, see [add a host](add-a-host.md). on DSM the volume
 
 ## DSM differences
 
-- **no `/etc/os-release`.** glances would report the container's OS, so its stack binds DSM's `/etc/VERSION` read-only and builds an `os-release` from it at start
+- DSM has no `/etc/os-release`, so glances would report the container's OS. its stack binds DSM's `/etc/VERSION` read-only and builds an `os-release` from it at start
 - `ovs_eth0` is the LAN interface, not `eth0`: DSM puts the port on an Open vSwitch bridge
 - stack data lives under `/volume1/docker/<stack>`, the share DSM creates for it

@@ -23,6 +23,9 @@ jobs:
           python-version: '3.12'
           cache: pip
       - run: pip install -r requirements.txt
+      # every config fragment on a page that shows a stack's files must still
+      # match the published copy in docs/files/, which is what a reader opens
+      - run: python tools/fragcheck.py
       # --strict turns MkDocs warnings (broken internal links, missing nav
       # entries, unresolved references) into build failures.
       - run: mkdocs build --strict

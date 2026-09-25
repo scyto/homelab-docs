@@ -22,6 +22,13 @@ For a rotation that is the `rotate/...` or `stacks/...` PR.
 > `retire` checks both and refuses otherwise. It looks at the running tasks,
 > not just the compose file, because a stalled rollout can leave old tasks
 > running on the old secret while the file already names the new one.
+>
+> **A secret that is not a Swarm secret** -- a file bound into a container on a
+> standalone host, a file an app reads through a placeholder, or a Portainer
+> stack variable -- retires the same way in the store. If 1.4 prints
+> `still in swarm: no`, skip 1.7: there is nothing in Swarm to remove. `retire`
+> does not touch the file or the stack variable; they hold the new value once
+> you have placed it, as [ROTATE.md](rotate.md) says under "Before you start".
 
 ## How the branch fits
 

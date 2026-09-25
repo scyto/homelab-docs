@@ -104,13 +104,13 @@ what the archives are for:
 | `docker-data.pxar` | everything the containers keep. this is the one you restore |
 | `etc.pxar`, `usr-local.pxar`, `root.pxar`, `home.pxar` | reference copies of config, for pulling out a single file. not for restoring over a fresh install |
 
-the whole filesystem is not backed up on purpose. restoring `/usr` or package
+i don't back up the whole filesystem. restoring `/usr` or package
 state file by file over a running system does not work well, docker's images come
 back from their registries, and the stacks come back from git. the plan is to
 rebuild the pi from a script and restore `docker-data.pxar`.
 
-typing this at an interactive bash prompt, run `set +H` first, or the `!` in
-`pi-zwave01@pbs!backup` gets treated as history expansion.
+the single quotes keep an interactive bash from treating the `!` in
+`pi-zwave01@pbs!backup` as history expansion.
 
 ## 4. an hourly timer
 
@@ -156,7 +156,6 @@ a timer rather than cron because the output lands in the journal, and
 a clean exit only proves the upload finished. this proves the backup is usable.
 
 ```
-set +H
 export PBS_REPOSITORY='pi-zwave01@pbs!backup@pbs1.mydomain.com:mnt-pbs'
 export PBS_PASSWORD_FILE=/var/lib/pbs-backup/token
 SNAP='host/pi-zwave01/<snapshot time>'

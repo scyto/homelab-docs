@@ -1,0 +1,13 @@
+metrics: true
+
+storage:
+  type: sqlite
+  path: /data/gatus.db
+
+ui:
+  title: mydomain homelab health
+  header: mydomain homelab
+
+concurrency: 10
+
+skip-invalid-config-update: true

@@ -1,0 +1,16 @@
+li.service[id^="glances-"] .service-card {
+  position: relative;
+}
+
+li.service[id^="glances-"] a.service-title-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+@media (min-width: 112rem) {
+  .container {
+    max-width: 160rem;
+  }
+}

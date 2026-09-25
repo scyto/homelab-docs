@@ -8,6 +8,8 @@ source_gist: https://gist.github.com/scyto/7315468af220655fea1fde7366d8c506
 ## Description
 This template runs my ouath2-proxy for azure auth for web sites that don't have any native auth mechansim.
 
+Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
+
 ## State Considerations for SWARM
 none, this container can be cofigured entirely by env vars so i use those
 
@@ -41,4 +43,12 @@ services:
     ports:
       - 4180:4180/tcp
     restart: always
-    ```
+```
+
+## what i run now
+
+- current oauth2-proxy needs `OAUTH2_PROXY_OIDC_ISSUER_URL`, and exits at startup without it
+- i use the `entra-id` provider. upstream has deprecated `azure`
+- the client secret is a swarm secret. oauth2-proxy reads it through `OAUTH2_PROXY_CLIENT_SECRET_FILE`, see [secrets](../secrets/index.md#option-2-the-_file-convention)
+
+--8<-- "blocks/swarm/oauth/compose.yml.md"

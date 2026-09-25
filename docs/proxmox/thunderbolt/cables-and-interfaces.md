@@ -38,7 +38,7 @@ iface en06 inet manual
 
 If you see any thunderbol sections delete them from the file before you save it.
 
-**DO NOT DELETE* the `source /etc/network/interfaces.d/*` this will always exist on the latest versions and should be the last or next to last line in /interfaces file
+**DO NOT DELETE** the `source /etc/network/interfaces.d/*` this will always exist on the latest versions and should be the last or next to last line in /interfaces file
 
 ## Rename Thunderbolt Connections
 This is needed as proxmox doesn't recognize the thunderbolt interface name.  There are various methods to do this. This method was selected after trial and error because:
@@ -46,6 +46,7 @@ This is needed as proxmox doesn't recognize the thunderbolt interface name.  The
 - the thunderboltX naming is not fixed to a port (it seems to be based on sequence you plug the cables in)
 - the MAC address of the interfaces changes with most cable insertion and removale events
 
+<!-- -->
 
 1. use `udevadm monitor` command to find your device IDs when you insert and remove each TB4 cable. Yes you can use other ways to do this, i recommend this one as it is great way to understand what udev does - the command proved more useful to me than `the syslog` or `lspci command` for troublehsooting thunderbolt issues and behavious.  In my case my two pci paths are `0000:00:0d.2`and `0000:00:0d.3` if you bought the same hardware this will be the same on all 3 units. Don't assume your PCI device paths will be the same as mine.
 
@@ -59,15 +60,17 @@ This is needed as proxmox doesn't recognize the thunderbolt interface name.  The
     MACAddressPolicy=none
     Name=en05
     ```
+
 3. create a second link file using `nano /etc/systemd/network/00-thunderbolt1.link` and enter the following content:
-```
-[Match]
-Path=pci-0000:00:0d.3
-Driver=thunderbolt-net
-[Link]
-MACAddressPolicy=none
-Name=en06
-```
+
+    ```
+    [Match]
+    Path=pci-0000:00:0d.3
+    Driver=thunderbolt-net
+    [Link]
+    MACAddressPolicy=none
+    Name=en06
+    ```
 
 ## Set Interfaces to UP on reboots and cable insertions
 This section en sure that the interfaces will be brought up at boot or cable insertion with whatever settings are in /etc/network/interfaces  - this shouldn't need to be done, it seems like a bug in the way thunderbolt networking is handled (i assume this is debian wide but haven't checked).
@@ -79,65 +82,70 @@ Huge thanks to @corvy for figuring out a script that should make this much much 
     ACTION=="move", SUBSYSTEM=="net", KERNEL=="en05", RUN+="/usr/local/bin/pve-en05.sh"
     ACTION=="move", SUBSYSTEM=="net", KERNEL=="en06", RUN+="/usr/local/bin/pve-en06.sh"
     ```
+
 2. save the file
 
 3. create the first script referenced above using `nano /usr/local/bin/pve-en05.sh` and with the follwing content:
-```
-#!/bin/bash
 
-LOGFILE="/tmp/udev-debug.log"
-VERBOSE="" # Set this to "-v" for verbose logging
-IF="en05"
+    ```
+    #!/bin/bash
 
-echo "$(date): pve-$IF.sh triggered by udev" >> "$LOGFILE"
+    LOGFILE="/tmp/udev-debug.log"
+    VERBOSE="" # Set this to "-v" for verbose logging
+    IF="en05"
 
-# If multiple interfaces go up at the same time, 
-# retry 10 times and break the retry when successful
-for i in {1..10}; do
-    echo "$(date): Attempt $i to bring up $IF" >> "$LOGFILE"
-    /usr/sbin/ifup $VERBOSE $IF >> "$LOGFILE" 2>&1 && {
-        echo "$(date): Successfully brought up $IF on attempt $i" >> "$LOGFILE"
-        break
-    }
-  
-    echo "$(date): Attempt $i failed, retrying in 3 seconds..." >> "$LOGFILE"
-    sleep 3
-done
-```
-save the file and then
+    echo "$(date): pve-$IF.sh triggered by udev" >> "$LOGFILE"
 
-3. create the second script referenced above using `nano /usr/local/bin/pve-en06.sh` and with the follwing content:
-```
-#!/bin/bash
+    # If multiple interfaces go up at the same time, 
+    # retry 10 times and break the retry when successful
+    for i in {1..10}; do
+        echo "$(date): Attempt $i to bring up $IF" >> "$LOGFILE"
+        /usr/sbin/ifup $VERBOSE $IF >> "$LOGFILE" 2>&1 && {
+            echo "$(date): Successfully brought up $IF on attempt $i" >> "$LOGFILE"
+            break
+        }
 
-LOGFILE="/tmp/udev-debug.log"
-VERBOSE="" # Set this to "-v" for verbose logging
-IF="en06"
+        echo "$(date): Attempt $i failed, retrying in 3 seconds..." >> "$LOGFILE"
+        sleep 3
+    done
+    ```
 
-echo "$(date): pve-$IF.sh triggered by udev" >> "$LOGFILE"
+    save the file and then
 
-# If multiple interfaces go up at the same time, 
-# retry 10 times and break the retry when successful
-for i in {1..10}; do
-    echo "$(date): Attempt $i to bring up $IF" >> "$LOGFILE"
-    /usr/sbin/ifup $VERBOSE $IF >> "$LOGFILE" 2>&1 && {
-        echo "$(date): Successfully brought up $IF on attempt $i" >> "$LOGFILE"
-        break
-    }
-  
-    echo "$(date): Attempt $i failed, retrying in 3 seconds..." >> "$LOGFILE"
-    sleep 3
-done
-```
-and save the file
+4. create the second script referenced above using `nano /usr/local/bin/pve-en06.sh` and with the follwing content:
 
-4. make both scripts executable with `chmod +x /usr/local/bin/*.sh`
-5. run `update-initramfs -u -k all` to propogate the new link files into initramfs
-6. Reboot (restarting networking, init 1 and init 3 are not good enough, so reboot)
+    ```
+    #!/bin/bash
+
+    LOGFILE="/tmp/udev-debug.log"
+    VERBOSE="" # Set this to "-v" for verbose logging
+    IF="en06"
+
+    echo "$(date): pve-$IF.sh triggered by udev" >> "$LOGFILE"
+
+    # If multiple interfaces go up at the same time, 
+    # retry 10 times and break the retry when successful
+    for i in {1..10}; do
+        echo "$(date): Attempt $i to bring up $IF" >> "$LOGFILE"
+        /usr/sbin/ifup $VERBOSE $IF >> "$LOGFILE" 2>&1 && {
+            echo "$(date): Successfully brought up $IF on attempt $i" >> "$LOGFILE"
+            break
+        }
+
+        echo "$(date): Attempt $i failed, retrying in 3 seconds..." >> "$LOGFILE"
+        sleep 3
+    done
+    ```
+
+    and save the file
+
+5. make both scripts executable with `chmod +x /usr/local/bin/*.sh`
+6. run `update-initramfs -u -k all` to propogate the new link files into initramfs
+7. Reboot (restarting networking, init 1 and init 3 are not good enough, so reboot)
 
 
 ## Enabling IP Connectivity
-[proceed to the next gist](openfabric-mesh-legacy.md)
+[proceed to the next gist](openfabric-mesh.md)
 
 # Slow Thunderbolt Performance? Too Many Retries? No traffic? Try this!
 
@@ -154,7 +162,11 @@ one set be sure to run `update-grub` and reboot
 
 everyones grub command line is different this is mine because i also have i915 virtualization, if you get this wrong you can break your machine, if you are not doing that you don't need the i915 entries you see below
 
-`GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt"` (note if you have more things in your cmd line DO NOT REMOVE them, just add the two intel ones, doesnt matter where.
+```
+GRUB_CMDLINE_LINUX_DEFAULT="quiet intel_iommu=on iommu=pt i915.enable_guc=3 i915.max_vfs=7 i915.modeset=1 thunderbolt.dyndbg=+p"
+```
+
+(note if you have more things in your cmd line DO NOT REMOVE them, just add the two intel ones, doesnt matter where.
 
 
 ## Pinning the Thunderbolt Driver (speed and retries troubleshooting)
@@ -217,7 +229,11 @@ these tools can be used to inspect your thundebolt system, note they rely on rus
 apt install pkg-config libudev-dev git curl
 curl https://sh.rustup.rs -sSf | sh
 git clone https://github.com/intel/tbtools
+```
+
 restart you ssh session
+
+```
 cd tbtools
 cargo install --path .
 ```

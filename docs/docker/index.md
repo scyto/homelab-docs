@@ -27,11 +27,13 @@ Each major task has its own gist, this is to help with maitainability long term.
 
 # Swarm Deployed Stacks
 
-what runs on the swarm, checked against portainer on 9/21/2026. every stack here deploys from git except portainer and its agent. the standalone hosts have [their own pages](standalone/index.md).
+this is what runs on the swarm, as portainer listed it on 9/21/2026. every stack here deploys from git except portainer and its agent. the standalone hosts have [their own pages](standalone/index.md).
+
+Update as of 2026.09.24: the agent deploys from git now as well. portainer itself is the one stack that doesn't.
 
 - [adguard](../apps/adguard.md) - two dns resolvers, kept in sync
 - [nginx proxy manager](../apps/nginx-proxy-manager.md) - reverse proxy and its certificates
-- [oauth2-proxy](../apps/oauth2-proxy.md) - auth in front of the proxied services
+- [oauth2-proxy](../apps/oauth2-proxy.md) - an auth proxy, running with nothing routed through it
 - [cloudflare ddns](../apps/cloudflare-ddns.md) - keeps the external A record current
 - acme.sh for the [ASRock Rack BMC](../apps/acme-asrock-bmc.md) and [Synology DSM](../apps/acme-synology.md) - certificates
 - [mosquitto mqtt](../apps/mosquitto-mqtt.md) - mqtt broker
@@ -50,7 +52,7 @@ what runs on the swarm, checked against portainer on 9/21/2026. every stack here
 - [watchtower](../apps/retired/watchtower.md)
 - [shepherd](../apps/retired/shepherd.md)
 - [traefik](../apps/retired/traefik.md)
-- [portainer agent managed by portainer](../apps/retired/portainer-agent.md) - not recommended
+- [portainer agent managed by portainer](../apps/retired/portainer-agent.md)
 - [portception](../apps/retired/portception.md) - portainer deployed by portainer, do not attempt
 
 # More Details on What and Why
@@ -64,24 +66,24 @@ what runs on the swarm, checked against portainer on 9/21/2026. every stack here
 
 ## current state 8/24/2026
 - all stacks now deploy [from git](gitops-with-portainer.md), not the portainer web editor
-  - each stack watches its own branch, so a commit only redeploys the stacks it touched
-  - point them all at `main` and every commit redeploys everything, don't do that
-- [passwords are out of the service specs](../secrets/index.md) - they were env vars, which anything that could reach the docker API could read, and i had an unauthenticated docker socket proxy on the LAN at the time. both fixed
+    - each stack watches its own branch, so a commit only redeploys the stacks it touched
+    - point them all at `main` and every commit redeploys everything, don't do that
+- [passwords are out of the service specs](../secrets/index.md). they were env vars, so anything that could reach the docker API could read them, and my docker socket proxy on the LAN had no authentication. both fixed
 - watchtower and shepherd are gone, replaced by [renovate](image-updates-renovate.md) opening PRs against the compose files
-- also retired: traefik (NPM does the job), and a docker management UI i was running on an eight month old dev build off a fork
+- also retired: traefik, NPM does the job
 - two stacks had been broken for a while and nobody noticed, because nothing was checking
-- new: [troubleshooting notes](troubleshooting.md), including why a container can't reach a macvlan container on the same host, which had my uptime monitoring lying to me for a long time
+- new: [troubleshooting notes](troubleshooting.md). one covers why a container can't reach a macvlan container on the same host, which made my uptime monitoring wrong for a long time
 
 ## current state 4/14/2025
 - VMs updated to debian bookworm using apt, and latest docker version
 - still love portainer - use it so much i paid for the education/home version
 - in the middle of migrating to virtioFS for bind mounmts, backed by my cephFS cluster, as my first attempt to migrate away from glusterFS
-  - goal: get rid of the gluster service and vdisks
+    - goal: get rid of the gluster service and vdisks
 - found swarm is very bad at knowing if a volume is truly unsed or not
-  - this broke badly with glusterFS
-  - i removed all the volumes marked as unused created by the plugin - seems when you delete the volume using docker / portainer it deleted the volumen *AND* the data in them 
-  - this seems to be because the volume is linked via inodes to the gluster storage it deleted the data on the node were it was marked unused and this deletions was replicated to all other nodes - EEK.  
-  - I had to do full restore of alll 3 VM nodes from my PBS backup.  This worked surprisingy well.
+    - this broke badly with glusterFS
+    - i removed all the volumes marked as unused created by the plugin - seems when you delete the volume using docker / portainer it deleted the volumen *AND* the data in them 
+    - this seems to be because the volume is linked via inodes to the gluster storage it deleted the data on the node were it was marked unused and this deletions was replicated to all other nodes - EEK.  
+    - I had to do full restore of alll 3 VM nodes from my PBS backup.  This worked surprisingy well.
 
 ## current state 9/30/2024
 - all still working
@@ -93,6 +95,8 @@ what runs on the swarm, checked against portainer on 9/21/2026. every stack here
   - I switched fully from native nginx container to NPM
   - i elimnated NFS and iSCSI and moved all containers with state to running on GlusterFS inlcuding things with databases like wordpress
   - i plan to move the VMs from Hyper-V to my new [proxmox cluster](../proxmox/index.md)
+
+Update as of 2026.09.24: the architecture and design below are from the original 2022 build. gluster has since been replaced by cephFS over virtioFS, and docker comes from docker's own repo.
 
 ## Architecture
 
@@ -129,9 +133,9 @@ We also see the following more advanced techniques used:
 
 In a swarm where you want a container to run on any node you need to find a way to make the data available on all nodes in a safe effective way.
 
-If you have a simple container that only needs environment variables to be cofigure you can do that directly when you deploy the portainer template as a portaineer stack.  See this [cloudflare dynamic dns updater](https://gist.github.com/scyto/22d570be47ba4ce52912160878d9495e) as an example.
+If you have a simple container that only needs environment variables to be cofigure you can do that directly when you deploy the portainer template as a portaineer stack.  See this [cloudflare dynamic dns updater](../apps/cloudflare-ddns.md) as an example.
 
-- Only #4 offers a safe way to make this happen (the 'config' is available to all nodes) - but this is super restrictive and doesn't help with containers that need to store more state and read/write that state. See this [mosquitto mqtt example](https://gist.github.com/scyto/e4098fcd9d35999ecc4f58f4ee42fbc7)
+- Only #4 offers a safe way to make this happen (the 'config' is available to all nodes) - but this is super restrictive and doesn't help with containers that need to store more state and read/write that state. See this [mosquitto mqtt example](../apps/mosquitto-mqtt.md)
 - \#1 this can work and you can mount the shares to multiple nodes via fstab.  Typically databases cannot be placed on these shares and will ultimately corrupt.  You do have to be careful to only have one container writing to any given file to avoid potentials issues.
 - \#2 and #3 - thishas the advantage of not being generall mounted to the host OS, but mount on demand by the container, this reduced all the tedious mucking about is ~~hyperspace~~ fstab.  You do need to use the volumes UI in portaine for this.
 

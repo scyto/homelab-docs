@@ -20,6 +20,8 @@ I have 3 networks:
 2. Thunderbolt mesh connected in a ring for subnet fc00::80/124
     - this has 3 single address subnets `fc00::81/128`, `fc00::82/128` and `fc00::83/128` these are used for FRR Openfabric  routing between nodes
 
+    Update as of 2026.09.24: the mesh now also carries `10.0.0.81/32` to `10.0.0.83/32`. ceph uses those IPv4 addresses, and migration still uses `fc00::80/124`.
+
 3. Addtional 2.5Gbe using (NUCIOALUWS) add-on afor subnet TBD
 
     - cluster (aka corosync) network uses network 1 (2.5gbe)
@@ -45,7 +47,7 @@ You should have 3 browser tabs open for this, one for each node's management IP.
 4. click `create`
 
 ### Join node 2 
-1. on node 2 in `Datacenter >  Cluster` click `join information`
+1. on node 1 in `Datacenter >  Cluster` click `join information`
 2. the IP address should be node 1 IPv4 address
 3. click `copy information`
 4. open tab 2 in your browser to node 2 management page
@@ -59,7 +61,7 @@ You should have 3 browser tabs open for this, one for each node's management IP.
 1. on node 1 in `Datacenter > Cluster` click `join information`
 2. the IP address should be node 1 IPv4 address
 3. click `copy information`
-4. open tab 2 in your browser to node 3 management page
+4. open tab 3 in your browser to node 3 management page
 5. navingate to `Datacenter > Cluster` and click join cluster
 7. paste the information into the dialog box that you collected in step 3
 8. Fill the root password in of node 1
@@ -85,3 +87,5 @@ This is because a)this subnet contains `fc00::80` thru `fc00::8f`; and b) becaus
 2. click create
 3. Name the cluster (ID) `ClusterGroup1`
 4. add all 3 nodes and then click `create`
+
+Update as of 2026.09.24: PVE 9 replaced HA groups with node affinity rules, and migrates existing groups to rules on upgrade. with three equal nodes no rule is needed. to pin a VM: `ha-manager rules add node-affinity <rule-id> --resources vm:<vmid> --nodes <node>`

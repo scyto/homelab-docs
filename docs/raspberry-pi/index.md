@@ -4,14 +4,13 @@ title: "Raspberry Pi: pi-zwave01"
 
 # raspberry pi: pi-zwave01
 
-a Raspberry Pi 4 Model B that holds the USB radios for home automation, keeps
-time from a GPS and serves it to the LAN, and shows its status on a small OLED. it is a standalone docker
-host, not part of the swarm, and its stacks deploy from
-[git](../docker/gitops-with-portainer.md) like everything else.
+pi-zwave01 is a Raspberry Pi 4 Model B. it holds the USB radios for home
+automation, keeps time from a GPS and serves it to the LAN, and shows its status
+on a small OLED. it is a standalone docker host outside the swarm, and its
+stacks deploy from [git](../docker/gitops-with-portainer.md) like everything
+else.
 
-everything here was read off the running pi, so it describes this machine rather
-than a recipe. i am turning it into a rebuild script, see
-[backups](../backups/pi-host-backup.md) for how the data side is covered.
+see [backups](../backups/pi-host-backup.md) for how the data side is covered.
 
 ## OS
 
@@ -21,8 +20,8 @@ than a recipe. i am turning it into a rebuild script, see
 | OS | Debian 13 (trixie), 64 bit, with the Raspberry Pi archive for the kernel and firmware |
 | installed with | Raspberry Pi Imager, which sets up first boot through cloud-init |
 
-two things cloud-init keeps owning after first boot, worth knowing before you
-edit them:
+before you edit these two files, know that cloud-init keeps owning them after
+first boot:
 
 - `/etc/hosts` is regenerated from `/etc/cloud/templates/hosts.debian.tmpl`
   (`manage_etc_hosts` is on)
@@ -30,7 +29,7 @@ edit them:
 
 ## boot config
 
-the lines in `/boot/firmware/config.txt` that matter for this pi:
+these are the lines in `/boot/firmware/config.txt` that matter for this pi:
 
 ```
 dtparam=i2c_arm=on              # i2c for the OLED
@@ -39,14 +38,14 @@ dtoverlay=disable-bt            # gives the GPS the full UART instead of the min
 dtoverlay=pps-gpio,gpiopin=4    # the GPS PPS line on GPIO 4 becomes /dev/pps0
 ```
 
-and `/boot/firmware/cmdline.txt` has no `console=serial0`, so the kernel does not
-put a login console on the port the GPS uses.
+to keep the kernel's login console off the port the GPS uses,
+`/boot/firmware/cmdline.txt` has no `console=serial0`.
 
 with that, `/dev/serial0` points at `/dev/ttyAMA0` and `/dev/pps0` exists.
 
 ## network
 
-NetworkManager, one ethernet profile with static addresses,
+NetworkManager has one ethernet profile with static addresses, in
 `/etc/NetworkManager/system-connections/LAN.nmconnection`:
 
 ```ini
@@ -84,5 +83,6 @@ anchors working, so a deep link lands on the link to where that section went -->
 
 ## backups
 
-hourly to PBS, `/docker-data` plus reference copies of `/etc`, `/usr/local`,
-`/root` and `/home`, see [raspberry pi to PBS](../backups/pi-host-backup.md).
+the pi backs up hourly to PBS: `/docker-data`, plus reference copies of `/etc`,
+`/usr/local`, `/root` and `/home`. see
+[raspberry pi to PBS](../backups/pi-host-backup.md).

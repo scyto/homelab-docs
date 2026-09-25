@@ -1,7 +1,10 @@
 ---
-title: "Don't be like scyto"
+title: "Domain Controller 1 (FSMO/CA)"
 source_gist: https://gist.github.com/scyto/ef59d3799c089338cfb32b83306f9396
 ---
+
+# domain controller 1 (FSMO/CA)
+
 
 # Don't be like scyto
 ## Don't do all the backup and restoring crap below

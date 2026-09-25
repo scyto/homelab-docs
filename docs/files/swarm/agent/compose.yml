@@ -1,0 +1,38 @@
+services:
+  agent:
+    image: portainer/agent:2.45.1
+    environment:
+      - TZ=America/Los_Angeles
+      - AGENT_CLUSTER_ADDR=tasks.agent
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - type: bind
+        source: /var/lib/docker/volumes
+        target: /var/lib/docker/volumes
+      - type: bind
+        source: /
+        target: /host
+        read_only: true
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+    ports:
+      - target: 9001
+        published: 9001
+        protocol: tcp
+        mode: host
+    networks:
+      - portainer
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+
+networks:
+  portainer:
+    driver: overlay
+    attachable: true

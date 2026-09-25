@@ -1,0 +1,4 @@
+Host github.com
+  ConnectTimeout 15
+  ServerAliveInterval 10
+  ServerAliveCountMax 3

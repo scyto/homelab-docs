@@ -1,0 +1,31 @@
+version: '3.2'
+services:
+  portainer:
+    image: portainer/portainer-ee:2.45.1
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - data:/data
+    networks:
+      - portainer
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  portainer:
+    driver: overlay
+    attachable: true
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/portainer_data"
+      o: bind

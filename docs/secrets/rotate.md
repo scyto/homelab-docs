@@ -19,6 +19,15 @@ example's names, use your own. Background and reasons are in
 - **Swarm secrets can't be changed.** A rotation always makes a new name: `_v1`
   becomes `_v2`, the compose file is changed to point at it, and the PR's merge
   is what makes it live.
+- **A secret that is not a Swarm secret** -- a file bound into a container on a
+  standalone host, a file an app reads through a placeholder, or a Portainer
+  stack variable -- is rotated the same way, but nothing below puts the new
+  value where the stack reads it. Place it by hand, as when it was added: write
+  the file with `feed`, as in
+  [ADD.md, step 6b](add.md#6b-a-secret-that-is-not-a-swarm-secret-in-the-container),
+  or set the stack variable in Portainer. Until then the stack keeps the old
+  value. `rotate` still creates the new version as a Swarm secret, which nothing
+  mounts.
 
 ## Pick your case
 
@@ -259,6 +268,7 @@ backup --apply
 ```
 git add -A
 git commit -m "secrets: example_app Example Cloud token v2"
+git pull --rebase
 git push
 exit
 ```
@@ -297,93 +307,112 @@ connections until it restarts with the new secret, a gap of a few minutes.
 
 ### C1. Find the database's node
 
-**C1.1** In any `keyman` session, find where `db` runs. It prints a node name,
-`docker02` here:
+**C1.1** On your workstation, start a fresh container and sign in to GitHub
+when it asks:
+
+```bash
+keyman
+```
+
+**C1.2** Find where `db` runs. It prints a node name, `docker02` here:
 
 ```
 docker service ps example_app_db --filter desired-state=running --format '{{.Node}}'
 ```
 
-**C1.2** Leave that container:
-
-```
-exit
-```
-
 > **Why:** `feed` in C3 runs `docker exec` into the database container, and the
-> key-manager container can only reach containers on its own node.
+> key-manager container can only reach containers on its own node. So C3 runs
+> in a second container, on that node.
 
-### C2. Generate and stage the new value (in a container on that node)
+### C2. Generate and stage the new value (in the same container)
 
-**C2.1** On your workstation, start key-manager on `docker02`. This is the
-`keyman` command with the node changed:
-
-```bash
-ssh -t docker02 'docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=scyto -e GIT_AUTHOR_EMAIL=you@mydomain.com ghcr.io/scyto/key-manager:latest'
-```
-
-**C2.2** Sign in to GitHub when it asks, then confirm you are on `main` and sign
-in to Key Vault:
+**C2.1** Confirm the container is on `main`, and sign in to Key Vault:
 
 ```
 git branch --show-current
 az-login
 ```
 
-**C2.3** Rotate:
+**C2.2** Rotate:
 
 ```
 rotate example_app_db_password_v1 --apply
 ```
 
-**C2.4** Read the compose change, then at
+**C2.3** Read the compose change, then at
 `Apply this to the compose file(s)? [y/N]` type **y**. It pushes
 `rotate/example-app-db-password-v2`.
 
-**C2.5** Open the PR, `126` here, and refresh the store copy in Key Vault:
+**C2.4** Open the PR, `126` here, and refresh the store copy in Key Vault:
 
 ```
 gh pr create --fill
 backup --apply
 ```
 
+**C2.5** Leave the container:
+
+```
+exit
+```
+
+> **Why here, and not on the database's node:** `rotate` creates a Swarm
+> secret, which only a manager can do. On a worker it stops with
+> `this node is not a Swarm MANAGER`. `keyman` runs on a manager; the database
+> may not.
+>
 > **Still nothing is live.** The database has not been touched, and `main` still
-> says `_v1`. Stay in this container for C3.
+> says `_v1`.
 
-### C3. Change the password in the database (in the same container)
+### C3. Change the password in the database (in a container on that node)
 
-**C3.1** Find the database container on this node:
+**C3.1** On your workstation, start key-manager on `docker02`. This is the
+`keyman` command with the node changed:
+
+```bash
+ssh -t docker02 'docker pull -q ghcr.io/scyto/key-manager:latest && docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock --dns-search mydomain.com -e AKV_VAULT=YourKeyVaultName -e AKV_TENANT=00000000-0000-0000-0000-000000000000 -e GIT_AUTHOR_NAME=you -e GIT_AUTHOR_EMAIL=you@mydomain.com -e HOMELAB_REPO_URL=https://github.com/you/your-repo.git ghcr.io/scyto/key-manager:latest'
+```
+
+**C3.2** Sign in to GitHub when it asks. Then check out the rotation's branch,
+the only branch whose store has `_v2` yet, and sign in to Key Vault:
+
+```
+git checkout rotate/example-app-db-password-v2
+az-login
+```
+
+**C3.3** Find the database container on this node:
 
 ```
 DB=$(docker ps -q -f name=example_app_db)
 echo "$DB"
 ```
 
-**C3.2** Prove the pipeline with a harmless query. It must end with `exited 0`:
+**C3.4** Prove the pipeline with a harmless query. It must end with `exited 0`:
 
 ```
 feed example_app_db_root_password_v1 --template "MYSQL_PWD='{example_app_db_root_password_v1}' mysql -u root -N -B -e 'SELECT 1;'" --apply -- docker exec -i "$DB" sh -s
 ```
 
-**C3.3** **Point of no return.** Set the new password:
+**C3.5** **Point of no return.** Set the new password:
 
 ```
 feed example_app_db_root_password_v1 --also example_app_db_password_v2 --template "MYSQL_PWD='{example_app_db_root_password_v1}' mysql -u root -e \"ALTER USER 'example'@'%' IDENTIFIED BY '{example_app_db_password_v2}';\"" --apply -- docker exec -i "$DB" sh -s
 ```
 
-**C3.4** Check the new password works. It must end with `exited 0`:
+**C3.6** Check the new password works. It must end with `exited 0`:
 
 ```
 feed example_app_db_password_v2 --template "MYSQL_PWD='{example_app_db_password_v2}' mysql -u example -N -B -e 'SELECT 1;'" --apply -- docker exec -i "$DB" sh -s
 ```
 
-**C3.5** Check the old password is refused. It must **not** exit 0:
+**C3.7** Check the old password is refused. It must **not** exit 0:
 
 ```
 feed example_app_db_password_v1 --template "MYSQL_PWD='{example_app_db_password_v1}' mysql -u example -N -B -e 'SELECT 1;'" --apply -- docker exec -i "$DB" sh -s
 ```
 
-**C3.6** Leave the container:
+**C3.8** Leave the container:
 
 ```
 exit
@@ -399,7 +428,7 @@ exit
 > **The host is part of the user.** `'example'@'%'` and `'example'@'localhost'`
 > are separate accounts with separate passwords. If both exist, change both.
 >
-> **From C3.3 on, reverting the PR undoes nothing.** The database already has the
+> **From C3.5 on, reverting the PR undoes nothing.** The database already has the
 > new password. Going back means setting it back to the `_v1` value, which is why
 > `_v1` stays in the store until it is retired.
 
@@ -492,6 +521,7 @@ clipboard:
 ```
 git add -A
 git commit -m "secrets: example_app example-portal password v2"
+git pull --rebase
 git push
 ```
 
@@ -542,10 +572,148 @@ rotation honours it.
 rotate example_app_db_password_v1 --max-chars 20 --alphabet alnum --why "example_app's config parser rejects symbols and stops at 20" --apply
 ```
 
-**2** It prints the entropy it actually got, for example
-`new value   20 chars, alnum, 119 bits`. Below 112 bits it says
-`CONSTRAINED` and allows it only because the reason is recorded.
+**2** It prints the entropy it actually got. For this example that is
+`new value   19 chars, alnum, 113 bits`: 19 characters, not 20, because it
+works in whole bytes of entropy. 113 bits is above the 112-bit floor, so there
+is no warning. Below the floor it adds a `CONSTRAINED` line and carries on,
+because the cap is recorded. Leaving out `--why` does not stop it either.
 
 > For B and D the value comes from you, so the cap is whatever you generate or
 > paste. `add`'s `Longest value the consuming service accepts?` prompt records
 > it.
+
+---
+
+## Rotation, in more depth
+
+The procedure is above. This is what is going on underneath.
+
+### The new name
+
+Swarm secrets are immutable, so `rotate` always creates a **new name**:
+`npm_db_password` becomes `npm_db_password_v2`. Nothing uses that name until
+the compose file says so, which is why nothing has broken yet.
+
+The edit is not one line. In `stacks/swarm/npm/compose.yml` the real rotation
+touched four places:
+
+```diff
+      # 1. the path the entrypoint wrapper reads
+-        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password)";
++        DB_MYSQL_PASSWORD="$$(cat /run/secrets/npm_db_password_v2)";
+
+      # 2. the service's own secrets list
+     secrets:
+-      - npm_db_password
++      - npm_db_password_v2
+
+      # 3. the same two again in the db service, which mounts it too
+
+      # 4. the top-level block that declares them external
+ secrets:
+-  npm_db_password:
++  npm_db_password_v2:
+     external: true
+```
+
+Miss one and the stack either mounts a secret nothing reads, or reads a path
+that does not exist. `key-manager check` catches the second.
+
+```mermaid
+%%{init: {'theme':'neutral'} }%%
+sequenceDiagram
+    autonumber
+    participant Op as Operator
+    participant AKV as Key Vault
+    participant Store as sops store
+    participant Swarm as Swarm
+    participant Auth as Authority (e.g. MariaDB)
+    participant App as Running app
+
+    rect rgba(60,160,90,0.18)
+    Note over Op,Swarm: rotate --apply, all abortable
+    Op->>AKV: 1-2. generate, write (write-ahead log)
+    Op->>Store: 3. sops set
+    Op->>Swarm: 4. docker secret create NAME_vN
+    Op->>Swarm: 5. verify --only NAME_vN
+    end
+
+    rect rgba(200,70,70,0.15)
+    Note over Op,App: 6 is the point of no return
+    Op->>Auth: 6. feed (ALTER USER, or provider API)
+    Auth-->>Op: 7. new accepted, old refused
+    Note over App: app cannot log in: it still has the old value
+    Op->>Swarm: 8. compose → _vN, PR, merge, deploy
+    Swarm->>App: restart on the new secret
+    Note over App: app can log in again
+    Op->>App: 9. verify FUNCTION
+    Op->>Auth: 10. revoke old, retire, backup --apply
+    end
+```
+
+Key Vault is written **first** on purpose. A provider issues a credential once;
+if the rotation dies partway an unrecorded value is gone and the service is
+unreachable. A run here failed at step 3 after the vault write, and the value
+was still durable and the rotation resumable.
+
+### Effects a rotation can have
+
+**But the change may still be visible to users.** The app was using the old
+value for something, and that something stops working. Two examples from this
+estate:
+
+- a cookie-signing secret invalidates every existing session, so everyone is
+  logged out
+- a key used to encrypt stored data makes that data unreadable, permanently
+
+Neither is a failure of the rotation. They are what the value was doing. Before
+you run it, read the application's own documentation for what it uses the
+secret for, and decide whether the effect is acceptable now or should wait for
+a quiet moment.
+
+**Some services let you avoid the outage case entirely** ([case C](#case-c-a-database-holds-one-copy) or [D](#case-d-you-set-it-by-hand-in-another-system)). `unifiapibrowser` used to be here,
+using a UniFi account password. Switching it to a UniFi API key moved it to case B,
+because the controller issues several keys and a password is singular. Same
+service, no interruption, because the *kind* of credential changed. Where a
+service offers both, take the key.
+
+### What `ALTER USER` actually does
+
+MariaDB does not store the password. It stores a hash:
+
+```
+npm  @ %   mysql_native_password   *468472B916B...
+```
+
+`ALTER USER 'npm'@'%' IDENTIFIED BY '<new>'` recomputes that hash and
+overwrites the row. Nothing restarts, no data changes, and open connections are
+unaffected. Only *new* connections are checked against the new hash, which is
+why the app often keeps working right up until it restarts.
+
+The host is part of the identity: `'npm'@'%'` and `'npm'@'localhost'` are
+different rows with different hashes. The root rotation needed both.
+
+`ALTER USER` is not recoverable from the database, because the old hash is
+gone. It is reversible only because the old plaintext is still in the store,
+which is why retiring comes last.
+
+### Rotation-due dates in Key Vault
+
+`rotate` stamps two things on the vault item: a `minted` tag with the date, and
+an expiry 90 days later. Both are labels for a human reading the portal. For
+Key Vault **secrets**, unlike keys, `exp` and `nbf` are informational and a
+`get` still succeeds outside the window, so an lapsed date never breaks
+recovery. That was worth checking rather than assuming.
+
+Per secret, with `constraints.rotate_days`.
+
+The date is stamped at **rotation**, not at backup. Setting it on every backup
+would push it forward each run and tell you nothing. `backup` reads the current
+expiry and carries it forward, because `set_secret` creates a new version with
+exactly the properties given and would otherwise erase it.
+
+**A secret with no expiry has never been rotated through this tool.** That
+absence is information, so nothing invents a date to fill it.
+
+For a provider-issued credential, [case B](#case-b-a-provider-can-issue-a-second-credential) is the procedure:
+create the new one in their console, store it, deploy, then revoke the old.

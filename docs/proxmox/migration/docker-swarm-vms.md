@@ -1,7 +1,10 @@
 ---
-title: "Introduction"
+title: "Migrating the Docker Swarm VMs"
 source_gist: https://gist.github.com/scyto/042c8c41b23bd5ddb31d1e4e38156dff
 ---
+
+# migrating the docker swarm VMs
+
 
 # Introduction
 
@@ -48,7 +51,7 @@ backing up now... all ok
 To boot [follow these steps](docker-swarm-vms-efi-bios.md)
 
 - yes those steps got me booted
-- on login i used `sudo fdisk -1` to look at partitions 0 interestingly all my disks are now listed as /dev/vdXX instead of /dev/sdXX - i need to think aboout this.
+- on login i used `sudo fdisk -l` to look at partitions 0 interestingly all my disks are now listed as /dev/vdXX instead of /dev/sdXX - i need to think aboout this.
 
 Ok so the only disk i care about here is the gluster disk (/dev/vdb1)  it seems that in the fstab i was wise and followed guidnace to use UUID not absolute path, this means while the dev name has changed the mount command should still work just fine... unless i am missing something...
 
@@ -195,7 +198,7 @@ If so now you are good to use the same basic steps we used for node 2 and 3:
     ```
     save the file, reboot
 
-13. enable and start gluster - make sure the gluster volume is absolutely ok before starting docker `gluster pool list` and `gluster volume status` and `gluster perr status`
+13. enable and start gluster - make sure the gluster volume is absolutely ok before starting docker `gluster pool list` and `gluster volume status` and `gluster peer status`
 14. enable and start docker - let nodes rebalance over time, keep an eye on it. `systemctl enable docker`, `systemctl enable docker.socket`, `systemctl start docker` & `systemctl start docker.socket` 
 
 You are done.

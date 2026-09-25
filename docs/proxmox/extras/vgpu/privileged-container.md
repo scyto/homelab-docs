@@ -1,7 +1,13 @@
 ---
-title: "How to get working in a privileged container"
+title: "vGPU in an LXC Container"
 source_gist: https://gist.github.com/scyto/e4e3de35ee23fdb4ae5d5a3b85c16ed3
 ---
+
+# vGPU in an LXC container
+
+!!! warning "no longer used"
+    i no longer run vGPU on the cluster.
+
 
 # How to get working in a privileged container
 wow this one is hard.... you can avoid the id mapping stuff by not using a privileged container...
@@ -10,7 +16,7 @@ wow this one is hard.... you can avoid the id mapping stuff by not using a privi
 1. you have a debian 12 container, you added the non-free deb and have installed the non-free drivers as per the host instructions
 2. you have run `cat /etc/groups` in the container and noted down the GID for render (lets call that CTRGID) and gid for video (lets call that CTVGID).
 4. you have run `cat /etc/groups` in the container and noted down the GID for render (lets call that HSTRGID) and gid for video (lets call that HSTVGID).
-5 that you have va info fully working
+5. that you have va info fully working
 
 ## Create Container
 1. create container privileged, with debian 12, starts it
@@ -21,6 +27,7 @@ wow this one is hard.... you can avoid the id mapping stuff by not using a privi
     usermod -a -G render root
     usermod -a -G video root
     ```
+
 4. shutdown container
 
 ## Edit container conf file
@@ -99,7 +106,7 @@ crw-rw-rw- 1 nobody render 226, 128 Oct  4 21:42 renderD128
 if the group names do not say video and render then you did something wrong
 
 
-**Note: YYMV **
+**Note: YYMV**
 
 For example plex HW transcoded just fine on my system. 
 

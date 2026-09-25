@@ -1,7 +1,10 @@
 ---
-title: "These are the steps need to boot disks when the source hypervisort (in my case hyper-v) was using EFI and GPT disks."
+title: "EFI / BIOS Changes"
 source_gist: https://gist.github.com/scyto/042c8c41b23bd5ddb31d1e4e38156dff
 ---
+
+# EFI / BIOS changes
+
 
 # These are the steps need to boot disks when the source hypervisort (in my case hyper-v) was using EFI and GPT disks.
 
@@ -25,7 +28,7 @@ Note wether the OS is Debian, Ubuntu, etc or Windows these steps change - the ma
 
     ![image](../../assets/img/205052ef11fe.png){ width="600" }
 
-5. then select the boot volume (if you did step 12 right there will be only one)
+5. then select the boot volume (if you did [step 8](docker-swarm-vms.md) right there will be only one)
 
     ![image](../../assets/img/ee708bbb18ab.png){ width="600" }
 

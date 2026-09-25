@@ -1,3 +1,13 @@
+{# pages that started as a gist link the original: its comment threads are
+   where most of the troubleshooting happened, and some pages send readers
+   there ("see the comments") #}
+{% if page.meta.source_gist %}
+  <p class="source-gist">
+    This page started as a gist:
+    <a href="{{ page.meta.source_gist }}">the original, with its comments</a>
+  </p>
+{% endif %}
+
 {% if page.meta.comments %}
   <h2 id="__comments">{{ lang.t("meta.comments") }}</h2>
 

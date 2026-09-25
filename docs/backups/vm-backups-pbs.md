@@ -6,12 +6,12 @@ title: "VM Backups to PBS"
 
 one datacenter backup job sends the VMs to proxmox backup server, which runs as a
 container on the [NAS](../truenas/index.md). this page is the proxmox side. the
-PBS side, datastore, prune and verify jobs, gets its own page.
+PBS side (datastore, prune and verify jobs) has its own page.
 
 ## 1. the PBS storage
 
-Datacenter, Storage, Add, Proxmox Backup Server. what that leaves in
-`/etc/pve/storage.cfg`:
+add it under Datacenter, Storage, Add, Proxmox Backup Server. this is what that
+leaves in `/etc/pve/storage.cfg`:
 
 ```
 pbs: pbs1-vms
@@ -38,7 +38,7 @@ pbs: pbs1-vms
 
 ## 2. the backup job
 
-Datacenter, Backup. what that leaves in `/etc/pve/jobs.cfg`:
+add it under Datacenter, Backup. this is what that leaves in `/etc/pve/jobs.cfg`:
 
 ```
 vzdump: backup-582f465c-a553
@@ -65,7 +65,7 @@ vzdump: backup-582f465c-a553
 | `fleecing 0` | off. fleecing is for backup targets slow enough to hold up the guest's own writes |
 | `prune-backups keep-all=1` | the job never deletes a backup. the comment is there so nobody "fixes" it |
 | `repeat-missed 1` | a run missed while the scheduler was not running happens as soon as it is back |
-| `notes-template {{guestname}}` | PBS shows the VM's name, not just its ID |
+| `notes-template {{guestname}}` | PBS shows the VM's name as well as its ID |
 | `mailnotification failure` | mail only when a run fails |
 | `pbs-change-detection-mode metadata` | only affects container backups. this job has none, so it does nothing here |
 
@@ -82,9 +82,9 @@ each node runs the job for the VMs it hosts, all at the same time.
 | 112 | docker02 | pve2 | `local-lvm` | on | EFI disk, TPM state |
 | 113 | docker03 | pve3 | `local-lvm` | on | EFI disk, TPM state |
 
-the docker VMs are on each node's own `local-lvm`, one per node, so for those
-three the backup is the only copy of their disks that is not on that node. the
-others are on ceph, which already keeps replicas across the nodes, and can move
+each docker VM is on its node's `local-lvm`, one per node, so for those three
+the backup is the only copy of their disks that is not on that node. the others
+are on ceph, which already keeps replicas across the nodes, and they can move
 between nodes.
 
 `agent: 1` only tells proxmox to use the agent. the guest has to have it installed
@@ -102,8 +102,8 @@ no disk is marked `backup=0`, so every disk is backed up.
 
 ## 5. checking a run
 
-a failed run sends mail. to watch one from a shell, the per-VM lines go to the
-journal under `pvedaemon`, on whichever node owns the VM:
+a failed run sends mail. the per-VM lines go to the journal under `pvedaemon`,
+so to watch a run from a shell, follow that on whichever node owns the VM:
 
 ```
 journalctl -f SYSLOG_IDENTIFIER=pvedaemon | grep --line-buffered -E 'Backup of VM|Backup job|ERROR'

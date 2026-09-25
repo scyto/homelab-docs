@@ -1,0 +1,21 @@
+version: '3'
+services:
+  cloudflare-ddns:
+    image: oznu/cloudflare-ddns:latest@sha256:19bd73d8aea9641dc329ec18ae693b2b9c33ff7cdc007f368266ce584446f995
+    restart: always
+    entrypoint:
+      - /bin/sh
+      - -c
+      - set -e; API_KEY="$$(cat /run/secrets/cloudflare_dns_api_key_v2)"; export API_KEY; exec /init
+    environment:
+      - TZ=America/Los_Angeles
+      - ZONE=mydomain.com
+      - SUBDOMAIN=external
+      - PROXIED=false
+      - CRON=* * * * *
+    secrets:
+      - cloudflare_dns_api_key_v2
+
+secrets:
+  cloudflare_dns_api_key_v2:
+    external: true

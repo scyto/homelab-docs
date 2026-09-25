@@ -1,0 +1,16 @@
+- glances:
+    url: http://192.168.1.86:61208
+    version: 4
+    label: truenas1
+    cpu: true
+    mem: true
+    cputemp: true
+    uptime: true
+    expanded: true
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: short
+      timeStyle: short
+      hour12: false
