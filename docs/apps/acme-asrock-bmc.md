@@ -4,6 +4,11 @@ title: "acme.sh for an ASRock Rack BMC"
 
 # acme.sh for an asrock rack BMC
 
+!!! note "secrets"
+    i make my secrets from my own [secret store](../secrets/index.md), which
+    only fits my setup. the `docker secret create` commands here are plain
+    swarm: use them, or however you normally make secrets.
+
 [acme.sh](https://github.com/acmesh-official/acme.sh) keeps a real certificate on
 my ASRock Rack BMC (the AMI MegaRAC web UI, firmware 11.02). it renews over
 cloudflare DNS, and a deploy hook installs every renewal on the BMC. after the

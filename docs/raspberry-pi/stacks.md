@@ -36,7 +36,7 @@ they land on the right device whatever order they enumerate in.
 | --- | --- | --- |
 | Zooz 800 Z-Wave stick | `usb-Zooz_800_Z-Wave_Stick_` | zwave-js-ui |
 | Nabu Casa SkyConnect | `usb-Nabu_Casa_SkyConnect_v1.0_` | ser2net |
-| Sonoff Zigbee 3.0 USB Dongle Plus | `usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_` | zigbee2mqtt, not deployed yet |
+| Sonoff Zigbee 3.0 USB Dongle Plus | `usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_` | zigbee2mqtt |
 
 ## containers
 
@@ -61,6 +61,26 @@ Z-Wave JS integration connects to it.
   approve each one when i can watch Home Assistant afterwards
 - the store directory keeps its old `zwavejs2mqtt` name. renaming it means
   changing the stack too
+
+### zigbee2mqtt
+
+zigbee2mqtt runs the Zigbee network on the Sonoff dongle and publishes its
+devices to [mosquitto](../apps/mosquitto-mqtt.md) on the swarm.
+
+--8<-- "blocks/pi-zwave01/zigbee2mqtt/compose.yml.md"
+
+| | |
+| --- | --- |
+| network | its own bridge |
+| ports | `8080` to the UI |
+| data | `/docker-data/zigbee2mqtt/data`: `configuration.yaml`, the device database and the coordinator backup |
+
+- `configuration.yaml` names the broker, `mqtt://mqtt.mydomain.com:1883`, and the
+  adapter, `zstack`. the network itself (channel, PAN ID and keys) lives on the
+  dongle and in `coordinator_backup.json`
+- **keep `coordinator_backup.json`.** with it, a new container resumes the
+  network. without it, and a config that doesn't match the dongle, zigbee2mqtt
+  forms a new network and every device has to be paired again
 
 ### ser2net
 
