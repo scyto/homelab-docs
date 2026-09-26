@@ -80,6 +80,8 @@ labels on the container aren't visible to anything reading the swarm's services,
 
 on the swarm a failing healthcheck gets the task killed and rescheduled. [gatus](../monitoring/gatus.md) checks health from outside instead. on a standalone host docker only reports health, so healthchecks are fine there, and mine say why they failed.
 
+the exception is a service where a new task is the fix. the two [adguards](../apps/adguard.md#when-a-docker-vms-nic-changes) check their own macvlan address, because a task that lost its macvlan interface only gets a new one by being replaced.
+
 ## every container runs in my time zone
 
 ```yaml

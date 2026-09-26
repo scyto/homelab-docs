@@ -6,19 +6,23 @@ title: "WordPress"
 
 i run one wordpress multisite on the swarm. one install serves several sites on
 subdomains of `mydomain.com` and a site on another domain. the stack is
-`wordpress2025`, with two services: `wordpress` and its `db`.
+`wordpress2025`, with three services: `wordpress`, its `db`, and `db-dump`,
+which keeps an hourly dump of the database for the backup.
 
 --8<-- "blocks/swarm/wordpress2025/compose.yml.md"
 
 ## before you deploy
 
-1. create both folders on the cephfs mount:
+1. create the three folders on the cephfs mount:
 
     ```
     sudo mkdir -p /mnt/docker-cephFS/wordpress_html /mnt/docker-cephFS/wordpress_db
+    sudo mkdir -m 700 /mnt/docker-cephFS/wordpress_dumps
     ```
 
     - each volume binds its folder by path, so a missing folder fails the task
+    - `wordpress_dumps` holds a full copy of the database, password hashes
+      included, so only root can read it
 
 2. create two docker secrets: `wordpress_db_password_v2` for the database
    user's password, and `wordpress_mysql_root_password` for mysql's root
@@ -138,6 +142,48 @@ public address, and those requests go through NPM like a visitor's.
 - both official images read passwords from files, so
   `WORDPRESS_DB_PASSWORD_FILE` and the `MYSQL_*_FILE` variables point at docker
   secrets, and no password is in the service spec
+
+## the hourly dump
+
+`db-dump` writes `wordpressdb.sql` to `/mnt/docker-cephFS/wordpress_dumps` when
+it starts and at :50 every hour. ceph's snapshot at :00 catches it, and the
+[cephFS backup](../backups/cephfs.md#databases) ships it at :15, so every backup
+holds a dump known to be consistent next to mysql's own files.
+
+- it runs the db service's image and digest, with `db-dump.sh` as its
+  entrypoint instead of mysqld, so `mysqldump` matches the server
+- `--single-transaction` reads one consistent view of the InnoDB tables without
+  locking them, so wordpress keeps serving while it runs. the dump is about
+  70 MB and takes a few seconds
+- `--source-data=2` writes the binary log position the dump was taken at into
+  the dump, as a comment. reading it takes a global read lock for a moment at
+  the start
+- the dump goes to a temporary name and is renamed only once complete, so a
+  snapshot never catches half of one
+- it is uncompressed on purpose. PBS compresses and deduplicates, and a dump
+  whose rows barely changed shares almost every chunk with the hour before
+- it has no healthcheck. on the swarm a failing one gets the task restarted,
+  which can't fix a missing database or cephFS, and the script already retries
+  every five minutes. a stale dump is for [gatus](../monitoring/gatus.md) to
+  report, which isn't set up yet
+
+--8<-- "blocks/swarm/wordpress2025/db-dump.sh.md"
+
+### binary logs, and rewinding to a minute
+
+mysql's binary log records every change in order. mysql 8 keeps it for thirty
+days by default, which here was 6.1 GB. nothing replicates from this server, so
+the log is only for replaying changes after a restore, and the database keeps
+two days of it (`--binlog-expire-logs-seconds=172800`).
+
+- with an hourly dump, two days is plenty: a restore needs the log only from
+  the dump's position onward
+- to rewind to just before a mistake, load the last dump from before it, then
+  replay the log from the position in the dump's header comment up to the
+  minute before, with `mysqlbinlog --start-position` and `--stop-datetime`.
+  mysqldump 8.0.42 writes that comment as `CHANGE MASTER TO`; newer versions
+  write `CHANGE REPLICATION SOURCE TO`
+- older logs are still in older PBS backups of the `wordpress_db` folder
 
 ## wpadmin.conf
 
