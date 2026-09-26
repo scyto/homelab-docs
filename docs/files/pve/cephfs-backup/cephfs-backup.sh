@@ -30,8 +30,10 @@ gatus_report() {
 }
 
 reported=0
+tmpdb=""
 on_exit() {
   local rc=$?
+  [[ -z "$tmpdb" ]] || rm -f "$tmpdb"
   if (( rc != 0 && reported == 0 )); then
     gatus_report false "exit $rc"
   fi
@@ -70,12 +72,31 @@ age=$(( $(date +%s) - newest_ts ))
   || fail "newest snapshot ${newest##*/} is $(( age / 60 )) minutes old: is snap_schedule running?"
 [[ -e "$newest/.donotdelete" ]] || fail "${newest##*/} has no .donotdelete: not the docker cephFS"
 
+portainer_db="$newest/portainer_data/portainer.db"
+portainer_problem=""
+if [[ -e "$portainer_db" ]]; then
+  if ! { tmpdb=$(mktemp /tmp/portainer.XXXXXX) && cp "$portainer_db" "$tmpdb"; }; then
+    portainer_problem="could not copy portainer.db from ${newest##*/} to /tmp to check it"
+  elif out=$(timeout 300 bbolt check "$tmpdb" 2>&1) && [[ "$(tail -n 1 <<<"$out")" == OK ]]; then
+    log "portainer.db in ${newest##*/} passes bbolt check"
+  else
+    portainer_problem="portainer.db in ${newest##*/} fails bbolt check: $(grep -m 1 -v '^[[:space:]]' <<<"$out" | cut -c 1-200)"
+  fi
+  [[ -z "$portainer_problem" ]] || log "$portainer_problem"
+  [[ -z "$tmpdb" ]] || rm -f "$tmpdb"
+  tmpdb=""
+else
+  portainer_problem="${newest##*/} has no portainer_data/portainer.db"
+  log "$portainer_problem"
+fi
+
 log "backing up ${newest##*/}"
 proxmox-backup-client backup "cephfs.pxar:$newest" \
   --ns Files \
   --backup-id cephfs \
   --change-detection-mode=metadata
 
+[[ -z "$portainer_problem" ]] || fail "backed up, but $portainer_problem"
 gatus_report true
 reported=1
 log "done in ${SECONDS}s"

@@ -119,6 +119,19 @@ timer and its unit go in the container, and the token goes in
 
 --8<-- "blocks/pve/cephfs-backup/cephfs-backup.timer.md"
 
+the script checks portainer's database in the snapshot with `bbolt check`
+before backing it up, see [databases](databases.md#portainer-a-checked-copy-in-every-cephfs-backup).
+debian has no `bbolt` command, so build it in the container from source at a
+pinned version, then remove go:
+
+```
+apt-get -y install golang-go
+env HOME=/root GOBIN=/usr/local/bin go install go.etcd.io/bbolt/cmd/bbolt@v1.4.3
+apt-get -y purge golang-go golang-1.24-go golang-1.24-src golang-src
+apt-get -y autoremove --purge
+rm -rf /root/go /root/.cache/go-build
+```
+
 - `DatastoreBackup` can back up and restore the backups its token owns, but not
   prune or delete them, so a compromised container cannot wipe the history.
   retention is the [prune job](pbs-server.md#retention-one-prune-job-for-everything)

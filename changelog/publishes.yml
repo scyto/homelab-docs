@@ -13,6 +13,13 @@
 
 - publish: next
   changes:
+    - added feature: "every hourly [cephfs backup](backups/cephfs.md#4-the-backup) checks portainer's database with `bbolt check` before backing it up"
+    - changed doc: "[databases](backups/databases.md#portainer-a-checked-copy-in-every-cephfs-backup): portainer is restored from the checked copy in the cephfs backup"
+    - added feature: "truenas1's `fast/configs` is replicated to the rust pool after every hourly snapshot, see [storage and snapshots](truenas/storage.md#what-this-does-not-cover)"
+    - added feature: "the catalogue apps' settings are copied into `fast/configs` every night, see [tasks and scripts](truenas/tasks-and-scripts.md#cron-jobs)"
+
+- publish: 33
+  changes:
     - added doc: "[databases](backups/databases.md): every database, how each is copied, and how to restore it"
     - added feature: "portainer's S3 backups keep 14 nights, and always the newest 14. a cron job on truenas deletes older ones, see [portainer to S3](backups/portainer-s3.md)"
     - removed feature: "two anonymous accounts on [nginx proxy manager](apps/nginx-proxy-manager.md)'s database, which nothing used"
