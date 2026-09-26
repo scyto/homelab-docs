@@ -279,3 +279,4 @@ nav:
       - CephFS Backups: backups/cephfs.md
       - Raspberry Pi to PBS: backups/pi-host-backup.md
       - Portainer to S3: backups/portainer-s3.md
+  - Changelog: changelog.md
