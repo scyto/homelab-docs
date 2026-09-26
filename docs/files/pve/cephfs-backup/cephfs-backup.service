@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up the newest cephFS snapshot to PBS
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/mnt/cephfs
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cephfs-backup
+Nice=10

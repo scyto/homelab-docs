@@ -7,7 +7,8 @@ title: "Proxmox Backup Server"
 PBS 4.2 runs as a container on the [NAS](../truenas/index.md). it has one
 datastore, which the [VM backups](vm-backups-pbs.md), the
 [cephFS backups](cephfs.md) and the [raspberry pi](pi-host-backup.md) write to.
-this page is the PBS side.
+this page is the PBS side. installing it is in
+[building pbs1](../truenas/containers.md#building-pbs1).
 
 ## datastore
 
