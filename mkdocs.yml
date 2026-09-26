@@ -49,6 +49,11 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
 
+# docs/changelog.md is built from changelog/ by this hook, which also fills in
+# the newest publish's time on the live build.
+hooks:
+  - hooks/changelog.py
+
 plugins:
   - search
   # Every page moved in the 2026-09-21 restructure keeps its old URL. The

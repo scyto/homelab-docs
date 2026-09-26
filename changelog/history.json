@@ -1,0 +1,203 @@
+{
+ "publishes": [
+  {
+   "id": "31",
+   "link": "https://github.com/scyto/homelab-docs/pull/31",
+   "time": "2026-09-26T06:27:54Z"
+  },
+  {
+   "id": "30",
+   "link": "https://github.com/scyto/homelab-docs/pull/30",
+   "time": "2026-09-26T06:06:56Z"
+  },
+  {
+   "id": "29",
+   "link": "https://github.com/scyto/homelab-docs/pull/29",
+   "time": "2026-09-26T01:50:05Z"
+  },
+  {
+   "id": "28",
+   "link": "https://github.com/scyto/homelab-docs/pull/28",
+   "time": "2026-09-26T00:28:53Z"
+  },
+  {
+   "id": "27",
+   "link": "https://github.com/scyto/homelab-docs/pull/27",
+   "time": "2026-09-25T20:07:47Z"
+  },
+  {
+   "id": "26",
+   "link": "https://github.com/scyto/homelab-docs/pull/26",
+   "time": "2026-09-25T15:02:27Z"
+  },
+  {
+   "id": "25",
+   "link": "https://github.com/scyto/homelab-docs/pull/25",
+   "time": "2026-09-23T06:33:29Z"
+  },
+  {
+   "id": "24",
+   "link": "https://github.com/scyto/homelab-docs/pull/24",
+   "time": "2026-09-22T19:36:26Z"
+  },
+  {
+   "id": "23",
+   "link": "https://github.com/scyto/homelab-docs/pull/23",
+   "time": "2026-09-22T16:55:44Z"
+  },
+  {
+   "id": "22",
+   "link": "https://github.com/scyto/homelab-docs/pull/22",
+   "time": "2026-09-20T15:54:07Z"
+  },
+  {
+   "id": "21",
+   "link": "https://github.com/scyto/homelab-docs/pull/21",
+   "time": "2026-09-19T23:36:29Z"
+  },
+  {
+   "id": "20",
+   "link": "https://github.com/scyto/homelab-docs/pull/20",
+   "time": "2026-09-19T23:04:55Z"
+  },
+  {
+   "id": "19",
+   "link": "https://github.com/scyto/homelab-docs/pull/19",
+   "time": "2026-09-16T19:37:55Z"
+  },
+  {
+   "id": "18",
+   "link": "https://github.com/scyto/homelab-docs/pull/18",
+   "time": "2026-09-16T18:53:07Z"
+  },
+  {
+   "id": "12",
+   "link": "https://github.com/scyto/homelab-docs/pull/12",
+   "time": "2026-09-16T04:34:10Z"
+  },
+  {
+   "id": "17",
+   "link": "https://github.com/scyto/homelab-docs/pull/17",
+   "time": "2026-09-16T04:25:52Z"
+  },
+  {
+   "id": "16",
+   "link": "https://github.com/scyto/homelab-docs/pull/16",
+   "time": "2026-09-16T04:08:12Z"
+  },
+  {
+   "id": "15",
+   "link": "https://github.com/scyto/homelab-docs/pull/15",
+   "time": "2026-09-16T02:15:49Z"
+  },
+  {
+   "id": "14",
+   "link": "https://github.com/scyto/homelab-docs/pull/14",
+   "time": "2026-09-16T01:24:11Z"
+  },
+  {
+   "id": "13",
+   "link": "https://github.com/scyto/homelab-docs/pull/13",
+   "time": "2026-09-15T23:58:06Z"
+  },
+  {
+   "id": "a937c79",
+   "link": "https://github.com/scyto/homelab-docs/commit/a937c79",
+   "time": "2026-08-26T18:05:50Z"
+  },
+  {
+   "id": "11",
+   "link": "https://github.com/scyto/homelab-docs/pull/11",
+   "time": "2026-08-24T19:03:47Z"
+  },
+  {
+   "id": "7e36498",
+   "link": "https://github.com/scyto/homelab-docs/commit/7e36498",
+   "time": "2026-08-24T02:05:26Z"
+  },
+  {
+   "id": "765b1e5",
+   "link": "https://github.com/scyto/homelab-docs/commit/765b1e5",
+   "time": "2026-08-24T01:53:31Z"
+  },
+  {
+   "id": "100397a",
+   "link": "https://github.com/scyto/homelab-docs/commit/100397a",
+   "time": "2026-08-24T01:43:56Z"
+  }
+ ],
+ "changes_by_day": {
+  "2026-08-23": {
+   "docs": 2,
+   "other": 10
+  },
+  "2026-08-24": {
+   "docs": 1,
+   "other": 4
+  },
+  "2026-08-25": {
+   "docs": 3,
+   "other": 5
+  },
+  "2026-08-26": {
+   "docs": 0,
+   "other": 7
+  },
+  "2026-08-27": {
+   "docs": 0,
+   "other": 5
+  },
+  "2026-08-28": {
+   "docs": 0,
+   "other": 2
+  },
+  "2026-08-29": {
+   "docs": 0,
+   "other": 1
+  },
+  "2026-09-14": {
+   "docs": 2,
+   "other": 2
+  },
+  "2026-09-15": {
+   "docs": 14,
+   "other": 3
+  },
+  "2026-09-16": {
+   "docs": 2,
+   "other": 9
+  },
+  "2026-09-18": {
+   "docs": 0,
+   "other": 1
+  },
+  "2026-09-19": {
+   "docs": 6,
+   "other": 7
+  },
+  "2026-09-20": {
+   "docs": 3,
+   "other": 29
+  },
+  "2026-09-21": {
+   "docs": 2,
+   "other": 19
+  },
+  "2026-09-22": {
+   "docs": 7,
+   "other": 11
+  },
+  "2026-09-24": {
+   "docs": 33,
+   "other": 17
+  },
+  "2026-09-25": {
+   "docs": 7,
+   "other": 8
+  },
+  "2026-09-26": {
+   "docs": 2,
+   "other": 0
+  }
+ }
+}
