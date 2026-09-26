@@ -1,0 +1,165 @@
+# Every publish of the site, newest first, for docs/changelog.md.
+#
+# publish: the homelab-docs pull request number, the commit for the four early
+#   direct pushes, or `next` for the publish being prepared. The live build
+#   fills in `next` from its own commit; tools/changelog.py later turns it into
+#   the number, so the next publish can be added above it.
+# changes: one line each, labelled added doc, changed doc, removed doc,
+#   added feature, changed feature, removed feature, or fix. A feature or fix is
+#   a change to the homelab itself, which the published pages describe. Links
+#   are relative to docs/.
+#
+# Times, links, the kind column and the pace section are all generated.
+
+- publish: next
+  changes:
+    - changed doc: "[changelog](changelog.md): publishes first, each change labelled, and the newest publish's time filled in when it goes live"
+
+- publish: 31
+  changes:
+    - added doc: "[changelog](changelog.md): every publish, and the pace by week"
+
+- publish: 30
+  changes:
+    - added feature: "hourly consistent dumps of the [wordpress](apps/wordpress.md#the-hourly-dump) and [nginx proxy manager](apps/nginx-proxy-manager.md) databases, for the cephfs backup"
+    - added feature: "[gatus](monitoring/gatus.md#the-fork) copies its database every hour, through the fork"
+    - changed feature: "wordpress keeps two days of binary logs, down from thirty"
+    - changed doc: "[cephfs backups](backups/cephfs.md#databases): what runs for each database, and how to restore each copy"
+    - changed doc: "[stack conventions](docker/conventions.md): the adguards are the one swarm service with a healthcheck, and why"
+
+- publish: 29
+  changes:
+    - fix: "re-plugging a docker VM's network card removed [adguard](apps/adguard.md#when-a-docker-vms-nic-changes)'s macvlan address. a healthcheck on that address now gets the container replaced"
+    - fix: "the macvlan shim is built by `eth0`'s stanza, so it comes back with the card"
+    - changed feature: "the two adguards keep off each other's node"
+
+- publish: 28
+  changes:
+    - added feature: "[cephfs backups](backups/cephfs.md) run in a container on the proxmox cluster that any node can run: hourly snapshots, the backup to PBS, and a restore check"
+    - added doc: "building and rebuilding [pbs1](truenas/containers.md), from the truenas container api to its certificate"
+    - changed feature: "pbs1 has one static address"
+    - changed doc: "[proxmox backup server](backups/pbs-server.md) links to the build"
+
+- publish: 27
+  changes:
+    - changed doc: "the [home page](index.md) cards, in my words"
+    - changed doc: "five pages that began as gists describe what runs now: [auto-label nodes](apps/auto-label-nodes.md), [cloudflare ddns](apps/cloudflare-ddns.md), [infinitude](apps/infinitude.md), [mosquitto](apps/mosquitto-mqtt.md) and [nginx proxy manager](apps/nginx-proxy-manager.md)"
+    - added doc: "a note on [acme asrock bmc](apps/acme-asrock-bmc.md), [acme synology](apps/acme-synology.md) and [dozzle](monitoring/dozzle.md): my secrets come from my own store, and the plain `docker secret create` commands work for anyone"
+    - changed feature: "the [arr stack](apps/arrstack.md)'s download clients open their web UI to the lan only"
+    - added feature: "[zigbee2mqtt](raspberry-pi/stacks.md) runs on the pi, pinned by digest"
+
+- publish: 26
+  changes:
+    - added doc: "[esp border router](thread/esp-border-router.md) and [checking the mesh](thread/checking-the-mesh.md), split out of the thread page"
+    - added doc: "[cephfs start guards](proxmox/cephfs-start-guards.md), [config from git](docker/config-from-git.md), [key-manager reference](secrets/key-manager.md), and a landing page for the [hyper-v migration](proxmox/migration/index.md)"
+    - changed doc: "99 pages: every section's facts checked against the running systems and corrected"
+    - changed doc: "app and monitoring pages show the stack files that deploy, with notes on the lines that matter"
+    - changed doc: "previous and next links on every page, and plain sentences throughout"
+    - fix: "the [offsite copy](backups/index.md) of PBS to azure, which had stopped in june, runs again"
+    - changed feature: "the [BMC certificate](apps/acme-asrock-bmc.md) hook signs in as a dedicated `acme-sh` account"
+
+- publish: 25
+  changes:
+    - added doc: "[IPv6](docker/ipv6.md) on the docker hosts: the addressing plan, the interface and daemon config, and how a stack turns it on"
+    - added feature: "the docker hosts route IPv6 to containers, with no NAT66"
+    - added feature: "a macvlan shim on every docker host, so a node reaches the [adguard](apps/adguard.md) running on it"
+    - added feature: "a cold copy of portainer before each upgrade, on [portainer to S3](backups/portainer-s3.md)"
+    - changed doc: "[portainer](docker/portainer.md): each environment is added by its agent's address on port 9001"
+
+- publish: 24
+  changes:
+    - changed doc: "[stacks in git](docker/gitops-with-portainer.md): why portainer's force redeployment stays off, and a current screenshot of the deploy ruleset"
+
+- publish: 23
+  changes:
+    - added doc: "three sections replace docker swarm: [docker](docker/index.md), [apps](apps/index.md) and [monitoring](monitoring/index.md). the 29 pages that moved redirect"
+    - added doc: "[standalone docker hosts](docker/standalone/index.md), [stack conventions](docker/conventions.md), [portainer](docker/portainer.md), [truenas tasks and scripts](truenas/tasks-and-scripts.md), [wordpress](apps/wordpress.md) and the [arr stack](apps/arrstack.md)"
+    - added doc: "the raspberry pi page split into [stacks](raspberry-pi/stacks.md), [thread radio](raspberry-pi/thread-radio.md), [GPS time](raspberry-pi/gps-time.md) and [PoE HAT OLED](raspberry-pi/poe-oled.md)"
+    - added feature: "a [homepage](monitoring/homepage.md) dashboard that finds its tiles on the swarm"
+    - added feature: "[gatus](monitoring/gatus.md) health checks, with their config in git"
+    - added feature: "[dozzle](monitoring/dozzle.md) and [glances](monitoring/glances.md) on every host"
+    - added feature: "the arr stack deployed from git on truenas1"
+    - changed feature: "every container on pacific time"
+    - removed feature: "uptime kuma, replaced by gatus"
+    - removed doc: "the unifi poller page, which now redirects to apps"
+
+- publish: 22
+  changes:
+    - added doc: "a [truenas](truenas/index.md) section: [hardware and base install](truenas/hardware-and-base-install.md), [system extensions](truenas/sysexts.md), [storage](truenas/storage.md), [apps](truenas/apps.md), [containers](truenas/containers.md), [boot environments](truenas/boot-environments.md) and frigate"
+    - added doc: "a [secrets](secrets/index.md) section, moved out of docker swarm, with guides to [add](secrets/add.md), [rotate](secrets/rotate.md), [retire](secrets/retire.md) and [recover](secrets/recover.md)"
+    - added feature: "an encrypted secret store, sops and age, run from a key-manager container"
+    - added feature: "acme.sh renews the certificates on the [BMC](apps/acme-asrock-bmc.md) and the [synology](apps/acme-synology.md)"
+    - added feature: "[frigate](apps/frigate.md) deployed from git on truenas1, off the app catalogue"
+
+- publish: 21
+  changes:
+    - changed doc: "[truenas virtualized on proxmox](truenas/virtualized-on-proxmox.md): an nvme drive that was passed through but never bound to vfio, and a step that loads the vfio modules"
+
+- publish: 20
+  changes:
+    - added doc: "[truenas virtualized on proxmox](truenas/virtualized-on-proxmox.md): how the NAS ran as a VM for a year, and the host-side guards that kept proxmox off its disks"
+
+- publish: 19
+  changes:
+    - changed doc: "numbered steps that restarted at 1 now count through, on eight proxmox pages"
+
+- publish: 18
+  changes:
+    - added doc: "[omni-tools](apps/omni-tools.md) and [bentopdf](apps/bentopdf.md)"
+    - added feature: "omni-tools and bentopdf on the swarm"
+    - changed doc: "[stacks in git](docker/gitops-with-portainer.md): which git reference to pick when adding a stack"
+
+- publish: 12
+  changes:
+    - changed doc: "the site's theme, mkdocs-material 9.5.44 to 9.7.7"
+
+- publish: 17
+  changes:
+    - changed doc: "[stacks in git](docker/gitops-with-portainer.md): what a standalone docker host shares with the swarm"
+
+- publish: 16
+  changes:
+    - changed doc: "[thread](thread/index.md): clipboard and state commands that run on each platform"
+
+- publish: 15
+  changes:
+    - changed doc: "[thread](thread/index.md): which ESP-IDF tree windows uses, and naming each board after its MAC as a normal step"
+
+- publish: 14
+  changes:
+    - changed doc: "[thread](thread/index.md) starts from an unflashed ESP board: parts, ESP-IDF on each OS, flashing, and joining from home assistant"
+    - added doc: "an optional firmware patch that names each ESP board after its MAC"
+    - changed doc: "[raspberry pi](raspberry-pi/index.md): the stacks portainer deploys there from git"
+    - changed doc: "34 lists that rendered as paragraphs now render as lists, and numbered steps no longer restart at 1 in 19 places"
+
+- publish: 13
+  changes:
+    - added doc: "a [backups](backups/index.md) section: [PBS server](backups/pbs-server.md), [VM backups](backups/vm-backups-pbs.md), [cephfs](backups/cephfs.md), [raspberry pi](backups/pi-host-backup.md) and [portainer to S3](backups/portainer-s3.md)"
+    - added doc: "[thread](thread/index.md), [raspberry pi](raspberry-pi/index.md) and [truenas](truenas/index.md) sections, with [S3 on versity gateway](truenas/s3-versity-gateway.md)"
+    - changed doc: "[cephfs on a lan client](proxmox/thunderbolt/cephfs-client-mount.md), rewritten from a tested run"
+    - changed doc: "[PBS on synology](proxmox/extras/proxmox-backup-server.md) marked deprecated"
+    - changed feature: "the ESP thread border router on newer firmware, managed by home assistant"
+    - added feature: "a healthcheck on the pi's ser2net connection to the thread radio"
+    - removed feature: "the pi's unused OTBR stack"
+
+- publish: a937c79
+  changes:
+    - changed doc: "the swarm install steps render as a numbered list"
+
+- publish: 11
+  changes:
+    - added doc: "[stacks in git](docker/gitops-with-portainer.md), [secrets](secrets/index.md), [image updates with renovate](docker/image-updates-renovate.md) and [troubleshooting](docker/troubleshooting.md)"
+    - added feature: "renovate, self-hosted and signed in as a github app, with one pull request per stack"
+    - changed doc: "the home page icons render; they had shown as text"
+
+- publish: 7e36498
+  changes:
+    - added doc: "comments on the ten busiest pages, through github discussions"
+
+- publish: 765b1e5
+  changes:
+    - added doc: "a list of the 16 gists not yet moved to the site"
+
+- publish: 100397a
+  changes:
+    - added doc: "the site: my proxmox and docker swarm gists, brought together in mkdocs"
