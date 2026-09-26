@@ -282,6 +282,7 @@ nav:
       - Proxmox Backup Server: backups/pbs-server.md
       - VM Backups to PBS: backups/vm-backups-pbs.md
       - CephFS Backups: backups/cephfs.md
+      - Databases: backups/databases.md
       - Raspberry Pi to PBS: backups/pi-host-backup.md
       - Portainer to S3: backups/portainer-s3.md
   - Changelog: changelog.md
