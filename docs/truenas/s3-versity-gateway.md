@@ -142,15 +142,18 @@ once a day, so:
 | weekly | 12 weeks |
 
 snapshots of files that only get added cost almost nothing, because a snapshot
-only holds blocks that later change or get deleted. add a daily one on
+only holds blocks that later change or get deleted. a backup the
+[retention job](tasks-and-scripts.md#cron-jobs) deletes stays on disk until the
+last snapshot holding it expires, up to 12 weeks. add a daily one on
 `fast/configs/versitygw` too. it is tiny.
 
 ## notes
 
 - `.sgwtmp` inside a bucket is versity's scratch space for multipart uploads.
   leave it. if it keeps growing, interrupted uploads are leaving parts behind
-- nothing expires objects for you. a daily backup of a few tens of MB is a
-  couple of GB a month
+- versity has no lifecycle rules, so nothing expires objects. for portainer's
+  backups a cron job deletes the old ones, see
+  [portainer to S3](../backups/portainer-s3.md)
 
 ## sources
 

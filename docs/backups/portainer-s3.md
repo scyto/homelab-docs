@@ -120,8 +120,10 @@ docker service update --replicas 1 --image portainer/portainer-ee:<new version> 
   per stack under `/data/compose`, about 14 MB each, so the archive grows with
   the number of stacks: mine went from 68 MB to 356 MB as stacks were added. the
   database itself is 8 MB
-- the bucket grows. nothing expires old backups, so a daily run adds about 10 GB
-  a month. clear it out now and then
+- a cron job on truenas keeps 14 nights of backups, and always the newest 14.
+  portainer has no retention setting and versity gateway has no lifecycle
+  rules, so it deletes the files from the bucket's folder, see
+  [tasks and scripts](../truenas/tasks-and-scripts.md#cron-jobs)
 - portainer can also encrypt its database at rest, with a docker secret named
   `portainer`. that is separate from this backup's password. its docs say it
   cannot be reversed, and the key lives in the swarm, so rebuild the swarm

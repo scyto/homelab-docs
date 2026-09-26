@@ -13,6 +13,13 @@
 
 - publish: next
   changes:
+    - added doc: "[databases](backups/databases.md): every database, how each is copied, and how to restore it"
+    - added feature: "portainer's S3 backups keep 14 nights, and always the newest 14. a cron job on truenas deletes older ones, see [portainer to S3](backups/portainer-s3.md)"
+    - removed feature: "two anonymous accounts on [nginx proxy manager](apps/nginx-proxy-manager.md)'s database, which nothing used"
+    - changed doc: "[backups](backups/index.md): portainer's database has no scheduled consistent copy, and truenas1's app databases have no copy off their pool"
+
+- publish: 32
+  changes:
     - changed doc: "[changelog](changelog.md): publishes first, each change labelled, and the newest publish's time filled in when it goes live"
 
 - publish: 31

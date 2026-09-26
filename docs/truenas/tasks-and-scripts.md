@@ -24,6 +24,7 @@ System → Advanced → Cron Jobs, all as root
 | --- | --- | --- |
 | daily 00:00 | `register-dns.sh` | the boot script again, to catch an address change |
 | daily 05:00 | `pbs-cloud-backup.sh` | snapshots the PBS datastore and copies it to azure, using the cloud credential stored in truenas, see [backups](../backups/index.md) |
+| daily 21:00 | `portainer-s3-retention.sh` | keeps 14 nights of portainer's backups in the S3 bucket, and always the newest 14. portainer and versity gateway can't expire them, so it deletes the files, see [portainer to S3](../backups/portainer-s3.md) |
 | sunday 00:00 | `midclt call disk.smart_test` | a short SMART test on every disk. this version has no SMART test task, so cron runs it |
 | sunday 04:30 | `docker image prune -a -f --filter until=168h` | truenas never removes an app's old image after an update, 225 GB had built up. keeping 7 days leaves the previous version to roll back to |
 
