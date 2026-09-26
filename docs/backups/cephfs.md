@@ -153,20 +153,34 @@ pct exec <ctid> -- /usr/local/sbin/verify-restore <directory>
 - encryption on the client, which `proxmox-backup-client` can do. the backups
   hold portainer's database, which has credentials in it. the key has to be kept
   somewhere other than the cluster. lose it and the backups are unreadable
-- the database dumps below
+- an alert when a [database dump](#databases) goes stale. the dumps log a
+  failure and retry, but nothing reports it yet
 
 ## databases
 
-snapshots alone are not enough for databases. each gets a small dump job in its
-own stack, which writes to cephFS just before the snapshot, so the backup holds
+snapshots alone are not enough for databases. a database keeps its state in
+several files and in memory, and a snapshot can catch those files mid-write. so
+each database gets a small dump job, a sidecar in its own stack, which asks the
+database for a consistent copy just before the snapshot. the backup then holds
 a dump known to be consistent as well as the raw files.
 
 | stack | database | dump |
 | --- | --- | --- |
-| wordpress | MySQL 8.0, InnoDB | `mysqldump --single-transaction` |
-| nginx proxy manager | MariaDB with Aria tables | needs table locks, `--single-transaction` only covers InnoDB. small, so the lock is brief |
+| [wordpress](../apps/wordpress.md#the-hourly-dump) | MySQL 8.0, InnoDB | runs: `db-dump`, hourly at :50, `--single-transaction`, with the binary log position recorded |
+| [nginx proxy manager](../apps/nginx-proxy-manager.md) | MariaDB 10.11, Aria tables | runs: `db-dump`, hourly at :50, `--lock-tables`, because `--single-transaction` only covers InnoDB. the database is 0.5 MB, so the lock is brief |
 | portainer | its own embedded database | no dump tool. snapshot, plus portainer's own [backup to S3](portainer-s3.md) |
-| gatus | SQLite, its check history | `sqlite3 .backup` from another container, since gatus's image has no shell. whether SQLite's locking holds over virtioFS and cephFS is still to test |
+| [gatus](../monitoring/gatus.md#the-fork) | SQLite in WAL mode, its check history | runs: gatus copies itself with `VACUUM INTO`, hourly at :50. a sidecar can't: WAL needs every reader on gatus's host, and swarm can't place one there |
 
-a dump job in the stack needs no docker socket, gets its password the same way
-the app does, and lives in git with the stack.
+- the dump job runs the database's own image, so its `mysqldump` matches the
+  server
+- it needs no docker socket, reads the password the database already has, and
+  lives in git with the stack
+- it writes to a temporary name and renames the file only when the dump is
+  complete, so a snapshot sees a whole dump or the previous one
+- the dumps are uncompressed, because PBS compresses and deduplicates them
+- to restore, load the dump into an empty database. the raw files from the same
+  backup are usually fine too, and faster
+- gatus's copy is a whole database, not a dump. to restore it, scale gatus to 0,
+  delete `gatus.db-wal` and `gatus.db-shm`, copy `backup/gatus.db` over
+  `gatus.db`, and scale it back to 1. a leftover `-wal` would be replayed into
+  the restored file

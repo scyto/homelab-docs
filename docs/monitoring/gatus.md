@@ -57,9 +57,13 @@ its old anchor working -->
 
 <span id="the-sidecar"></span>the sidecar and gatus's `sparse-checkout`, `ssh_config` and `known_hosts` are on [config from git](../docker/config-from-git.md).
 
-## a fork for the proxmox token
+## the fork
 
-the proxmox quorum check needs an api token. upstream gatus only substitutes environment variables into its config, and a token in an environment variable is readable by anything that can read the service. i run a small fork that also reads `PROXMOX_TOKEN_FILE`, a docker secret, and substitutes `${PROXMOX_TOKEN}` from it.
+i run a small fork, [scyto/gatus](https://github.com/scyto/gatus), for two things upstream doesn't do.
+
+**a token from a file.** the proxmox quorum check needs an api token. upstream gatus only substitutes environment variables into its config, and a token in an environment variable is readable by anything that can read the service. the fork also reads `PROXMOX_TOKEN_FILE`, a docker secret, and substitutes `${PROXMOX_TOKEN}` from it.
+
+**a backup of gatus's database.** the check history is SQLite in WAL mode, so a [cephfs snapshot](../backups/cephfs.md#databases) can catch it mid-write. nothing outside gatus can copy it safely: WAL needs every reader on the same host, swarm can't keep a sidecar on gatus's node, and the image has no shell. so the fork copies it with `VACUUM INTO` to `GATUS_SQLITE_BACKUP_PATH`, at start and hourly at :50.
 
 ## what each check asserts
 

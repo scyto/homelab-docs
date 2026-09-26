@@ -14,6 +14,9 @@ I restrict to 1 instance of each container to avoid database corruption from hav
 Both services read their passwords from swarm secrets through entrypoint wrappers, see [secrets](../secrets/index.md#option-3-an-entrypoint-wrapper).
 Leave hostname as db (name resolution works fine using this method).
 If you place the database in a different stack / want to use an existing database then both stacks need to share a network.
+A third service, `db-dump`, dumps the database to `/mnt/docker-cephFS/npm_dumps` at start and at :50 every hour, so every [cephFS backup](../backups/cephfs.md#databases) holds a consistent copy. It runs the database's image with the same script as [wordpress's hourly dump](wordpress.md#the-hourly-dump). The folder has to exist before the first deploy (`sudo mkdir -m 700 /mnt/docker-cephFS/npm_dumps`).
+The tables are Aria, which has no consistent read view, so the dump uses `--lock-tables`: writers wait for it, readers carry on. The database is 0.5 MB and the dump takes under a second, and only npm's admin side uses the database, while nginx proxies from the config files npm generates.
+If `mysqldump --routines` fails with `Cannot load from mysql.proc` (error 1728), the system tables were made by an older MariaDB and never upgraded. `mariadb-upgrade` inside the db container fixes that; take a dump first.
 
 ## Network Considerations
 This publishes 80, 443 and 81 (admin) as 180, 1443 and 181, so the admin UI is at swarmIP:181.
@@ -23,3 +26,5 @@ cephfs allows the replica to run on any node.
 I hard set 1 replica (even though that's default) to avoid corruption of the database.  Not sure it will corrupt, this is just my own caution.
 
 --8<-- "blocks/swarm/npm/compose.yml.md"
+
+--8<-- "blocks/swarm/npm/db-dump.sh.md"

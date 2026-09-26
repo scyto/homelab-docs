@@ -52,12 +52,13 @@ services:
       replicas: 1
 
   gatus:
-    image: ghcr.io/scyto/gatus:v5.36.0-12-secrets@sha256:82aafabd56ad1161f0f82e92174a3fb53e8cb91940ee31e4664a692f8c2eb691
+    image: ghcr.io/scyto/gatus:v5.36.0-12-secrets-backup@sha256:61a8988f286fed144c91cdfd1acb7d429d2ba0fecc47007c95df2e0a0c840518
     environment:
       - TZ=America/Los_Angeles
       - GATUS_CONFIG_PATH=/git/repo/stacks/swarm/gatus/config
       - GATUS_LOG_LEVEL=INFO
       - PROXMOX_TOKEN_FILE=/run/secrets/proxmox_api_token_v1
+      - GATUS_SQLITE_BACKUP_PATH=/data/backup/gatus.db
     volumes:
       - type: bind
         source: /usr/share/zoneinfo
