@@ -81,21 +81,30 @@ Anything on that node that needs DNS or the AdGuard API times out.
 
 Each docker host carries a macvlan shim to fix it. `mac0` is a second macvlan
 child of `eth0`, and child-to-child traffic is allowed, so routing the two
-resolver addresses out of it works:
+resolver addresses out of it works. `eth0`'s own stanza in
+`/etc/network/interfaces` builds it:
 
 ```
-auto mac0
-iface mac0 inet manual
-  pre-up ip link add mac0 link eth0 type macvlan mode bridge
-  up ip route replace 192.168.1.5/32 dev mac0 src 192.168.1.41
-  up ip route replace 192.168.1.6/32 dev mac0 src 192.168.1.41
-  up iptables -N DOCKER-USER 2>/dev/null || true
-  up iptables -C DOCKER-USER -o mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -o mac0 -j ACCEPT
-  up iptables -C DOCKER-USER -i mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -i mac0 -j ACCEPT
-  post-down ip link del mac0
+allow-hotplug eth0
+iface eth0 inet static
+  address 192.168.1.41
+  netmask 255.255.255.0
+  gateway 192.168.1.1
+  post-up ip link add mac0 link eth0 type macvlan mode bridge 2>/dev/null || true
+  post-up ip link set dev mac0 up
+  post-up ip route replace 192.168.1.5/32 dev mac0 src 192.168.1.41
+  post-up ip route replace 192.168.1.6/32 dev mac0 src 192.168.1.41
+  post-up iptables -N DOCKER-USER 2>/dev/null || true
+  post-up iptables -C DOCKER-USER -o mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -o mac0 -j ACCEPT
+  post-up iptables -C DOCKER-USER -i mac0 -j ACCEPT 2>/dev/null || iptables -I DOCKER-USER -i mac0 -j ACCEPT
+  pre-down ip link del mac0 2>/dev/null || true
 ```
 
 - only `src` changes per host, to that host's own address
+- it is in `eth0`'s stanza, not one of its own, because a macvlan child is
+  deleted with its parent. `eth0` is `allow-hotplug`, so when its card comes
+  back its stanza runs again and rebuilds `mac0`. a separate `auto mac0`
+  stanza only runs at boot
 - the shim needs no address of its own, so nothing has to be reserved. the
   route's `src` supplies the source address, and adguard sees the host
 - the `/32` routes are correct whether or not the adguard is local. `mac0` is on
@@ -117,6 +126,24 @@ docker run --rm --network <an overlay> alpine:3 ping -c2 192.168.1.5
 With the shim in place no service needs a placement constraint to avoid the
 AdGuard nodes. On a three node cluster, a service kept off both resolvers has
 one eligible node, and losing that node leaves it unschedulable.
+
+## when a docker VM's NIC changes
+
+proxmox unplugs and re-plugs a running VM's network card when you change that
+card's settings. adding a second card leaves the first alone. when `eth0` goes
+away, every macvlan child of it goes too: `mac0`, and the LAN interface of an
+AdGuard running on that node.
+
+- `mac0` comes back with `eth0`, from `eth0`'s stanza above
+- docker never rebuilds a running container's macvlan interface, so the AdGuard
+  keeps running with no address on the LAN. its healthcheck asks for
+  `localhost` on its own macvlan address, fails, and swarm replaces the task
+  with one that has a fresh interface
+- each AdGuard has a placement constraint that keeps it off the other's node.
+  it reads auto-label's labels, which follow a move only after auto-label next
+  runs, so if both are rescheduled at once they can still land together. move
+  them one at a time
+- a change to `net0` is safest with the VM stopped
 
 ## Network Preparation
 This is one of the few times where showing picture will use less space than trying to explain something complex and non-intutive.
@@ -254,7 +281,8 @@ networks:
 ## what i run now
 
 - the volumes are named binds on cephfs, see [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts)
-- adguard2 has a placement constraint from [auto-label](auto-label-nodes.md) that keeps it off adguard1's node
+- each adguard has a placement constraint from [auto-label](auto-label-nodes.md) that keeps it off the other's node
+- each adguard has a healthcheck on its own macvlan address, see [when a docker VM's NIC changes](#when-a-docker-vms-nic-changes)
 - the two sync passwords are in one swarm secret. adguardhome-sync reads it as its `--config` file, see [secrets](../secrets/index.md#option-1-the-app-reads-the-file-itself)
 
 --8<-- "blocks/swarm/adguard/compose.yml.md"
