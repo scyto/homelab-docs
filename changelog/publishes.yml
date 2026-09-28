@@ -13,6 +13,10 @@
 
 - publish: next
   changes:
+    - removed feature: "the last names [traefik](apps/traefik.md) passed through to nginx proxy manager, which served nothing once it stopped"
+
+- publish: 36
+  changes:
     - changed feature: "made [wordpress](apps/wordpress.md#network-considerations)'s root site lan-only: outside, every path redirects to `www.`"
     - changed feature: "set up wordpress's site on another domain on [traefik](apps/traefik.md#the-fields) again, with a certificate of its own. cloudflare checks that certificate (full, strict) and uses post-quantum key agreement to traefik"
     - changed feature: "set up [gatus](monitoring/gatus.md#checking-the-proxy) to check the certificate of a name outside my domain, by name but still on the lan"

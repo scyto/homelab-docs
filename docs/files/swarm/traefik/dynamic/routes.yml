@@ -576,24 +576,3 @@ http:
       serverName: frigate.mydomain.com
     unifi-tls:
       serverName: unifi.mydomain.com
-tcp:
-  routers:
-    npm-wordpress:
-      rule: HostSNI(`wordpress.mydomain.com`)
-      entryPoints:
-      - external
-      service: npm-passthrough
-      tls:
-        passthrough: true
-    npm-wpadmin:
-      rule: HostSNI(`wpadmin.mydomain.com`)
-      entryPoints:
-      - external
-      service: npm-passthrough
-      tls:
-        passthrough: true
-  services:
-    npm-passthrough:
-      loadBalancer:
-        servers:
-        - address: 192.168.1.45:1443
