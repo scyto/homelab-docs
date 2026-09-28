@@ -27,7 +27,24 @@ title: "Gatus"
 
     - `discovery` belongs to no stack, so removing gatus never takes it away from homepage or the docker socket proxy
 
+    gatus also joins `traefik-api`, where it reads traefik's API. create it as in [traefik's steps](../apps/traefik.md#before-you-deploy)
+
 3. create the two docker secrets. `gitsync_ssh_key_v1` is the private half of a read-only deploy key on the repo, and `proxmox_api_token_v1` is the secret of the proxmox api token `pve-auditor@pam!homepage`
+
+## state considerations
+
+both volumes are named binds on cephfs, see [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts):
+
+- `data`, from `/mnt/docker-cephFS/gatus_data`, holds the check history, a SQLite database, and the hourly copy [the fork](#the-fork) makes of it in `/data/backup/`
+- `gitrepo_v2`, from `/mnt/docker-cephFS/gatus_git_v2`, holds git-sync's checkout. gatus mounts it read-only and reads its config from it
+
+on cephfs, git-sync and gatus don't have to share a node, so gatus can move when a node goes down.
+
+## network considerations
+
+- gatus publishes its UI's `8080` as `8085` through the ingress mesh, so every swarm node and the keepalived VIP answer on it, `192.168.1.45:8085` included. its dashboard tile links to it by name, `https://gatus.mydomain.com`
+- it joins `discovery` to reach the swarm's read-only docker socket proxy as `dockerproxy:2375`, which has no port on the lan. git-sync joins it too, as `gatus-git-sync`, so gatus's check reaches the sidecar's health endpoint by name
+- it joins `traefik-api` to read traefik's API at `http://traefik_traefik:8080`, since `traefik.mydomain.com` is behind oauth
 
 ## config in git
 
@@ -76,13 +93,29 @@ each check asserts something only a working service returns, beyond a 200 from i
 | glances, every host | `/api/4/quicklook` returns collected memory, `mem > 0` |
 | proxmox | an authenticated `cluster/status` says the cluster is quorate |
 
+## checking the proxy
+
+gatus checks [traefik](../apps/traefik.md) in four ways, and never through an
+address outside my lan:
+
+- every route gets a check, generated with the routes. each goes through the
+  VIP with the name as the Host header and no DNS, so one mis-wired route goes
+  red on its own
+- traefik itself is checked by reading its API over `traefik-api`, with no name
+  and no DNS
+- one check goes by name, to `auth.mydomain.com/ping`, the one name with no
+  sign-in in front. it covers DNS, the VIP, traefik and the certificate
+- an app behind oauth also gets a check on its own address. its route check
+  only reaches the sign-in, which answers with a redirect whether the app is
+  up or not
+
 ## checking a job by its result
 
 some services have no port: they wake, do a job and sleep. gatus checks those by what the job produces.
 
 | service | checked by |
 | --- | --- |
-| cloudflare ddns | a name that is a CNAME to the DDNS record answers over TLS, with a valid certificate only my proxy holds |
+| cloudflare ddns | the DDNS record, resolved through a public resolver because my lan has its own copy of that name, answers over TLS with a valid certificate only my proxy holds |
 | acme.sh, BMC and synology | the certificate each device serves verifies for its hostname and has more than 21 days left |
 | auto-label nodes | the node labels it maintains are present, read through the docker socket proxy |
 

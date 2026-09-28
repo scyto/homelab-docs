@@ -69,3 +69,32 @@
   font-size: 0.8em;
   color: var(--md-default-fg-color--light);
 }
+
+/*
+ * The access table on the auth page (includes/access/table.md). Each access
+ * path's columns carry their own tint and a rule on their left, so a cell
+ * reads as direct, lan or outside without tracing it back to the header.
+ * Tighter padding and type let the eight columns fit beside the sidebar.
+ * The selectors repeat Material's `table:not([class])` so these win on
+ * specificity.
+ */
+.md-typeset .access-table table:not([class]) {
+  font-size: 0.6rem;
+}
+
+.md-typeset .access-table table:not([class]) th,
+.md-typeset .access-table table:not([class]) td {
+  padding: 0.5em 0.7em;
+}
+
+.md-typeset .access-table table:not([class]) .path-lan {
+  background-color: rgb(63 81 181 / 12%);
+}
+
+.md-typeset .access-table table:not([class]) .path-outside {
+  background-color: rgb(255 152 0 / 12%);
+}
+
+.md-typeset .access-table table:not([class]) .path-start {
+  border-left: 0.1rem solid var(--md-default-fg-color--light);
+}

@@ -1,6 +1,6 @@
 - Infrastructure:
     - Portainer (swarm):
-        href: https://192.168.1.45:9443
+        href: https://portainer.mydomain.com
         icon: portainer.png
         description: the three managers and every stack on them
         widget:
@@ -9,7 +9,7 @@
           env: 13
           key: "{{HOMEPAGE_FILE_PORTAINER_KEY}}"
     - Portainer (syn02):
-        href: https://192.168.1.45:9443
+        href: https://portainer.mydomain.com
         icon: portainer.png
         description: Synology NAS
         widget:
@@ -18,7 +18,7 @@
           env: 34
           key: "{{HOMEPAGE_FILE_PORTAINER_KEY}}"
     - Portainer (pi-zwave01):
-        href: https://192.168.1.45:9443
+        href: https://portainer.mydomain.com
         icon: portainer.png
         description: Raspberry Pi, Z-Wave and Thread
         widget:
@@ -27,7 +27,7 @@
           env: 37
           key: "{{HOMEPAGE_FILE_PORTAINER_KEY}}"
     - Portainer (truenas1):
-        href: https://192.168.1.45:9443
+        href: https://portainer.mydomain.com
         icon: portainer.png
         description: NAS apps, frigate and arrstack
         widget:
@@ -41,12 +41,12 @@
         description: NAS, apps and storage
         widget:
           type: truenas
-          url: https://truenas1.mydomain.com
+          url: https://192.168.1.86
           version: 2
           key: "{{HOMEPAGE_FILE_TRUENAS_KEY}}"
           enablePools: true
     - UniFi:
-        href: https://192.168.1.1
+        href: https://unifi.mydomain.com
         icon: unifi.png
         description: Network controller, gateway and APs
         widget:
@@ -54,7 +54,7 @@
           url: https://192.168.1.1
           key: "{{HOMEPAGE_FILE_UNIFI_KEY}}"
     - Nginx Proxy Manager:
-        href: http://192.168.1.45:181
+        href: https://npm.mydomain.com
         server: swarm
         container: npm_app
         icon: nginx-proxy-manager.png
@@ -79,13 +79,22 @@
               format: float
               scale: "1/1000000"
               suffix: ms
+    - Traefik:
+        href: https://traefik.mydomain.com/
+        server: swarm
+        container: traefik_traefik
+        icon: traefik.png
+        description: Reverse proxy on 443, from services.yaml
+        widget:
+          type: traefik
+          url: http://traefik_traefik:8080
     - Proxmox:
-        href: https://pve.mydomain.com:8006
+        href: https://proxmox.mydomain.com
         icon: proxmox.png
         description: Three-node cluster, VMs and LXC
         widget:
           type: proxmox
-          url: https://pve.mydomain.com:8006
+          url: https://proxmox.mydomain.com
           username: pve-auditor@pam!homepage
           password: "{{HOMEPAGE_FILE_PROXMOX_KEY}}"
     - pve1:
@@ -94,7 +103,7 @@
         description: Physical, Proxmox VE node
         widget:
           type: proxmox
-          url: https://pve.mydomain.com:8006
+          url: https://proxmox.mydomain.com
           username: pve-auditor@pam!homepage
           password: "{{HOMEPAGE_FILE_PROXMOX_KEY}}"
           node: pve1
@@ -104,7 +113,7 @@
         description: Physical, Proxmox VE node
         widget:
           type: proxmox
-          url: https://pve.mydomain.com:8006
+          url: https://proxmox.mydomain.com
           username: pve-auditor@pam!homepage
           password: "{{HOMEPAGE_FILE_PROXMOX_KEY}}"
           node: pve2
@@ -114,7 +123,7 @@
         description: Physical, Proxmox VE node
         widget:
           type: proxmox
-          url: https://pve.mydomain.com:8006
+          url: https://proxmox.mydomain.com
           username: pve-auditor@pam!homepage
           password: "{{HOMEPAGE_FILE_PROXMOX_KEY}}"
           node: pve3
@@ -122,7 +131,7 @@
 - Glances:
     - truenas1:
         id: glances-truenas1
-        href: http://192.168.1.86:61208
+        href: https://glances-truenas1.mydomain.com
         icon: truenas.png
         description: Physical, NAS, apps and storage
         widget:
@@ -132,7 +141,7 @@
           metric: info
     - syn02:
         id: glances-syn02
-        href: http://192.168.1.31:61208
+        href: https://glances-syn02.mydomain.com
         icon: synology.png
         description: Physical, Synology NAS
         widget:
@@ -142,7 +151,7 @@
           metric: info
     - pi-zwave01:
         id: glances-pi-zwave01
-        href: http://192.168.1.96:61208
+        href: https://glances-pi-zwave01.mydomain.com
         icon: raspberry-pi.png
         description: Physical, the Z-Wave, Zigbee and Thread radios
         widget:
@@ -152,7 +161,7 @@
           metric: info
     - pve1:
         id: glances-pve1
-        href: http://192.168.1.81:61208
+        href: https://glances-pve1.mydomain.com
         icon: proxmox.png
         description: Physical, Proxmox VE node
         widget:
@@ -162,7 +171,7 @@
           metric: info
     - pve2:
         id: glances-pve2
-        href: http://192.168.1.82:61208
+        href: https://glances-pve2.mydomain.com
         icon: proxmox.png
         description: Physical, Proxmox VE node
         widget:
@@ -172,7 +181,7 @@
           metric: info
     - pve3:
         id: glances-pve3
-        href: http://192.168.1.83:61208
+        href: https://glances-pve3.mydomain.com
         icon: proxmox.png
         description: Physical, Proxmox VE node
         widget:
@@ -182,7 +191,7 @@
           metric: info
     - Docker01:
         id: glances-docker01
-        href: http://192.168.1.41:61208
+        href: https://glances-docker01.mydomain.com
         icon: docker.png
         description: VM, swarm manager (HA)
         widget:
@@ -192,7 +201,7 @@
           metric: info
     - Docker02:
         id: glances-docker02
-        href: http://192.168.1.42:61208
+        href: https://glances-docker02.mydomain.com
         icon: docker.png
         description: VM, swarm manager (HA)
         widget:
@@ -202,7 +211,7 @@
           metric: info
     - docker03:
         id: glances-docker03
-        href: http://192.168.1.43:61208
+        href: https://glances-docker03.mydomain.com
         icon: docker.png
         description: VM, swarm manager (HA)
         widget:
@@ -356,6 +365,29 @@
         widget:
           type: customapi
           url: http://192.168.1.45:8085/api/v1/endpoints/plumbing_acme-asrock-bmc/statuses?page=1&pageSize=1
+          refreshInterval: 60000
+          mappings:
+            - field: results.0.success
+              label: Gatus
+              format: text
+              remap:
+                - value: true
+                  to: UP
+                - value: false
+                  to: DOWN
+                - any: true
+                  to: "?"
+            - field: results.0.duration
+              label: Response
+              format: float
+              scale: "1/1000000"
+              suffix: ms
+    - ACME (Traefik):
+        icon: lets-encrypt.png
+        description: Traefik's *.mydomain.com certificate
+        widget:
+          type: customapi
+          url: http://192.168.1.45:8085/api/v1/endpoints/plumbing_acme-traefik/statuses?page=1&pageSize=1
           refreshInterval: 60000
           mappings:
             - field: results.0.success

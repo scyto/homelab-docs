@@ -8,14 +8,22 @@ title: "omni-tools"
 tools: image, video and audio conversions, pdf tools, text and json formatting,
 number and date calculators. the processing runs in your browser, and the
 container only serves the page. it runs as one replica, anywhere on the swarm.
-there is nothing to keep, so it has no volumes.
 
 --8<-- "blocks/swarm/omni-tools/compose.yml.md"
 
-## how it's reached
+## state considerations
 
-the container listens on 80, and i publish it on 8090. reach it on port 8090 of
-any swarm node IP or the keepalived IP.
+there is nothing to keep, so it has no volumes. it has no database, config file
+or upload directory, only the static page.
+
+## network considerations
+
+the container listens on 80, and i publish it on 8090 through the ingress mesh.
+it joins no overlay network besides the stack's default.
+
+reach it by name through [traefik](traefik.md), at
+`https://omni-tools.mydomain.com`, or on port 8090 of any swarm node IP or the
+keepalived IP.
 
 ## latest, pinned by digest
 

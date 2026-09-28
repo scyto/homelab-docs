@@ -57,6 +57,16 @@ with the idmap, root in the container is not root on the NAS. a process that
 breaks out lands as an unprivileged uid that owns nothing, and that is the main
 reason i am comfortable running it.
 
+## signing in with entra
+
+users sign in to PBS with their entra ID accounts through an OpenID Connect
+realm, set up the same way as proxmox's, see
+[entra ID auth](../proxmox/extras/azure-ad-auth.md). PBS keeps its `pam` and
+`pbs` password realms beside it.
+
+!!! note "to be written"
+    PBS's own realm settings, and its app registration in entra.
+
 ## storage
 
 the container's own storage and the backups are kept apart:
@@ -109,8 +119,12 @@ build. replacing the container around the backups it already has is
 1. make the dataset the backups go in:
 
     ```
-    midclt call pool.dataset.create '{"name": "rust/local-backups/pbs"}'
+    midclt call pool.dataset.create '{"name": "rust/local-backups/pbs", "recordsize": "1M"}'
     ```
+
+    - `recordsize` 1M, because PBS stores backups as chunks of up to 4 MB and
+      the pool is hard disks: fewer, larger records mean fewer seeks, see
+      [PBS](../backups/pbs-server.md#datastore)
 
 2. find the newest debian 13 image:
 

@@ -157,9 +157,11 @@ kept on this box:
 - S3, via [Versity](s3-versity-gateway.md), for things that back themselves up
 - cloud sync to `rust/cloud-backups`
 
-the PBS datastore is also copied to azure every day, see
+the PBS datastore is also copied to azure every day, encrypted, see
 [tasks and scripts](tasks-and-scripts.md#cron-jobs). S3 has no copy off the box.
 
 `fast/configs` is replicated to the rust pool: a local replication task copies
 each hourly snapshot to `rust/replicas/fast-configs`, read-only, and keeps the
-same two weeks there. it covers losing the fast pool, not losing the box.
+same two weeks there. it covers losing the fast pool. `configs-backup.sh` backs
+the newest snapshot up to PBS every night, which the 05:00 job copies to azure,
+encrypted, see [tasks and scripts](tasks-and-scripts.md#cron-jobs).

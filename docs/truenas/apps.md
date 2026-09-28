@@ -120,6 +120,14 @@ INSPECT
 apps get a port in the 30000s by default, and are reached over the NAS's
 hostname with the certificate picked in the app.
 
+### grafana: signing in with entra
+
+grafana's login page offers entra ID, through grafana's own azure AD setting,
+beside its password form.
+
+!!! note "to be written"
+    grafana's azure AD settings, and its app registration in entra.
+
 ## time zone
 
 catalog apps take their time zone from the app's own `TZ` value. versitygw and

@@ -11,13 +11,13 @@ I use Cloudflare as my external DNS provider and will be using this for my chall
 ## Create Account
 1. navigate to `Datcenter > ACME`
 2. under accounts click `add`
-3. the account name is anything useful to you - i recommend using something like \<mydomain>-\<tld>-acme where mydomain is your DNS domain prefix and tld is the suffice (like com or net etc) so mydomain-com-acme
+3. the account name is anything useful to you - i recommend using something like `<mydomain>-<tld>-acme` where mydomain is your DNS domain prefix and tld is the suffice (like com or net etc) so mydomain-com-acme
 4. enter your email
 5. accept the TOS and click `register` 
 
 ## Create Challenge Plugin
 1. under 'challenge plugins' click `add`
-2. set any name for the plugin ID, i chose to call mine CF-\<domain>-\<tld> (e.g CF-mydomain-com 
+2. set any name for the plugin ID, i chose to call mine `CF-<domain>-<tld>` (e.g CF-mydomain-com 
 3. select DNS API = Cloudflare Managed DNS
 4. fill in CF_Key=
 5. Fill in CF_Token=

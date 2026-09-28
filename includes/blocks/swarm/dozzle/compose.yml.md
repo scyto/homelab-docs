@@ -38,7 +38,7 @@ services:
         - homepage.group=Monitoring
         - homepage.name=Dozzle
         - homepage.icon=dozzle.png
-        - homepage.href=http://192.168.1.41:8888
+        - homepage.href=https://dozzle.mydomain.com
         - homepage.description=Container logs, all six hosts
 
   dozzle-agent:

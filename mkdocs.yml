@@ -84,7 +84,8 @@ plugins:
         docker-swarm/stacks/portainer-agent.md: apps/retired/portainer-agent.md
         docker-swarm/stacks/portception.md: apps/retired/portception.md
         docker-swarm/stacks/shepherd.md: apps/retired/shepherd.md
-        docker-swarm/stacks/traefik.md: apps/retired/traefik.md
+        docker-swarm/stacks/traefik.md: apps/traefik.md
+        apps/retired/traefik.md: apps/traefik.md
         docker-swarm/stacks/unifi-poller.md: apps/index.md
         docker-swarm/stacks/watchtower.md: apps/retired/watchtower.md
         docker-swarm/troubleshooting.md: docker/troubleshooting.md
@@ -220,6 +221,7 @@ nav:
       - DNS & Network:
           - AdGuard: apps/adguard.md
           - Cloudflare DDNS: apps/cloudflare-ddns.md
+          - Traefik: apps/traefik.md
           - Nginx Proxy Manager: apps/nginx-proxy-manager.md
           - oauth2-proxy: apps/oauth2-proxy.md
       - Certificates:
@@ -239,7 +241,6 @@ nav:
       - No Longer Used:
           - Watchtower: apps/retired/watchtower.md
           - Shepherd: apps/retired/shepherd.md
-          - Traefik Swarm Template: apps/retired/traefik.md
           - Portainer Agent Managed by Portainer: apps/retired/portainer-agent.md
           - "Do Not Attempt: Portception": apps/retired/portception.md
   - Monitoring:
@@ -248,6 +249,9 @@ nav:
       - Glances: monitoring/glances.md
       - Dozzle: monitoring/dozzle.md
       - Homepage: monitoring/homepage.md
+  - Auth:
+      - auth/index.md
+      - Entra ID: auth/entra.md
   - Secrets:
       - secrets/index.md
       - Background: secrets/background.md

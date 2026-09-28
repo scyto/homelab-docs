@@ -25,7 +25,7 @@ what runs on it that the rest of these docs care about:
 - catalog and custom apps, see [apps](apps.md)
 
 PBS and S3 are on the same box. the PBS datastore is also copied to azure every
-day, see [tasks and scripts](tasks-and-scripts.md#cron-jobs). S3 has no copy off
+day, encrypted, see [tasks and scripts](tasks-and-scripts.md#cron-jobs). S3 has no copy off
 the box.
 
 ## pools

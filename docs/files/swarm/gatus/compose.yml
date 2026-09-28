@@ -4,7 +4,7 @@ services:
     user: "1000:1000"
     environment:
       - TZ=America/Los_Angeles
-      - GITSYNC_REPO=git@github.com:<you>/<repo>.git
+      - GITSYNC_REPO=ssh://git@ssh.github.com:443/<you>/<repo>.git
       - GITSYNC_REF=deploy/swarm/gatus
       - GITSYNC_PERIOD=60s
       - GITSYNC_ROOT=/git
@@ -35,9 +35,9 @@ services:
         volume:
           nocopy: true
     configs:
-      - source: gatus_known_hosts
+      - source: gatus_known_hosts_v2
         target: /known_hosts
-      - source: gatus_ssh_config_v1
+      - source: gatus_ssh_config_v2
         target: /ssh_config
       - source: gatus_sparse_checkout_v1
         target: /sparse-checkout
@@ -70,6 +70,7 @@ services:
       - proxmox_api_token_v1
     networks:
       - discovery
+      - traefik-api
     ports:
       - 8085:8080
     deploy:
@@ -79,7 +80,7 @@ services:
         - homepage.group=Monitoring
         - homepage.name=Gatus
         - homepage.icon=gatus.png
-        - homepage.href=http://192.168.1.45:8085
+        - homepage.href=https://gatus.mydomain.com
         - homepage.description=Health checks, config in git
         - homepage.widget.type=gatus
         - homepage.widget.url=http://192.168.1.45:8085
@@ -101,11 +102,13 @@ volumes:
 networks:
   discovery:
     external: true
+  traefik-api:
+    external: true
 
 configs:
-  gatus_known_hosts:
+  gatus_known_hosts_v2:
     file: ./known_hosts
-  gatus_ssh_config_v1:
+  gatus_ssh_config_v2:
     file: ./ssh_config
   gatus_sparse_checkout_v1:
     file: ./sparse-checkout

@@ -33,6 +33,19 @@ i run [glances](https://github.com/nicolargo/glances) on all nine hosts: in a co
 
     - truenas1 binds no probes, so it needs none of these
 
+## state considerations
+
+on the swarm it keeps nothing, and there are no volumes. it binds the host's `/etc/os-release` and the two empty probe directories read-only, and edits its three settings into the image's own config at every start.
+
+## network considerations
+
+- on the swarm it joins docker's built-in `host` network and publishes no port, so `61208` is on each node's own address. it joins no overlay network. the standalone hosts use `network_mode: host`, and [the proxmox nodes](#on-the-proxmox-nodes) listen on the node's lan address
+- reach each host at its own address, `192.168.1.41:61208` for docker01, or by name through [traefik](../apps/traefik.md), `https://glances-docker01.mydomain.com`. never use the keepalived VIP, which moves between nodes
+
+## placement considerations
+
+on the swarm it runs `mode: global`, one task per node, each on that node's own address, so each tile names the host it reports.
+
 ## on the docker hosts
 
 in a container glances reports the container's network interfaces, OS name and mounts. four changes make it report the host's.

@@ -7,8 +7,9 @@ source_gist: https://gist.github.com/scyto/ce866ee606ef27fd7c47832005b55d9f
 
 ## Description
 
-UPDATED 9/2/2025 - here we are a few years later, adguuard has been stable as heck
-now i wanted to add IPv6 to this mix
+- UPDATED 9/2/2025 - here we are a few years later, adguuard has been stable as heck
+- now i wanted to add IPv6 to this mix
+
 these were the steps
 
 1. stop the stack
@@ -30,8 +31,10 @@ these were the steps
 4. assign the actual MVL networks (i actually renamed mine so the 6 config networks are called adguard1/2-config and the two macvlan networks are called adguard1/2-mvl - much easier, i had them the wrong way round when i wrote the original article)  
 5. restart the stack (it really was this easy)
 
-learning: also the randomness i talk about below when selecting the networks in the UI can be avoided if all your machines are hosts!
-don't forget to add the IPv6 upstream resolvers in adguard
+<!-- -->
+
+- learning: also the randomness i talk about below when selecting the networks in the UI can be avoided if all your machines are hosts!
+- don't forget to add the IPv6 upstream resolvers in adguard
 
 --------
 
@@ -41,8 +44,10 @@ I wanted redundant adguard - there are two ways to do this:
 1. run single swarm instance and assume swarm will keep the service running (i ahve a template for this at the bottom of this gist)
 2. run two instances so you can specify two DNS servers on client - this is much harder and requires adguard sync too - this is what we are covering in this gist.
 
-I also wanted adguard to accurately record the client host names accessing adgaurd - this meant i needed to use macvlan networking.
-I also wanted to use native ports like 443 but have other services that need to use that too so rather than use host networking i used macvlan/  This is not rquired but i wanted to make this one `interesing` :-)
+<!-- -->
+
+- I also wanted adguard to accurately record the client host names accessing adgaurd - this meant i needed to use macvlan networking.
+- I also wanted to use native ports like 443 but have other services that need to use that too so rather than use host networking i used macvlan/  This is not rquired but i wanted to make this one `interesing` :-)
 
 Update as of 2026.09.24: this is how i first set it up. what i run now is [at the end](#what-i-run-now).
 
@@ -68,9 +73,9 @@ Wow, this is the most complex network setup because i need each adguard instance
     - private overlay network to allow all 3 nodes to talk to each other for purpose of sync
 
 ## Placement Considerations
-It is not possible to have a single host adapter (i.e eth0) have two macvlans running at the same time.
-It is not possible to have a sigle host support two default gateways.
-You may see placement rejection of the second service if it initially tries to place it on the same node as the other adguard instance.  Once rejected docker will try the service on another node and it will wok.  The rejection errors can be ignored.  This works as an implicit placement constraint.  If someone knows how to specifiy that two services in the same stack run on different swarm nodes (lables won't cut it in this 3 node scenario) let me know in the comments!
+- It is not possible to have a single host adapter (i.e eth0) have two macvlans running at the same time.
+- It is not possible to have a sigle host support two default gateways.
+- You may see placement rejection of the second service if it initially tries to place it on the same node as the other adguard instance.  Once rejected docker will try the service on another node and it will wok.  The rejection errors can be ignored.  This works as an implicit placement constraint.  If someone knows how to specifiy that two services in the same stack run on different swarm nodes (lables won't cut it in this 3 node scenario) let me know in the comments!
 
 
 ## Reaching AdGuard from the node it runs on
@@ -146,15 +151,16 @@ AdGuard running on that node.
 - a change to `net0` is safest with the VM stopped
 
 ## Network Preparation
-This is one of the few times where showing picture will use less space than trying to explain something complex and non-intutive.
-Note is asbolutely possible to do this via command line.  If you prefer that [this is the best article](https://web.archive.org/web/20231225080129/https://jpft.win/docker-swarm-macvlan/) i won't be covering command line here as i didn't use it after i had learnt what i was doing :-).
+- This is one of the few times where showing picture will use less space than trying to explain something complex and non-intutive.
+- Note is asbolutely possible to do this via command line.  If you prefer that [this is the best article](https://web.archive.org/web/20231225080129/https://jpft.win/docker-swarm-macvlan/) i won't be covering command line here as i didn't use it after i had learnt what i was doing :-).
 
 Note this result in your tow adguard servers being 192.168.1.5 and 192.168.1.6 respectively.  Adjust as needed for your network.
 
 
 ### Define the macvlan configuration for adguard1 service
-make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
-Note: the ip range of /32 is valid - this hard sets the IP on this service / container to that IP.
+- make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
+- Note: the ip range of /32 is valid - this hard sets the IP on this service / container to that IP.
+
 ![adgaurd1-mvl](../assets/img/b7694af4f675.png)
 
 ### Create the macvlan for adguard1 service
@@ -162,8 +168,9 @@ You will have 3 nodes to pick from (see picture) 2 will not work and throw error
 ![adgaurd1-creation](../assets/img/a898c60e6d16.png)
 
 ### Define the macvlan configuration for adguard2 service
-Do the same again, note the change in IP range.
-make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
+- Do the same again, note the change in IP range.
+- make sure you select the 3 docker nodes and get the IP details correct (modify if you don't use 192.168.1.0/24 as your LAN)
+
 ![adgaurd2-mvl](../assets/img/a68244e0c89d.png)
 
 ### Create the macvlan for adguard2 service
@@ -284,5 +291,7 @@ networks:
 - each adguard has a placement constraint from [auto-label](auto-label-nodes.md) that keeps it off the other's node
 - each adguard has a healthcheck on its own macvlan address, see [when a docker VM's NIC changes](#when-a-docker-vms-nic-changes)
 - the two sync passwords are in one swarm secret. adguardhome-sync reads it as its `--config` file, see [secrets](../secrets/index.md#option-1-the-app-reads-the-file-itself)
+- the cache's minimum TTL override is 0, so an answer lasts as long as its source says. it was 300, which held every short TTL on the internet for five minutes. optimistic caching stays on: it answers from an expired entry while it refreshes, so lookups stay fast
+- adguard has no separate setting for "no such name" answers. a name looked up just before it's created keeps failing until the zone's negative TTL runs out, plus one stale answer from the optimistic cache. settings → DNS settings → clear cache fixes it at once
 
 --8<-- "blocks/swarm/adguard/compose.yml.md"

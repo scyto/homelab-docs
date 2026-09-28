@@ -82,6 +82,46 @@ on one manager:
 
 each environment points at an address on 9001. the swarm's is the keepalived VIP, and each standalone host's is the host itself. portainer reaches the swarm through that address, and removing the agent stack cuts it off.
 
+## signing in with entra
+
+users sign in to portainer with their entra ID accounts, through portainer's
+own oauth setting. in settings → authentication → oauth, choose the microsoft
+provider with a custom configuration.
+
+1. register an app in entra with a web redirect URI of portainer's own
+   address, `https://portainer.mydomain.com`, and a client secret
+
+    - set *assignment required* on its enterprise application and assign who
+      may sign in
+
+2. fill in the form:
+
+    | field | value |
+    | --- | --- |
+    | client ID, client secret | the app's |
+    | authorization URL | `https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/authorize` |
+    | access token URL | `https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token` |
+    | resource URL | `https://graph.microsoft.com/v1.0/me` |
+    | redirect URL | portainer's own address, the same as the registered redirect URI |
+    | logout URL | `https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/logout` |
+    | user identifier | `userPrincipalName` |
+    | scopes | `openid profile` |
+
+    - the tenant's own userinfo endpoint, `https://graph.microsoft.com/oidc/userinfo`,
+      has no `userPrincipalName`, and signing in then fails with "failed to
+      extract username from oauth resource"
+
+3. turn automatic user provisioning off, and create each user in portainer,
+   named with their user principal name, before you log out
+
+    - with it off, only users made in portainer get in. without the user, your
+      first sign-in with entra has nowhere to land
+
+the initial admin can always log in with a password, whatever the setting,
+and API keys skip the login altogether. so from outside,
+[traefik](../apps/traefik.md) keeps entra in front of `/api/auth` and of any
+request that carries an API key.
+
 ## what deploys from git
 
 portainer itself is the one stack not deployed [from git](gitops-with-portainer.md). it would be applying changes to itself, and a bad commit leaves no UI to fix it with.

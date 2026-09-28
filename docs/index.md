@@ -44,13 +44,21 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
 
     ---
 
-    Details on the apps i have running including app configuration and compose/stack files when on docker, for example: AdGuard DNS, NPM as reverse proxy, auth, certificates, the arr stack, Frigate, etc.
+    Details on the apps i have running including app configuration and compose/stack files when on docker, for example: AdGuard DNS, Traefik as reverse proxy, auth, certificates, the arr stack, Frigate, etc.
 
 -   :material-monitor-dashboard:{ .lg .middle } **[Monitoring](monitoring/index.md)**
 
     ---
 
     Monitoring: Gatus checks, Glances on every host, Dozzle for logs, and a Homepage dashboard that pulls it together. This will expand to include both prometheus and other centralized logging, grafana dashboards and notifications. 
+
+-   :material-account-lock:{ .lg .middle } **[Auth](auth/index.md)**
+
+    ---
+
+    How people sign in to every app, on the lan and from outside: Entra ID,
+    oauth in front of the apps with no login of their own, and the MFA on each
+    way in.
 
 -   :material-key-variant:{ .lg .middle } **[Secrets](secrets/index.md)**
 

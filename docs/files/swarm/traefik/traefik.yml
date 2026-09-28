@@ -1,0 +1,71 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+
+accessLog: {}
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      aliasHeadersStrategy: delete
+      encodedCharacters: &encoded
+        allowEncodedSlash: true
+        allowEncodedBackSlash: false
+        allowEncodedNullCharacter: false
+        allowEncodedSemicolon: true
+        allowEncodedPercent: true
+        allowEncodedQuestionMark: true
+        allowEncodedHash: true
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+    http:
+      aliasHeadersStrategy: delete
+      encodedCharacters: *encoded
+      tls: &tls
+        certResolver: letsencrypt
+        domains:
+          - main: mydomain.com
+            sans:
+              - "*.mydomain.com"
+
+  external:
+    address: ":1444"
+    http:
+      aliasHeadersStrategy: delete
+      encodedCharacters: *encoded
+      tls: *tls
+
+  traefik:
+    address: ":8080"
+    http:
+      aliasHeadersStrategy: delete
+      encodedCharacters: *encoded
+
+ping: {}
+
+api:
+  dashboard: true
+
+providers:
+  file:
+    directory: /dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /acme/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"

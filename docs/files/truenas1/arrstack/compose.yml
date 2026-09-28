@@ -17,7 +17,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Prowlarr
       - homepage.icon=prowlarr.png
-      - homepage.href=http://192.168.1.86:9696
+      - homepage.href=https://prowlarr.mydomain.com
       - homepage.description=Indexer manager
       - homepage.widget.type=prowlarr
       - homepage.widget.url=http://192.168.1.86:9696
@@ -44,7 +44,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Radarr
       - homepage.icon=radarr.png
-      - homepage.href=http://192.168.1.86:7878
+      - homepage.href=https://radarr.mydomain.com
       - homepage.description=Film management
       - homepage.widget.type=radarr
       - homepage.widget.url=http://192.168.1.86:7878
@@ -76,7 +76,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Sonarr
       - homepage.icon=sonarr.png
-      - homepage.href=http://192.168.1.86:8989
+      - homepage.href=https://sonarr.mydomain.com
       - homepage.description=TV series management
       - homepage.widget.type=sonarr
       - homepage.widget.url=http://192.168.1.86:8989
@@ -108,7 +108,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Bazarr
       - homepage.icon=bazarr.png
-      - homepage.href=http://192.168.1.86:6767
+      - homepage.href=https://bazarr.mydomain.com
       - homepage.description=Subtitles for Sonarr and Radarr
       - homepage.widget.type=bazarr
       - homepage.widget.url=http://192.168.1.86:6767
@@ -140,7 +140,7 @@ services:
       - homepage.group=Media
       - homepage.name=Jellyfin
       - homepage.icon=jellyfin.png
-      - homepage.href=http://192.168.1.86:8096
+      - homepage.href=https://jellyfin.mydomain.com
       - homepage.description=Media server
     restart: unless-stopped
     networks: [arrstack]
@@ -161,7 +161,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Seerr
       - homepage.icon=jellyseerr.png
-      - homepage.href=http://192.168.1.86:5055
+      - homepage.href=https://seerr.mydomain.com
       - homepage.description=Requests
       - homepage.widget.type=seerr
       - homepage.widget.url=http://192.168.1.86:5055
@@ -192,7 +192,7 @@ services:
       - homepage.group=Arr
       - homepage.name=Profilarr
       - homepage.icon=profilarr.png
-      - homepage.href=http://192.168.1.86:6868
+      - homepage.href=https://profilarr.mydomain.com
       - homepage.description=Quality profiles
     restart: unless-stopped
     networks: [arrstack]
@@ -203,6 +203,7 @@ services:
       - PGID=568
       - UMASK=022
       - TZ=America/Los_Angeles
+      - ORIGIN=https://profilarr.mydomain.com
     volumes:
       - type: bind
         source: /usr/share/zoneinfo
@@ -248,7 +249,7 @@ services:
       - homepage.group=Downloads
       - homepage.name=qBittorrent
       - homepage.icon=qbittorrent.png
-      - homepage.href=http://192.168.1.86:8080
+      - homepage.href=https://qbittorrent.mydomain.com
       - homepage.description=Torrent client, via its own VPN
       - homepage.widget.type=qbittorrent
       - homepage.widget.url=http://192.168.1.86:8080
@@ -299,7 +300,7 @@ services:
       - homepage.group=Downloads
       - homepage.name=SABnzbd
       - homepage.icon=sabnzbd.png
-      - homepage.href=http://192.168.1.86:8081
+      - homepage.href=https://sabnzbd.mydomain.com
       - homepage.description=Usenet client, via its own VPN
       - homepage.widget.type=sabnzbd
       - homepage.widget.url=http://192.168.1.86:8081

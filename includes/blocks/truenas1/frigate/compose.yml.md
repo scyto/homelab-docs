@@ -15,7 +15,7 @@ services:
       - homepage.group=Media
       - homepage.name=Frigate
       - homepage.icon=frigate.png
-      - homepage.href=https://192.168.1.86:8971
+      - homepage.href=https://nvr.mydomain.com
       - homepage.description=NVR, 8 cameras, 4 detectors
       - homepage.widget.type=frigate
       - homepage.widget.url=http://192.168.1.86:5000
@@ -94,8 +94,8 @@ services:
 ```
 
 1.  labels for the tile on the [homepage dashboard](../monitoring/homepage.md). the widget reads
-    frigate's plain api on port 5000, which needs no key, and the tile's link opens the
-    authenticated UI on 8971.
+    frigate's plain api on port 5000 by address, which needs no key, and the tile's link opens the
+    authenticated UI on 8971 through [traefik](traefik.md), as `nvr`.
 2.  go2rtc reaches the cameras directly on the lan, and frigate listens on five ports (5000, 8971,
     8554, 1984 and 8555), so host networking leaves no port list to keep in step.
 3.  frigate's detector processes pass frames through `/dev/shm`, and docker's default of 64 MB is too

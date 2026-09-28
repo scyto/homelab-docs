@@ -39,6 +39,58 @@ endpoints:
       resolve-successful-conditions: true
     conditions: ["[STATUS] == 200"]
 
+  - name: traefik
+    group: swarm
+    url: "http://traefik_traefik:8080/api/version"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].Version) == true"
+
+  - name: traefik by name
+    group: swarm
+    url: "https://auth.mydomain.com/ping"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == OK"
+
+  - name: bentopdf
+    group: swarm
+    url: "http://192.168.1.45:8091/"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200"]
+
+  - name: omni-tools
+    group: swarm
+    url: "http://192.168.1.45:8090/"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200"]
+
+  - name: apprise
+    group: swarm
+    url: "http://192.168.1.45:8050/status"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "[BODY] == OK"]
+
+  - name: unifiapibrowser
+    group: swarm
+    url: "http://192.168.1.45:8010/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "[BODY] == pat(*UniFi API Browser*)"]
+
   - name: portainer
     group: swarm
     url: "http://192.168.1.45:9000/api/system/status"

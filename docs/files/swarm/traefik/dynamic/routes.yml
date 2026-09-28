@@ -1,0 +1,587 @@
+http:
+  routers:
+    adguard1:
+      rule: Host(`adguard1.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: adguard1
+    adguard2:
+      rule: Host(`adguard2.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: adguard2
+    apex-external:
+      rule: Host(`mydomain.com`)
+      entryPoints:
+      - external
+      service: apex
+    apex-external-root:
+      rule: Host(`mydomain.com`) && Path(`/`)
+      entryPoints:
+      - external
+      service: noop@internal
+      middlewares:
+      - apex-root-redirect
+      priority: 10032
+    api-private:
+      rule: PathPrefix(`/api`) && (ClientIP(`127.0.0.1`) || ClientIP(`10.0.200.0/24`))
+      entryPoints:
+      - traefik
+      service: api@internal
+    apprise:
+      rule: Host(`apprise.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: apprise
+      middlewares:
+      - oauth
+    bazarr:
+      rule: Host(`bazarr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: bazarr
+      middlewares:
+      - oauth
+    bentopdf:
+      rule: Host(`bentopdf.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: bentopdf
+    blog:
+      rule: Host(`blog.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: blog
+    blog-external:
+      rule: Host(`blog.mydomain.com`)
+      entryPoints:
+      - external
+      service: blog
+    dozzle:
+      rule: Host(`dozzle.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: dozzle
+      middlewares:
+      - oauth
+    gatus:
+      rule: Host(`gatus.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: gatus
+    glances-docker01:
+      rule: Host(`glances-docker01.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-docker01
+    glances-docker02:
+      rule: Host(`glances-docker02.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-docker02
+    glances-docker03:
+      rule: Host(`glances-docker03.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-docker03
+    glances-pi-zwave01:
+      rule: Host(`glances-pi-zwave01.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-pi-zwave01
+    glances-pve1:
+      rule: Host(`glances-pve1.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-pve1
+    glances-pve2:
+      rule: Host(`glances-pve2.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-pve2
+    glances-pve3:
+      rule: Host(`glances-pve3.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-pve3
+    glances-syn02:
+      rule: Host(`glances-syn02.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-syn02
+    glances-truenas1:
+      rule: Host(`glances-truenas1.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: glances-truenas1
+    grafana:
+      rule: Host(`grafana.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: grafana
+    ha-external:
+      rule: Host(`ha.mydomain.com`)
+      entryPoints:
+      - external
+      service: ha
+    homepage:
+      rule: Host(`homepage.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: homepage
+    homepage-external:
+      rule: Host(`homepage.mydomain.com`)
+      entryPoints:
+      - external
+      service: homepage
+      middlewares:
+      - oauth
+    infinitude:
+      rule: Host(`infinitude.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: infinitude
+    jellyfin:
+      rule: Host(`jellyfin.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: jellyfin
+    npm:
+      rule: Host(`npm.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: npm
+    nvr:
+      rule: Host(`nvr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: nvr
+    oauth2-proxy:
+      rule: Host(`auth.mydomain.com`)
+      entryPoints:
+      - websecure
+      - external
+      service: oauth2-proxy
+    omni-tools:
+      rule: Host(`omni-tools.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: omni-tools
+    open-webui:
+      rule: Host(`open-webui.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: open-webui
+    pbs:
+      rule: Host(`pbs.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: pbs
+    portainer:
+      rule: Host(`portainer.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: portainer
+    portainer-external:
+      rule: Host(`portainer.mydomain.com`)
+      entryPoints:
+      - external
+      service: portainer
+    portainer-external-oauth:
+      rule: Host(`portainer.mydomain.com`) && (Path(`/api/auth`) || Path(`/api%2Fauth`) || HeaderRegexp(`X-API-Key`, `.+`))
+      entryPoints:
+      - external
+      service: portainer
+      middlewares:
+      - oauth
+      priority: 10110
+    profilarr:
+      rule: Host(`profilarr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: profilarr
+      middlewares:
+      - oauth
+    prometheus:
+      rule: Host(`prometheus.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: prometheus
+    prowlarr:
+      rule: Host(`prowlarr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: prowlarr
+      middlewares:
+      - oauth
+    proxmox:
+      rule: Host(`proxmox.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: proxmox
+    qbittorrent:
+      rule: Host(`qbittorrent.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: qbittorrent
+      middlewares:
+      - oauth
+    radarr:
+      rule: Host(`radarr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: radarr
+      middlewares:
+      - oauth
+    sabnzbd:
+      rule: Host(`sabnzbd.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: sabnzbd
+      middlewares:
+      - oauth
+    searxng:
+      rule: Host(`searxng.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: searxng
+    seerr:
+      rule: Host(`seerr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: seerr
+      middlewares:
+      - oauth
+    seerr-external:
+      rule: Host(`seerr.mydomain.com`)
+      entryPoints:
+      - external
+      service: seerr
+      middlewares:
+      - oauth
+    sonarr:
+      rule: Host(`sonarr.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: sonarr
+      middlewares:
+      - oauth
+    syn01-external:
+      rule: Host(`syn01.mydomain.com`)
+      entryPoints:
+      - external
+      service: syn01
+    syn02-external:
+      rule: Host(`syn02.mydomain.com`)
+      entryPoints:
+      - external
+      service: syn02
+    traefik:
+      rule: Host(`traefik.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: api@internal
+      middlewares:
+      - oauth
+    unifi-external:
+      rule: Host(`unifi.mydomain.com`)
+      entryPoints:
+      - external
+      service: unifi
+    unifiapibrowser:
+      rule: Host(`unifiapibrowser.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: unifiapibrowser
+      middlewares:
+      - oauth
+    versity:
+      rule: Host(`versity.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: versity
+    watch-your-lan:
+      rule: Host(`watch-your-lan.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: watch-your-lan
+    www:
+      rule: Host(`www.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: www
+    www-external:
+      rule: Host(`www.mydomain.com`)
+      entryPoints:
+      - external
+      service: www
+    zigbee2mqtt:
+      rule: Host(`zigbee2mqtt.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: zigbee2mqtt
+      middlewares:
+      - oauth
+    zwave-js-ui:
+      rule: Host(`zwave-js-ui.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: zwave-js-ui
+      middlewares:
+      - oauth
+  middlewares:
+    apex-root-redirect:
+      redirectRegex:
+        regex: ^https?://[^/]+(.*)$
+        replacement: https://www.mydomain.com${1}
+        permanent: true
+    oauth:
+      forwardAuth:
+        address: http://192.168.1.45:4180/
+        trustForwardHeader: false
+        maxResponseBodySize: 1048576
+        authResponseHeaders:
+        - X-Auth-Request-User
+        - X-Auth-Request-Email
+  services:
+    adguard1:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.5:80
+    adguard2:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.6:3000
+    apex:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8180
+    apprise:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8050
+    bazarr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:6767
+    bentopdf:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8091
+    blog:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8180
+    dozzle:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.41:8888
+    gatus:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8085
+    glances-docker01:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.41:61208
+    glances-docker02:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.42:61208
+    glances-docker03:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.43:61208
+    glances-pi-zwave01:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.96:61208
+    glances-pve1:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.81:61208
+    glances-pve2:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.82:61208
+    glances-pve3:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.83:61208
+    glances-syn02:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.31:61208
+    glances-truenas1:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:61208
+    grafana:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:30037
+    ha:
+      loadBalancer:
+        servers:
+        - url: https://192.168.1.63:443
+        serversTransport: ha-tls
+    homepage:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:3000
+    infinitude:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:4000
+    jellyfin:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:8096
+    npm:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:181
+    nvr:
+      loadBalancer:
+        servers:
+        - url: https://192.168.1.86:8971
+        serversTransport: nvr-tls
+    oauth2-proxy:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:4180
+    omni-tools:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8090
+    open-webui:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:31028
+    pbs:
+      loadBalancer:
+        servers:
+        - url: https://pbs1.mydomain.com:8007
+    portainer:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:9000
+    profilarr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:6868
+    prometheus:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:30104
+    prowlarr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:9696
+    proxmox:
+      loadBalancer:
+        servers:
+        - url: https://pve1.mydomain.com:8006
+        - url: https://pve2.mydomain.com:8006
+        - url: https://pve3.mydomain.com:8006
+        healthCheck:
+          path: /
+          interval: 30s
+          timeout: 5s
+        sticky:
+          cookie:
+            name: proxmox_server
+            secure: true
+            httpOnly: true
+    qbittorrent:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:8080
+    radarr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:7878
+    sabnzbd:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:8081
+    searxng:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:30053
+    seerr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:5055
+    sonarr:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.86:8989
+    syn01:
+      loadBalancer:
+        servers:
+        - url: https://syn01.mydomain.com:5101
+        serversTransport: insecure
+    syn02:
+      loadBalancer:
+        servers:
+        - url: https://syn02.mydomain.com:5101
+    unifi:
+      loadBalancer:
+        servers:
+        - url: https://192.168.1.1:443
+        serversTransport: unifi-tls
+    unifiapibrowser:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8010
+    versity:
+      loadBalancer:
+        servers:
+        - url: https://truenas1.mydomain.com:30355
+    watch-your-lan:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.31:8840
+    www:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8180
+    zigbee2mqtt:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.96:8080
+    zwave-js-ui:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.96:80
+  serversTransports:
+    ha-tls:
+      serverName: homeassistant.mydomain.com
+    insecure:
+      insecureSkipVerify: true
+    nvr-tls:
+      serverName: frigate.mydomain.com
+    unifi-tls:
+      serverName: unifi.mydomain.com
+tcp:
+  routers:
+    npm-wordpress:
+      rule: HostSNI(`wordpress.mydomain.com`)
+      entryPoints:
+      - external
+      service: npm-passthrough
+      tls:
+        passthrough: true
+    npm-wpadmin:
+      rule: HostSNI(`wpadmin.mydomain.com`)
+      entryPoints:
+      - external
+      service: npm-passthrough
+      tls:
+        passthrough: true
+  services:
+    npm-passthrough:
+      loadBalancer:
+        servers:
+        - address: 192.168.1.45:1443

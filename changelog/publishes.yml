@@ -13,10 +13,32 @@
 
 - publish: next
   changes:
-    - added feature: "every hourly [cephfs backup](backups/cephfs.md#4-the-backup) checks portainer's database with `bbolt check` before backing it up"
+    - changed feature: "moved the [config from git](docker/config-from-git.md) sidecars to ssh over port 443, after port 22 to github stopped answering"
+    - added feature: "replaced nginx proxy manager with [traefik](apps/traefik.md)"
+    - added doc: "[traefik](apps/traefik.md)"
+    - added feature: "set up oauth with entra ID on traefik, through [oauth2-proxy](apps/oauth2-proxy.md), for the names with no login of their own"
+    - changed doc: "rewrote [oauth2-proxy](apps/oauth2-proxy.md) for how it runs now, with its app registration in entra"
+    - added doc: "[auth](auth/index.md): how people sign in to every app, on the lan and from outside, and the MFA on each way in"
+    - added doc: "[entra ID](auth/entra.md): every app registration, and the password logins for when entra is down"
+    - changed doc: "[traefik](apps/traefik.md): the diagram is two, one for requests and one for config"
+    - changed doc: "placeholders the site hid are shown on [entra ID auth](proxmox/extras/azure-ad-auth.md), [let's encrypt via cloudflare](proxmox/extras/lets-encrypt-cloudflare.md) and [installing debian as VM](docker/swarm/debian-vm-install.md). on the entra page, the rest of the list showed as a link"
+    - changed doc: "[nginx proxy manager](apps/nginx-proxy-manager.md) is stopped, replaced by traefik"
+    - removed doc: "the old traefik template"
+    - changed feature: "set up [wordpress](apps/wordpress.md#how-its-reached) on traefik. the root site's front page redirects to `www.`"
+    - added doc: "signing in to [portainer](docker/portainer.md#signing-in-with-entra) with entra ID"
+    - added doc: "[webauthn keys on every node](proxmox/extras/azure-ad-auth.md#webauthn-keys-on-every-node) of the proxmox cluster"
+    - changed feature: "set up [gatus](monitoring/gatus.md#checking-the-proxy) to check every traefik route, and traefik itself over a private network"
+    - changed feature: "set [adguard](apps/adguard.md#what-i-run-now)'s minimum cache TTL to 0"
+    - changed feature: "encrypted the PBS copy in azure with rclone crypt, see [backups](backups/index.md#rules-i-am-working-to)"
+    - added feature: "set up a nightly backup of truenas1's `fast/configs` to PBS, and from there to azure, see [tasks and scripts](truenas/tasks-and-scripts.md#cron-jobs)"
+    - changed feature: "set the PBS datastore's record size to 1M, see [proxmox backup server](backups/pbs-server.md#datastore)"
+
+- publish: 34
+  changes:
+    - added feature: "added a `bbolt check` of portainer's database to every hourly [cephfs backup](backups/cephfs.md#4-the-backup)"
     - changed doc: "[databases](backups/databases.md#portainer-a-checked-copy-in-every-cephfs-backup): portainer is restored from the checked copy in the cephfs backup"
-    - added feature: "truenas1's `fast/configs` is replicated to the rust pool after every hourly snapshot, see [storage and snapshots](truenas/storage.md#what-this-does-not-cover)"
-    - added feature: "the catalogue apps' settings are copied into `fast/configs` every night, see [tasks and scripts](truenas/tasks-and-scripts.md#cron-jobs)"
+    - added feature: "replicated truenas1's `fast/configs` to the rust pool after every hourly snapshot, see [storage and snapshots](truenas/storage.md#what-this-does-not-cover)"
+    - added feature: "set up a nightly copy of the catalogue apps' settings into `fast/configs`, see [tasks and scripts](truenas/tasks-and-scripts.md#cron-jobs)"
 
 - publish: 33
   changes:

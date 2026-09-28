@@ -8,7 +8,7 @@
 {: .file-legend }
 
 ``` { .text linenums="1" }
-Host github.com
+Host github.com ssh.github.com
   ConnectTimeout 15
   ServerAliveInterval 10
   ServerAliveCountMax 3

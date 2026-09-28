@@ -32,8 +32,9 @@ this is what runs on the swarm, as portainer listed it on 9/21/2026. every stack
 Update as of 2026.09.24: the agent deploys from git now as well. portainer itself is the one stack that doesn't.
 
 - [adguard](../apps/adguard.md) - two dns resolvers, kept in sync
-- [nginx proxy manager](../apps/nginx-proxy-manager.md) - reverse proxy and its certificates
-- [oauth2-proxy](../apps/oauth2-proxy.md) - an auth proxy, running with nothing routed through it
+- [traefik](../apps/traefik.md) - reverse proxy for every name, inside and out, its routes in git
+- [nginx proxy manager](../apps/nginx-proxy-manager.md) - the reverse proxy before traefik, now stopped
+- [oauth2-proxy](../apps/oauth2-proxy.md) - oauth with entra ID, in front of the names that have no login of their own
 - [cloudflare ddns](../apps/cloudflare-ddns.md) - keeps the external A record current
 - acme.sh for the [ASRock Rack BMC](../apps/acme-asrock-bmc.md) and [Synology DSM](../apps/acme-synology.md) - certificates
 - [mosquitto mqtt](../apps/mosquitto-mqtt.md) - mqtt broker
@@ -51,7 +52,6 @@ Update as of 2026.09.24: the agent deploys from git now as well. portainer itsel
 
 - [watchtower](../apps/retired/watchtower.md)
 - [shepherd](../apps/retired/shepherd.md)
-- [traefik](../apps/retired/traefik.md)
 - [portainer agent managed by portainer](../apps/retired/portainer-agent.md)
 - [portception](../apps/retired/portception.md) - portainer deployed by portainer, do not attempt
 
@@ -70,7 +70,7 @@ Update as of 2026.09.24: the agent deploys from git now as well. portainer itsel
     - point them all at `main` and every commit redeploys everything, don't do that
 - [passwords are out of the service specs](../secrets/index.md). they were env vars, so anything that could reach the docker API could read them, and my docker socket proxy on the LAN had no authentication. both fixed
 - watchtower and shepherd are gone, replaced by [renovate](image-updates-renovate.md) opening PRs against the compose files
-- also retired: traefik, NPM does the job
+- [traefik](../apps/traefik.md) replaced nginx proxy manager (2026-09), so the reverse proxy's routes are in git too
 - two stacks had been broken for a while and nobody noticed, because nothing was checking
 - new: [troubleshooting notes](troubleshooting.md). one covers why a container can't reach a macvlan container on the same host, which made my uptime monitoring wrong for a long time
 

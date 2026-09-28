@@ -48,6 +48,46 @@ endpoints:
       resolve-successful-conditions: true
     conditions: ["[STATUS] == 200", "[BODY].status == OK"]
 
+  - name: bazarr
+    group: truenas
+    url: "http://192.168.1.86:6767/api/system/ping"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "[BODY].status == OK"]
+
+  - name: qbittorrent
+    group: truenas
+    url: "http://192.168.1.86:8080/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "[BODY] == pat(*qBittorrent*)"]
+
+  - name: sabnzbd
+    group: truenas
+    url: "http://192.168.1.86:8081/api?mode=version"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "has([BODY].version) == true"]
+
+  - name: seerr
+    group: truenas
+    url: "http://192.168.1.86:5055/api/v1/status"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "has([BODY].version) == true"]
+
+  - name: profilarr
+    group: truenas
+    url: "http://192.168.1.86:6868/"
+    interval: 120s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200"]
+
   - name: jellyfin
     group: truenas
     url: "http://192.168.1.86:8096/health"

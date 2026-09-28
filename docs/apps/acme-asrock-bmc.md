@@ -49,6 +49,23 @@ the swarm.
     - with a token, acme.sh needs the account id or the zone id to find the
       zone, and the account id covers every zone in the account
 
+## state considerations
+
+- `acme` is a named bind of `/mnt/docker-cephFS/acme_asrock_bmc_acme`, mounted
+  at `/acme.sh`, see
+  [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts).
+  it holds all of acme.sh's state, the keys and the cloudflare token included,
+  so only root can read it
+- the BMC password is a swarm secret and the hook a swarm config, so neither
+  is in the volume
+
+## network considerations
+
+- nothing is published, and it joins no overlay network besides the stack's
+  default. the container only calls out: to the CA, cloudflare and the BMC
+- `ASROCK_BMC_URL` is the BMC's IPv4 address, because my overlay networks have
+  no IPv6
+
 ## the first certificate
 
 do this once, after the first deploy:
@@ -105,10 +122,6 @@ the config `name` whenever the script changes.
 
 - `command: daemon` runs supercronic, which runs `acme.sh --cron` four times a
   day
-- nothing is published. the container only calls out: to the CA, cloudflare and
-  the BMC
-- `ASROCK_BMC_URL` is the BMC's IPv4 address, because my overlay networks have
-  no IPv6
 - the image is pinned by digest, renovate opens a PR when it changes
 
 ## checking it
