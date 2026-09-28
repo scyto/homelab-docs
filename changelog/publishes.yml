@@ -13,6 +13,10 @@
 
 - publish: next
   changes:
+    - changed doc: "[wordpress](apps/wordpress.md#the-network-admin): open the network admin in a browser window that maps the root site's name to traefik, with the commands for chrome and edge, instead of a hosts file"
+
+- publish: 37
+  changes:
     - removed feature: "the last names [traefik](apps/traefik.md) passed through to nginx proxy manager, which served nothing once it stopped"
 
 - publish: 36
