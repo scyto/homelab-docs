@@ -43,7 +43,7 @@ services:
     volumes:
       - html:/var/www/html
     extra_hosts:
-     - mydomain.com:203.0.113.10
+     - mydomain.com:192.168.1.45
     secrets:
       - wordpress_db_password_v2
 

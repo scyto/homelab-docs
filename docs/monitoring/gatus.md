@@ -95,7 +95,7 @@ each check asserts something only a working service returns, beyond a 200 from i
 
 ## checking the proxy
 
-gatus checks [traefik](../apps/traefik.md) in four ways, and never through an
+gatus checks [traefik](../apps/traefik.md) in five ways, and never through an
 address outside my lan:
 
 - every route gets a check, generated with the routes. each goes through the
@@ -108,6 +108,10 @@ address outside my lan:
 - an app behind oauth also gets a check on its own address. its route check
   only reaches the sign-in, which answers with a redirect whether the app is
   up or not
+- a name outside my domain has a certificate of its own, which the route
+  checks can't see. it gets a check by name, for the certificate's expiry,
+  and gatus's `extra_hosts` points that name at the VIP, so the check stays on
+  the lan
 
 ## checking a job by its result
 

@@ -5,9 +5,9 @@ title: "WordPress"
 # wordpress
 
 i run one wordpress multisite on the swarm. one install serves several sites on
-subdomains of `mydomain.com` and a site on another domain. the stack is
-`wordpress2025`, with three services: `wordpress`, its `db`, and `db-dump`,
-which keeps an hourly dump of the database for the backup.
+subdomains of `mydomain.com` and a site on another domain, `mydomain1.com`. the
+stack is `wordpress2025`, with three services: `wordpress`, its `db`, and
+`db-dump`, which keeps an hourly dump of the database for the backup.
 
 --8<-- "blocks/swarm/wordpress2025/compose.yml.md"
 
@@ -60,12 +60,19 @@ http to port `8180` on the swarm's VIP, 192.168.1.45:
 | name | inside the lan | outside |
 | --- | --- | --- |
 | `www.`, `blog.` | served | served, as public sites |
-| `mydomain.com`, the root site | not at all: inside, the name is active directory's | the front page redirects to `www.`; every other path is served |
+| `mydomain.com`, the root site | served, but the name is active directory's, see below | every path redirects to `www.`, keeping the path |
+| `mydomain1.com`, the site on another domain | through cloudflare, as from outside: the lan has no DNS of its own for it | served, as a public site |
 
-- the root site's front page goes to `www.` because that's the site people
-  should land on. its other paths stay, because the root site holds the
-  network admin: wordpress sends every network-admin page to the root site's
-  name, so redirecting all of it would send network admin round in a circle
+- the root site is never reachable from outside. it holds the network admin:
+  wordpress sends every network-admin page to the root site's name
+- on the lan that name belongs to active directory, so traefik's route for it
+  is reached only by wordpress itself, see
+  [the container reaching itself](#the-container-reaching-itself), and by a
+  machine whose hosts file points `mydomain.com` at the VIP, for the network
+  admin
+- the other domain is outside traefik's wildcard certificate, so its route
+  asks for a certificate of its own, see [traefik](traefik.md#the-fields).
+  the cloudflare token has to cover that domain's zone too
 
 wordpress only sees http, so it has to be told the visitor used https. the
 `wp-config.php` that the official image generates does that when the proxy
@@ -149,14 +156,14 @@ the only active change to the generated `wp-config.php` in the volume is
 ```yaml title="compose.yml"
     hostname: mydomain.com
     extra_hosts:
-      - mydomain.com:203.0.113.10
+      - mydomain.com:192.168.1.45
 ```
 
 wordpress makes requests to its own url (cron, site health). inside the lan
 that name resolves to the domain controllers, so the container pins it to the
-public address, and those requests go through traefik like a visitor's. that's
-another reason only the root site's front page redirects: wordpress's cron
-calls `/wp-cron.php` on its own name, and a redirect there would stop it.
+VIP, where traefik serves the root site on its lan listener. outside, every
+path of the root site redirects, so these requests must not go out through the
+WAN: cron calls `/wp-cron.php` on its own name, and a redirect would stop it.
 
 ## the hourly dump
 

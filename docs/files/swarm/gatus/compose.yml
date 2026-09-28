@@ -71,6 +71,8 @@ services:
     networks:
       - discovery
       - traefik-api
+    extra_hosts:
+      - mydomain1.com:192.168.1.45
     ports:
       - 8085:8080
     deploy:
