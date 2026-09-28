@@ -85,10 +85,19 @@ services:
   apex:
     host: mydomain.com
     upstream: http://192.168.1.45:8180
+    internal: open
     external: public
-    root_redirect: https://www.mydomain.com
+    external_redirect: https://www.mydomain.com
     native:
       auth: "WordPress password login, at a custom address (wp-login.php answers 404); the network admin is here"
+      mfa: "unknown: check for a 2FA plugin"
+
+  mydomain1:
+    host: mydomain1.com
+    upstream: http://192.168.1.45:8180
+    external: public
+    native:
+      auth: "WordPress password login, at a custom address (wp-login.php answers 404)"
       mfa: "unknown: check for a 2FA plugin"
 
   dozzle:

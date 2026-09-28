@@ -10,19 +10,18 @@ http:
       entryPoints:
       - websecure
       service: adguard2
+    apex:
+      rule: Host(`mydomain.com`)
+      entryPoints:
+      - websecure
+      service: apex
     apex-external:
       rule: Host(`mydomain.com`)
       entryPoints:
       - external
-      service: apex
-    apex-external-root:
-      rule: Host(`mydomain.com`) && Path(`/`)
-      entryPoints:
-      - external
       service: noop@internal
       middlewares:
-      - apex-root-redirect
-      priority: 10032
+      - apex-external-redirect
     api-private:
       rule: PathPrefix(`/api`) && (ClientIP(`127.0.0.1`) || ClientIP(`10.0.200.0/24`))
       entryPoints:
@@ -240,6 +239,15 @@ http:
       service: sabnzbd
       middlewares:
       - oauth
+    mydomain1-external:
+      rule: Host(`mydomain1.com`)
+      entryPoints:
+      - external
+      service: mydomain1
+      tls:
+        certResolver: letsencrypt
+        domains:
+        - main: mydomain1.com
     searxng:
       rule: Host(`searxng.mydomain.com`)
       entryPoints:
@@ -330,7 +338,7 @@ http:
       middlewares:
       - oauth
   middlewares:
-    apex-root-redirect:
+    apex-external-redirect:
       redirectRegex:
         regex: ^https?://[^/]+(.*)$
         replacement: https://www.mydomain.com${1}
@@ -505,6 +513,10 @@ http:
       loadBalancer:
         servers:
         - url: http://192.168.1.86:8081
+    mydomain1:
+      loadBalancer:
+        servers:
+        - url: http://192.168.1.45:8180
     searxng:
       loadBalancer:
         servers:

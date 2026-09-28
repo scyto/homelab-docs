@@ -41,7 +41,8 @@ flowchart LR
 ## before you deploy
 
 1. create a cloudflare API token with **Zone / Zone / Read** and
-   **Zone / DNS / Edit**, limited to your zone, and store it as a docker secret:
+   **Zone / DNS / Edit**, limited to your zones, and store it as a docker
+   secret. a name outside your domain needs its zone in the token too:
 
     ```bash
     docker secret create traefik_cf_token_v1 -
@@ -50,6 +51,10 @@ flowchart LR
     - paste the token, then press Ctrl-D
     - traefik reads the token from the secret's file, and the service spec
       never holds it
+    - in cloudflare, set each zone's encryption mode to full (strict), so
+      cloudflare checks the certificate traefik serves. traefik also takes
+      cloudflare's post-quantum key agreement to the origin, which needs
+      TLS 1.3
 
 2. create the certificate folder on the cephfs mount:
 
@@ -174,6 +179,7 @@ certificates. traefik is for everything that lacks one or both.
 | `upstream` | where traefik sends requests. a list gets a health check on `/` and a sticky cookie; proxmox uses all three nodes |
 | `upstream_tls: insecure` | skips the check of a backend's certificate, for one that is self-signed or expired |
 | `tls_name` | checks a backend's certificate against this name, for a backend reached by address |
+| `host` | the name, when it isn't the key under the domain. a name outside the domain's wildcard gets a certificate of its own from the same resolver |
 | `internal` | `open`, or `oauth` for oauth2-proxy in front. leave it out and the name isn't served on the lan |
 | `external` | `oauth`, `own-mfa` or `public`. leave it out and the name isn't served outside |
 | `mfa` | with `own-mfa`, a line saying how the app enforces MFA, so a reviewer sees the claim |
@@ -181,6 +187,7 @@ certificates. traefik is for everything that lacks one or both.
 | `external_oauth_paths`, `external_oauth_headers` | oauth in front of part of an `own-mfa` or `public` name only |
 | `redirect` | the name only redirects, keeping the path |
 | `root_redirect` | the front page redirects, and every other path is served |
+| `external_redirect` | the name is served on the lan, and outside every path redirects, keeping the path |
 
 --8<-- "blocks/swarm/traefik/services.yaml.md"
 

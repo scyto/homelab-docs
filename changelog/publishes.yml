@@ -13,6 +13,12 @@
 
 - publish: next
   changes:
+    - changed feature: "made [wordpress](apps/wordpress.md#network-considerations)'s root site lan-only: outside, every path redirects to `www.`"
+    - changed feature: "set up wordpress's site on another domain on [traefik](apps/traefik.md#the-fields) again, with a certificate of its own. cloudflare checks that certificate (full, strict) and uses post-quantum key agreement to traefik"
+    - changed feature: "set up [gatus](monitoring/gatus.md#checking-the-proxy) to check the certificate of a name outside my domain, by name but still on the lan"
+
+- publish: 35
+  changes:
     - changed feature: "moved the [config from git](docker/config-from-git.md) sidecars to ssh over port 443, after port 22 to github stopped answering"
     - added feature: "replaced nginx proxy manager with [traefik](apps/traefik.md)"
     - added doc: "[traefik](apps/traefik.md)"
