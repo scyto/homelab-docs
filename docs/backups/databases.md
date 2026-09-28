@@ -6,8 +6,6 @@ title: "Databases"
 
 a copy of a database's files taken while it writes may not start. every
 database here has a copy that is consistent or checked, or doesn't need one.
-truenas1's copies are on a second pool in the same box, see
-[the apps on truenas1](#the-apps-on-truenas1-zfs-snapshots).
 
 | database | lives on | how it's copied | restore |
 | --- | --- | --- | --- |
@@ -16,7 +14,7 @@ truenas1's copies are on a second pool in the same box, see
 | gatus, SQLite | cephFS | [gatus copies itself](#gatus-copies-itself), hourly | swap the copy in |
 | portainer, BoltDB | cephFS | [a checked copy in every cephFS backup](#portainer-a-checked-copy-in-every-cephfs-backup), hourly | put the file back |
 | adguard, bbolt | cephFS | [none needed](#adguard-none-needed) | delete a bad file |
-| the apps on truenas1, SQLite | ZFS | [snapshots](#the-apps-on-truenas1-zfs-snapshots), hourly, replicated to the rust pool | copy the files back |
+| the apps on truenas1, SQLite | ZFS | [snapshots](#the-apps-on-truenas1-zfs-snapshots), hourly, replicated to the rust pool, and nightly to PBS and azure | copy the files back |
 | zigbee2mqtt and zwave-js-ui | the pi | [the pi's backup](#zigbee2mqtt-and-zwave-js-ui-the-pis-backup), hourly, and zwave-js-ui's own backups | restore the files |
 | home assistant, the domain controllers | their VMs | the [VM backups](vm-backups-pbs.md), every two hours, with the guest agent freezing the filesystems | restore the VM |
 
@@ -30,7 +28,7 @@ whole dump next to the database's own files.
 | stack | dump | options |
 | --- | --- | --- |
 | [wordpress](../apps/wordpress.md#the-hourly-dump) | `wordpress_dumps/wordpressdb.sql`, about 70 MB | `--single-transaction` reads the InnoDB tables at one point in time without locking them. `--source-data=2` records the binary log position |
-| [nginx proxy manager](../apps/nginx-proxy-manager.md) | `npm_dumps/npm.sql`, about 0.2 MB | `--lock-tables`, because the tables are Aria and `--single-transaction` only covers InnoDB. writers wait under a second |
+| [nginx proxy manager](../apps/nginx-proxy-manager.md) | `npm_dumps/npm.sql`, about 0.2 MB | `--lock-tables`, because the tables are Aria and `--single-transaction` only covers InnoDB. writers wait under a second. npm is stopped now, so its last dump is the one that stays |
 
 - the sidecar runs the database's own image, so `mysqldump` matches the server
 - it needs no docker socket, reads the password the database already has, and
@@ -108,7 +106,9 @@ open webui and grafana. `fast/configs` has a recursive snapshot every hour,
 kept for two weeks, see [storage and snapshots](../truenas/storage.md#3-snapshot-the-config).
 a replication task copies each snapshot to `rust/replicas/fast-configs` on the
 rust pool, read-only, and keeps the same two weeks there. that covers losing the
-fast pool. both pools are in the same box, so it doesn't cover losing truenas1.
+fast pool. every night at 04:00, the newest snapshot is also backed up to PBS,
+one archive per dataset, and the 05:00 copy takes it to azure, encrypted. that
+covers losing truenas1.
 
 - a ZFS snapshot is atomic, so a database in one looks like it went through a
   power cut. SQLite recovers from that
@@ -145,9 +145,6 @@ apps run.
 
 ## still to do
 
-- a copy of `fast/configs` off truenas1. backing it up to PBS would put it in
-  the nightly copy to azure too. it holds the catalogue apps' secrets, so that
-  copy needs encrypting
 - watch-your-lan on syn02 keeps a database in `/volume1/docker/wyl/data`. i
   haven't checked what backs that up
 - an alert when a dump or a copy stops being refreshed. the jobs log a failure

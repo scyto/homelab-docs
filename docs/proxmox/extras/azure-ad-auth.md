@@ -25,8 +25,8 @@ All of these steps will be done in the Azure Portal AAD UI
 9. click new client secret
 10. set description to say proxmox-auth
 11. set expires to 730 days
-12. copy the value <a string hash>
-13. copy the secret id <a guid>)
+12. copy the value `<a string hash>`
+13. copy the secret id `<a guid>`
 
     **very important - you will never see the value again - must copy it down now**
   
@@ -78,3 +78,38 @@ All of these steps will be done in the Azure Portal AAD UI
 5. email = ususally the same as name@mydomain.com
 
 ## login with AAD!
+
+## webauthn keys on every node
+
+a security key or passkey is bound to one "relying party ID", set for the
+whole cluster in datacenter → options → webauthn settings. i set it to the
+domain, so every node's name and the cluster's name share it.
+
+1. set it from a shell on any node:
+
+    ```bash
+    pvesh set /cluster/options --webauthn 'rp=mydomain.com,origin=https://mydomain.com,id=mydomain.com,allow-subdomains=1'
+    ```
+
+    - the settings dialog has no subdomain box, so `allow-subdomains` is only
+      set this way, and saving the dialog again can drop it
+    - changing the ID breaks every key registered under the old one. add a
+      TOTP entry and recovery keys first
+
+2. register the key again, from a name served on port 443. mine is the
+   cluster's name through [traefik](../../apps/traefik.md)
+
+    - the origin check compares the port, so a key works on names served on
+      443 and not on a node's own `:8006`. i use TOTP there
+
+if a key stops working, the web UI's second factor doesn't cover ssh or the
+console. as root on a node, with `ENTRY_ID` set to an ID from the list:
+
+```bash
+pveum user tfa list root@pam
+pveum user tfa delete root@pam --id "$ENTRY_ID"
+pveum user tfa unlock root@pam
+```
+
+- `delete` without `--id` removes all of the user's entries, leaving a
+  password-only login until you add them again

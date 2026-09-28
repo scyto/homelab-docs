@@ -31,3 +31,55 @@ endpoints:
       resolve-successful-conditions: true
     conditions:
       - "[DNS_RCODE] == NOERROR"
+
+  - name: proxy name via winserver01
+    group: network
+    url: "192.168.1.35"
+    interval: 60s
+    dns:
+      query-name: "traefik.mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == 192.168.1.45"
+
+  - name: proxy name via winserver02
+    group: network
+    url: "192.168.1.36"
+    interval: 60s
+    dns:
+      query-name: "traefik.mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == 192.168.1.45"
+
+  - name: proxy name via adguard1
+    group: network
+    url: "192.168.1.5"
+    interval: 60s
+    dns:
+      query-name: "traefik.mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == 192.168.1.45"
+
+  - name: proxy name via adguard2
+    group: network
+    url: "192.168.1.6"
+    interval: 60s
+    dns:
+      query-name: "traefik.mydomain.com"
+      query-type: "A"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == 192.168.1.45"

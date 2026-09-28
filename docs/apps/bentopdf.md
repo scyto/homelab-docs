@@ -12,6 +12,21 @@ from the jsdelivr cdn. it runs as one replica, anywhere on the swarm.
 
 --8<-- "blocks/swarm/bentopdf/compose.yml.md"
 
+## state considerations
+
+there is nothing to keep, so there are no volumes. upstream can hide tools with
+a `config.json` mounted into the container at runtime. i don't use it.
+
+## network considerations
+
+the container listens on 8080 (set `PORT` to change that), and i publish it
+on 8091 through the ingress mesh. it joins no overlay network besides the
+stack's default.
+
+reach it by name through [traefik](traefik.md), at
+`https://bentopdf.mydomain.com`, or on port 8091 of any swarm node IP or the
+keepalived IP.
+
 ## the simple image, from upstream
 
 i use the `bentopdf-simple` image. it's the self-hosting build: the same tools,
@@ -24,16 +39,6 @@ articles link to an old copy of the repo under another account.
 upstream tags a release most months, so this is a plain version pin, and
 renovate opens a PR for each new one. a new major waits for approval on the
 dependency dashboard first.
-
-## no volumes
-
-there is nothing to keep, so there are no volumes. upstream can hide tools with
-a `config.json` mounted into the container at runtime. i don't use it.
-
-## how it's reached
-
-the container listens on 8080 (set `PORT` to change that), and i publish it
-on 8091. reach it on port 8091 of any swarm node IP or the keepalived IP.
 
 ## checking it
 

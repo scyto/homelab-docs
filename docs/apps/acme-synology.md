@@ -59,6 +59,22 @@ replica, anywhere on the swarm.
       the wrapper takes `<host>` from the first label of the certificate's
       domain, so `syn02.mydomain.com` reads `dsm_password_syn02`
 
+## state considerations
+
+- `acme` is a named bind of `/mnt/docker-cephFS/acme_synology`, mounted at
+  `/acme.sh`, see
+  [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts).
+  it holds all of acme.sh's state, the keys and the cloudflare token included,
+  so only root can read it
+- each DSM password is a swarm secret, and the hook a swarm config. the
+  wrapper keeps the passwords out of the volume, see [the hook](#the-hook)
+
+## network considerations
+
+nothing is published, and it joins no overlay network besides the stack's
+default. the container calls the CA, cloudflare, and each DSM on its HTTPS
+port. mine use 5101, and the default is 5001.
+
 ## the first certificate
 
 do this once per NAS, after the first deploy:
@@ -129,8 +145,6 @@ the config `name` whenever the script changes.
   stops the container instead of starting one that can't renew
 - `exec /entry.sh daemon` runs supercronic, which runs `acme.sh --cron` four
   times a day and passes its environment to the job
-- nothing is published. the container calls the CA, cloudflare, and each DSM on
-  its HTTPS port. mine use 5101, and the default is 5001
 - the image is pinned by digest, renovate opens a PR when it changes
 
 ## checking it

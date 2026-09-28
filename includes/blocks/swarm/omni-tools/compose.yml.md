@@ -20,7 +20,7 @@ services:
         - homepage.group=Tools
         - homepage.name=omni-tools
         - homepage.icon=omni-tools.png
-        - homepage.href=http://192.168.1.45:8090
+        - homepage.href=https://omni-tools.mydomain.com
         - homepage.description=File and text tools in the browser
       mode: replicated
       replicas: 1

@@ -35,7 +35,7 @@ services:
         - homepage.group=Infrastructure
         - homepage.name=AdGuard 1
         - homepage.icon=adguard-home.png
-        - homepage.href=http://192.168.1.5
+        - homepage.href=https://adguard1.mydomain.com
         - homepage.description=DNS and filtering, primary
         - homepage.widget.type=adguard
         - homepage.widget.url=http://192.168.1.5
@@ -68,7 +68,7 @@ services:
         - homepage.group=Infrastructure
         - homepage.name=AdGuard 2
         - homepage.icon=adguard-home.png
-        - homepage.href=http://192.168.1.6:3000
+        - homepage.href=https://adguard2.mydomain.com
         - homepage.description=DNS and filtering, secondary
         - homepage.widget.type=adguard
         - homepage.widget.url=http://192.168.1.6:3000

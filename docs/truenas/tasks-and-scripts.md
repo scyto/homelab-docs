@@ -23,7 +23,8 @@ System → Advanced → Cron Jobs, all as root
 | when | runs | does |
 | --- | --- | --- |
 | daily 00:00 | `register-dns.sh` | the boot script again, to catch an address change |
-| daily 05:00 | `pbs-cloud-backup.sh` | snapshots the PBS datastore and copies it to azure, using the cloud credential stored in truenas, see [backups](../backups/index.md) |
+| daily 04:00 | `configs-backup.sh` | backs up the newest snapshot of `fast/configs` to PBS, one archive per dataset, with a token that can only add backups. the 05:00 job then takes it to azure, encrypted |
+| daily 05:00 | `pbs-cloud-backup.sh` | snapshots the PBS datastore and copies it to azure, encrypted with rclone crypt, using the cloud credential and the encryption password and salt stored on a cloud sync task in truenas, see [backups](../backups/index.md) |
 | daily 21:00 | `portainer-s3-retention.sh` | keeps 14 nights of portainer's backups in the S3 bucket, and always the newest 14. portainer and versity gateway can't expire them, so it deletes the files, see [portainer to S3](../backups/portainer-s3.md) |
 | daily 23:55 | `rsync` of `/mnt/.ix-apps/app_configs` | copies the catalogue apps' settings into `fast/configs/ix-app-configs`, root only, where the hourly snapshots and the replica on the rust pool pick them up. no snapshot or replication task can use a dataset under `ix-apps` |
 | sunday 00:00 | `midclt call disk.smart_test` | a short SMART test on every disk. this version has no SMART test task, so cron runs it |

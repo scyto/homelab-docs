@@ -58,6 +58,23 @@ one [dozzle](https://dozzle.dev/) UI shows the logs of every container on every 
 
     - a hub with no agents answering is an empty UI
 
+## state considerations
+
+- the hub keeps `/data` in `data`, a plain named volume with no `driver_opts`, so docker keeps it on docker01, where the hub is pinned
+- the certificate pair is two docker secrets, `dozzle_agent_cert_v1` and `dozzle_agent_key_v1`, which the hub and the swarm's agents mount. the standalone hosts bind the same pair from a directory on the host, as in [before you deploy](#before-you-deploy)
+- the agents keep nothing
+
+## network considerations
+
+- the hub publishes the UI's `8080` as `8888` in host mode, so it answers on docker01 only, at `192.168.1.41:8888`. its dashboard tile links to it by name, `https://dozzle.mydomain.com`, which is behind oauth on the lan
+- each agent publishes `7007` in host mode, so a node's own address reaches that node's agent. the hub names every agent by that address in [the agent list](#the-agent-list). see [stack conventions](../docker/conventions.md#per-node-services-publish-in-host-mode)
+- the stack joins no shared overlay network
+
+## placement considerations
+
+- the hub is one replica pinned to docker01 (`node.hostname == Docker01`), so its address stays put instead of following the task between nodes
+- the swarm's agents run `mode: global`, one per node, and a node added to the swarm gets one
+
 ## the agent list
 
 the hub lists every agent by the host's own address, with a name and a sidebar group:

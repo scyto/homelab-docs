@@ -20,7 +20,7 @@ services:
         - homepage.group=Tools
         - homepage.name=BentoPDF
         - homepage.icon=bentopdf.png
-        - homepage.href=http://192.168.1.45:8091
+        - homepage.href=https://bentopdf.mydomain.com
         - homepage.description=PDF toolkit in the browser
       mode: replicated
       replicas: 1

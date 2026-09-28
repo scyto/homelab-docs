@@ -163,9 +163,9 @@ pct exec <ctid> -- /usr/local/sbin/verify-restore <directory>
   [gatus](../monitoring/gatus.md) external endpoint, and gatus alerts when no
   report arrives within two hours. the endpoint and its token don't exist yet,
   so for now the script logs that and backs up anyway
-- encryption on the client, which `proxmox-backup-client` can do. the backups
-  hold portainer's database, which has credentials in it. the key has to be kept
-  somewhere other than the cluster. lose it and the backups are unreadable
+- the backups hold portainer's database, which has credentials in it. the copy
+  that leaves the box is encrypted, see [backups](index.md#rules-i-am-working-to).
+  the datastore on truenas isn't
 
 ## databases
 

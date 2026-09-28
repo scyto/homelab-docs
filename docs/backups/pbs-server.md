@@ -16,16 +16,21 @@ this page is the PBS side. installing it is in
 | --- | --- | --- |
 | `mnt-pbs` | `/mnt/pbs` | daily 02:00 |
 
-`/mnt/pbs` is a TrueNAS dataset handed to the container.
+`/mnt/pbs` is a TrueNAS dataset handed to the container, `rust/local-backups/pbs`,
+on the hard-disk pool.
+
+- `recordsize` is 1M, not the default 128K. a chunk is up to 4 MB, so it reads
+  as about 4 records instead of 32, and the disks seek less. it applies to
+  chunks written since 2026-09-26; older ones keep 128K until pruned
 
 ## namespaces
 
 | namespace | written by |
 | --- | --- |
 | `VMs` | the proxmox [VM backup job](vm-backups-pbs.md), set on the proxmox storage |
-| `Files` | the hourly [cephFS backup](cephfs.md), `--ns Files` |
+| `Files` | app data: the hourly [cephFS backup](cephfs.md), and truenas1's [app configs](databases.md#the-apps-on-truenas1-zfs-snapshots) every night, `--ns Files` |
 | `CTs` | proxmox container backups. nothing writes it yet: the only PBS storage in proxmox is set to `VMs`, so a container job needs a second storage entry with `namespace CTs` |
-| `Hosts` | file-level backups from other machines running `proxmox-backup-client`, each under its own token. today that is the [raspberry pi](pi-host-backup.md) |
+| `Hosts` | whole machines' files, from `proxmox-backup-client` on each under its own token. today that is the [raspberry pi](pi-host-backup.md) |
 
 `host/benchmark` in the root namespace is not a backup. `proxmox-backup-client
 benchmark` uploads its test data to that group, so it appears the first time
@@ -120,6 +125,8 @@ proxmox-backup-manager acl list
 | `cephFS@pbs` | `DatastoreBackup` | owns the token |
 | `pi-zwave01@pbs!backup` (token) | `DatastoreBackup` on `Hosts` only | the [raspberry pi](pi-host-backup.md) |
 | `pi-zwave01@pbs` | `DatastoreBackup` on `Hosts` only | owns the token |
+| `truenas1@pbs!backup` (token) | `DatastoreBackup` on `Files` only | the nightly backup of truenas1's [app configs](databases.md#the-apps-on-truenas1-zfs-snapshots) |
+| `truenas1@pbs` | `DatastoreBackup` on `Files` only | owns the token |
 | `backup@pbs` | `DatastoreBackup` | nothing i know of. not the pi, whose group is owned by its own token. check the owner column before removing it |
 
 `DatastoreBackup` can create backups and restore the ones it owns. it cannot prune

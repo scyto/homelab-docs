@@ -6,7 +6,7 @@ services:
       - homepage.group=Media
       - homepage.name=Frigate
       - homepage.icon=frigate.png
-      - homepage.href=https://192.168.1.86:8971
+      - homepage.href=https://nvr.mydomain.com
       - homepage.description=NVR, 8 cameras, 4 detectors
       - homepage.widget.type=frigate
       - homepage.widget.url=http://192.168.1.86:5000

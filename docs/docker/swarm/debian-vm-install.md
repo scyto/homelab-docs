@@ -21,7 +21,7 @@ This is the base of all my linux VM installs I use for docker etc
 ## Debian Install (hints)
 - Non graphical Install debian with SSH and tools only (aka deslect everything else)
 - Use the disk layout it reccomend unless you know what you are doing
-- Create root and user <your-username> when prompted
+- Create root and user `<your-username>` when prompted
 - set a sensible machine name (i prefer docker01, docker02 etc if I am using this to host a docker swarm, you can use what you like, i will use this convention in the subsequent gists).
   
 ## First Login

@@ -34,3 +34,19 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[BODY].mem > 0"
+
+  - name: zwave-js-ui
+    group: hosts
+    url: "http://192.168.1.96:80/health/zwave/"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200"]
+
+  - name: zigbee2mqtt
+    group: hosts
+    url: "http://192.168.1.96:8080/"
+    interval: 60s
+    ui:
+      resolve-successful-conditions: true
+    conditions: ["[STATUS] == 200", "[BODY] == pat(*Zigbee2MQTT*)"]

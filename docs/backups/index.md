@@ -14,10 +14,11 @@ the backup server itself: retention, verification and users.
 | --- | --- | --- | --- |
 | VMs | proxmox backup job, snapshot mode, every two hours | PBS on [TrueNAS](../truenas/index.md) | working, see [VM backups](vm-backups-pbs.md) |
 | cephFS (all swarm stack data) | `proxmox-backup-client` from a proxmox node, hourly | PBS on TrueNAS | working, see [cephFS backups](cephfs.md) |
-| databases | a copy that is consistent on its own, one way per database | beside the database, then its backup | working. truenas1's are copied to a second pool in the same box, and watch-your-lan's on syn02 is unchecked. see [databases](databases.md) |
+| databases | a copy that is consistent on its own, one way per database | beside the database, then its backup | working. watch-your-lan's on syn02 is unchecked. see [databases](databases.md) |
 | raspberry pi (pi-zwave01) | `proxmox-backup-client` on the pi, hourly | PBS on TrueNAS | working, see [raspberry pi](pi-host-backup.md) |
+| truenas1's app configs and databases (`fast/configs`) | `proxmox-backup-client` on truenas1, nightly, from a snapshot | PBS on TrueNAS, then azure | working, see [databases](databases.md#the-apps-on-truenas1-zfs-snapshots) |
 | portainer configuration | portainer's own scheduled backup | S3 on TrueNAS | working, see [portainer](portainer-s3.md) |
-| the PBS datastore, off-site | a cron job on the NAS snapshots it and copies it, daily | azure blob storage | working, see [tasks and scripts](../truenas/tasks-and-scripts.md#cron-jobs) |
+| the PBS datastore, off-site | a cron job on the NAS snapshots it and copies it, encrypted, daily | azure blob storage | working, see [tasks and scripts](../truenas/tasks-and-scripts.md#cron-jobs) |
 
 ## what VM backups miss
 
@@ -33,6 +34,8 @@ an NFS share.
   ceph
 - PBS goes off-site every day. a cron job on the NAS snapshots the datastore
   and copies it to azure, see [tasks and scripts](../truenas/tasks-and-scripts.md#cron-jobs).
+  the copy is encrypted with rclone crypt, which encrypts each of PBS's chunk
+  files on its own, so the deduplication holds and only new chunks upload.
   S3 has no off-site copy
 - the credential that writes backups should not be able to delete them.
   PBS's `DatastoreBackup` role can back up and restore its own backups but not

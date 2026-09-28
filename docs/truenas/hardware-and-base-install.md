@@ -83,8 +83,9 @@ the drives:
   raidz2 survives a second failure during that window
 - the SLOG is Optane, for low latency sync writes. the L2ARC is an ordinary
   NVMe drive
-- every dataset uses lz4 compression and the default 128K record size, none
-  are encrypted
+- every dataset uses lz4 compression, none are encrypted, and the ones i made
+  use the default 128K record size except the PBS datastore,
+  `rust/local-backups/pbs`, which uses 1M, see [PBS](../backups/pbs-server.md#datastore)
 - both pools are scrubbed on a schedule, see [tasks and scripts](tasks-and-scripts.md)
 
 the dataset layout and which datasets to snapshot are on their own page, see

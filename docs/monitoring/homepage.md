@@ -25,6 +25,24 @@ title: "Homepage"
 
 3. create the docker secret `unifi_apikey`. homepage shares `gitsync_ssh_key_v1` and the `discovery` overlay with gatus, so create those as in [gatus's steps](gatus.md#before-you-deploy) if gatus is not deployed yet
 
+    - homepage also joins `traefik-api`, where the traefik widget reads traefik's API. the dashboard's name is behind oauth, which a widget can't pass. create the overlay as in [traefik's steps](../apps/traefik.md#before-you-deploy)
+
+## state considerations
+
+both volumes are named binds on cephfs, see [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts):
+
+- `config`, from `/mnt/docker-cephFS/homepage_config`, is homepage's `/app/config`. it holds the yaml files and `custom.css` that config-sync copies from git, the widget key files in `secrets/`, and homepage's `logs/`
+- `gitrepo_v2`, from `/mnt/docker-cephFS/homepage_git_v2`, holds config-sync's checkout
+
+on cephfs, config-sync doesn't have to share a node with homepage.
+
+## network considerations
+
+- homepage publishes `3000` through the ingress mesh. it answers only the hosts in `HOMEPAGE_ALLOWED_HOSTS`: the keepalived VIP at `192.168.1.45:3000`, its name `homepage.mydomain.com`, and `localhost:3000`
+- it joins `discovery` to read the swarm's labels from `dockerproxy:2375`. config-sync joins it too, as `homepage-git-sync`, so gatus's check reaches the sidecar's health endpoint by name
+- it joins `traefik-api` so the traefik widget can read traefik's API at `http://traefik_traefik:8080`, since `traefik.mydomain.com` is behind oauth
+- `extra_hosts` resolves `proxmox.mydomain.com` to the VIP, `192.168.1.45`, without DNS. the proxmox widget can only reach proxmox by that name, because traefik routes on it
+
 ## where the tiles come from
 
 - labels on the stacks make the tiles for anything with a web UI. homepage reads them from two docker endpoints: `dockerproxy`, the swarm's read-only socket proxy on an overlay network, and a second read-only socket proxy on truenas1 at 192.168.1.86:2375.

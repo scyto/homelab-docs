@@ -1,0 +1,121 @@
+services:
+  traefik:
+    image: traefik:v3.7.13@sha256:24841fe2de7304c149343d877d2923b4c8800a38ba015dea9174c23b20e344a0
+    environment:
+      - TZ=America/Los_Angeles
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/traefik_cf_token_v1
+    ports:
+      - 80:80
+      - 443:443
+      - 1444:1444
+    configs:
+      - source: traefik_static
+        target: /etc/traefik/traefik.yml
+    secrets:
+      - traefik_cf_token_v1
+    volumes:
+      - acme:/acme
+      - type: volume
+        source: dynamic
+        target: /dynamic
+        read_only: true
+    networks:
+      - default
+      - traefik-api
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        order: start-first
+
+  config-sync:
+    image: registry.k8s.io/git-sync/git-sync:v4.7.1
+    environment:
+      - TZ=America/Los_Angeles
+      - GITSYNC_REPO=ssh://git@ssh.github.com:443/<you>/<repo>.git
+      - GITSYNC_REF=deploy/swarm/traefik
+      - GITSYNC_PERIOD=60s
+      - GITSYNC_ROOT=/git
+      - GITSYNC_LINK=repo
+      - GITSYNC_SSH_KEY_FILE=/dev/shm/key
+      - GITSYNC_SSH_KNOWN_HOSTS_FILE=/known_hosts
+      - GITSYNC_EXECHOOK_COMMAND=/sync-routes.sh
+      - GITSYNC_FILTER=blob:none
+      - GITSYNC_SPARSE_CHECKOUT_FILE=/sparse-checkout
+      - GITSYNC_HTTP_BIND=:8080
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        umask 077
+        printf '%s\n' "$$(cat /run/secrets/gitsync_ssh_key_v1)" > /dev/shm/key
+        [ -s /dev/shm/key ] || { echo "config-sync: could not write the SSH key to /dev/shm" >&2; exit 1; }
+        mkdir -p /tmp/.ssh && cp /ssh_config /tmp/.ssh/config || { echo "config-sync: could not install the ssh config" >&2; exit 1; }
+        exec /git-sync
+    volumes:
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+      - dynamic:/dynamic
+    configs:
+      - source: traefik_known_hosts
+        target: /known_hosts
+      - source: traefik_ssh_config
+        target: /ssh_config
+      - source: traefik_sparse_checkout
+        target: /sparse-checkout
+      - source: traefik_sync_routes
+        target: /sync-routes.sh
+        mode: 0555
+    secrets:
+      - gitsync_ssh_key_v1
+    deploy:
+      mode: global
+
+configs:
+  traefik_static:
+    file: ./traefik.yml
+    name: traefik_static_v2
+  traefik_known_hosts:
+    file: ./known_hosts
+    name: traefik_known_hosts_v2
+  traefik_ssh_config:
+    file: ./ssh_config
+    name: traefik_ssh_config_v2
+  traefik_sparse_checkout:
+    file: ./sparse-checkout
+    name: traefik_sparse_checkout_v1
+  traefik_sync_routes:
+    file: ./sync-routes.sh
+    name: traefik_sync_routes_v1
+
+networks:
+  traefik-api:
+    external: true
+
+secrets:
+  traefik_cf_token_v1:
+    external: true
+  gitsync_ssh_key_v1:
+    external: true
+
+volumes:
+  acme:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/traefik_acme"
+      o: bind
+  dynamic:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "uid=65533,gid=65533,mode=0755,size=1m"

@@ -33,19 +33,43 @@ which keeps an hourly dump of the database for the backup.
       `wordpress_db_password_v2` on every connection, so that one has to match
       the database user's password in mysql
 
-## how it's reached
+## state considerations
 
-nginx proxy manager terminates TLS for every site name and proxies plain http
-to port `8180` on the swarm's VIP, 192.168.1.45:
+- `html` is wordpress's `/var/www/html` and `db` is mysql's `/var/lib/mysql`.
+  both are named binds to `/mnt/docker-cephFS/wordpress_html` and
+  `wordpress_db` on the replicated storage, see
+  [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts).
+  `db-dump` writes to a third, `wordpress_dumps`, see
+  [the hourly dump](#the-hourly-dump)
+- mysql is pinned by digest, and wordpress only by its version tag.
+  [renovate](../docker/image-updates-renovate.md) asks before bumping either,
+  because either can run a schema migration on start
+- both official images read passwords from files, so
+  `WORDPRESS_DB_PASSWORD_FILE` and the `MYSQL_*_FILE` variables point at docker
+  secrets, and no password is in the service spec
 
-| name | proxied to |
-| --- | --- |
-| `mydomain.com`, `www.`, `blog.`, `wordpress.`, `wpadmin.` | `http://192.168.1.45:8180` |
-| the site on the other domain | `http://192.168.1.45:8180` |
+## network considerations
+<span id="how-its-reached"></span>
+the stack publishes `8180` for wordpress's port 80, and `8443` for its 443,
+through the ingress mesh. its three services share the stack's default network,
+where wordpress and `db-dump` reach the database as `db`.
+
+[traefik](traefik.md) terminates TLS for every site name and proxies plain
+http to port `8180` on the swarm's VIP, 192.168.1.45:
+
+| name | inside the lan | outside |
+| --- | --- | --- |
+| `www.`, `blog.` | served | served, as public sites |
+| `mydomain.com`, the root site | not at all: inside, the name is active directory's | the front page redirects to `www.`; every other path is served |
+
+- the root site's front page goes to `www.` because that's the site people
+  should land on. its other paths stay, because the root site holds the
+  network admin: wordpress sends every network-admin page to the root site's
+  name, so redirecting all of it would send network admin round in a circle
 
 wordpress only sees http, so it has to be told the visitor used https. the
 `wp-config.php` that the official image generates does that when the proxy
-sends `X-Forwarded-Proto`, and NPM sends it:
+sends `X-Forwarded-Proto`, and traefik sends it:
 
 ```php
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
@@ -57,11 +81,11 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARD
 
 - multisite picks the site from the `Host` header, so every site name has to
   reach wordpress unchanged. public DNS needs a record per name pointing at my
-  WAN address, and NPM needs a proxy host per name that passes the host header
-  through
+  WAN address, and the proxy needs a route per name that passes the host
+  header through
 - the root site is the bare `mydomain.com`, and inside my lan that name belongs
   to active directory. it resolves to the windows server domain controllers,
-  not to NPM, so from inside the lan the root site's name doesn't reach
+  not to the proxy, so from inside the lan the root site's name doesn't reach
   wordpress. the container gets round it with `extra_hosts`, below
 
 ## the multisite config
@@ -99,12 +123,13 @@ to turn multisite on:
 
     - keep the two the same. if they differ, everything breaks once multisite
       is on
-    - the page breaks as soon as you save, until NPM serves the name over https
+    - the page breaks as soon as you save, until the proxy serves the name over https
 
-3. in NPM, give `mydomain.com`'s proxy host a certificate and Force SSL, then
-   log in again at `https://mydomain.com`
+3. make the proxy serve `mydomain.com` over https (npm, when i did this; in
+   traefik it's a route like any other), then log in again at
+   `https://mydomain.com`
     - do this from outside the lan, or from a machine whose hosts file points
-      `mydomain.com` at NPM. inside the lan that name resolves to the domain
+      `mydomain.com` at the proxy. inside the lan that name resolves to the domain
       controllers, see
       [what makes multisite fiddly](#what-makes-multisite-fiddly)
 
@@ -129,19 +154,9 @@ the only active change to the generated `wp-config.php` in the volume is
 
 wordpress makes requests to its own url (cron, site health). inside the lan
 that name resolves to the domain controllers, so the container pins it to the
-public address, and those requests go through NPM like a visitor's.
-
-## storage and passwords
-
-- `html` and `db` are named binds to `/mnt/docker-cephFS/wordpress_html` and
-  `wordpress_db` on the replicated storage, see
-  [stack conventions](../docker/conventions.md#volumes-are-a-named-bind-with-driver_opts)
-- mysql is pinned by digest, and wordpress only by its version tag.
-  [renovate](../docker/image-updates-renovate.md) asks before bumping either,
-  because either can run a schema migration on start
-- both official images read passwords from files, so
-  `WORDPRESS_DB_PASSWORD_FILE` and the `MYSQL_*_FILE` variables point at docker
-  secrets, and no password is in the service spec
+public address, and those requests go through traefik like a visitor's. that's
+another reason only the root site's front page redirects: wordpress's cron
+calls `/wp-cron.php` on its own name, and a redirect there would stop it.
 
 ## the hourly dump
 

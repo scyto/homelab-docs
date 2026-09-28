@@ -8,7 +8,7 @@ title: "Config from Git"
 
 ## the sidecar
 
-this is gatus's sidecar. it polls the stack's [deploy branch](gitops-with-portainer.md#3-one-branch-per-stack-not-main), `deploy/swarm/gatus`, every 60 seconds over ssh. the deploy key is read-only and held as a docker secret, and github's host key is pinned:
+this is gatus's sidecar. it polls the stack's [deploy branch](gitops-with-portainer.md#3-one-branch-per-stack-not-main), `deploy/swarm/gatus`, every 60 seconds over ssh, to github's ssh host on port 443, `ssh.github.com`, which works where a network drops outbound port 22. the deploy key is read-only and held as a docker secret, and github's host key is pinned, for that host too:
 
 ```yaml title="gatus/compose.yml"
   git-sync:
@@ -16,7 +16,7 @@ this is gatus's sidecar. it polls the stack's [deploy branch](gitops-with-portai
     user: "1000:1000"
     environment:
       - TZ=America/Los_Angeles
-      - GITSYNC_REPO=git@github.com:<you>/<repo>.git
+      - GITSYNC_REPO=ssh://git@ssh.github.com:443/<you>/<repo>.git
       - GITSYNC_REF=deploy/swarm/gatus
       - GITSYNC_PERIOD=60s
       - GITSYNC_ROOT=/git
@@ -47,9 +47,9 @@ this is gatus's sidecar. it polls the stack's [deploy branch](gitops-with-portai
         volume:
           nocopy: true
     configs:
-      - source: gatus_known_hosts
+      - source: gatus_known_hosts_v2
         target: /known_hosts
-      - source: gatus_ssh_config_v1
+      - source: gatus_ssh_config_v2
         target: /ssh_config
       - source: gatus_sparse_checkout_v1
         target: /sparse-checkout
