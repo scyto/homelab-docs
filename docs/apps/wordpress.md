@@ -68,8 +68,8 @@ http to port `8180` on the swarm's VIP, 192.168.1.45:
 - on the lan that name belongs to active directory, so traefik's route for it
   is reached only by wordpress itself, see
   [the container reaching itself](#the-container-reaching-itself), and by a
-  machine whose hosts file points `mydomain.com` at the VIP, for the network
-  admin
+  browser that maps the name to the VIP, see
+  [the network admin](#the-network-admin)
 - the other domain is outside traefik's wildcard certificate, so its route
   asks for a certificate of its own, see [traefik](traefik.md#the-fields).
   the cloudflare token has to cover that domain's zone too
@@ -83,6 +83,35 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARD
 	$_SERVER['HTTPS'] = 'on';
 }
 ```
+
+## the network admin
+
+the network admin is on the root site, and on the lan `mydomain.com` belongs
+to active directory. i open it in a browser window that maps just that name
+to the VIP. on a mac, with chrome or edge:
+
+```
+open -na "Google Chrome" --args --user-data-dir="$HOME/Library/Application Support/wp-network-admin" --host-resolver-rules="MAP mydomain.com 192.168.1.45"
+open -na "Microsoft Edge" --args --user-data-dir="$HOME/Library/Application Support/wp-network-admin-edge" --host-resolver-rules="MAP mydomain.com 192.168.1.45"
+```
+
+on windows, with edge, in powershell:
+
+```powershell
+& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --user-data-dir="$env:LOCALAPPDATA\wp-network-admin" --host-resolver-rules="MAP mydomain.com 192.168.1.45"
+```
+
+then go to `https://mydomain.com/wp-admin/network/`.
+
+- only that window, and only that one name, goes to traefik. the rest of the
+  machine is unchanged, so active directory's use of the name keeps working.
+  a hosts file entry on a domain-joined PC would break it
+- the separate `--user-data-dir` starts a browser of its own. without it, the
+  command hands the url to the browser already running, which ignores the
+  switch
+- traefik serves the root site on its lan listener with the domain's own
+  certificate, so the window shows no warning
+- tested with chrome and edge on a mac
 
 ## what makes multisite fiddly
 
@@ -135,9 +164,9 @@ to turn multisite on:
 3. make the proxy serve `mydomain.com` over https (npm, when i did this; in
    traefik it's a route like any other), then log in again at
    `https://mydomain.com`
-    - do this from outside the lan, or from a machine whose hosts file points
-      `mydomain.com` at the proxy. inside the lan that name resolves to the domain
-      controllers, see
+    - do this in a browser that maps `mydomain.com` to the proxy, see
+      [the network admin](#the-network-admin). inside the lan that name
+      resolves to the domain controllers, see
       [what makes multisite fiddly](#what-makes-multisite-fiddly)
 
 4. in Tools → Network Setup, choose sub-domains and install
