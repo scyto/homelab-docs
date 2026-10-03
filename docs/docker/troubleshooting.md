@@ -29,6 +29,21 @@ on the node hosting `.5` it times out. anywhere else you get an answer.
 [adguard](../apps/adguard.md#reaching-adguard-from-the-node-it-runs-on). it
 routes only the two ipv4 resolver addresses, `.5` and `.6`.
 
+## the gateway reports an ip address conflict for a docker host
+
+**symptom:** unifi raises "IP Address Conflict" for a docker host's address, or
+for a keepalived vip on it. the gateway's log repeats `netlink: L3 entry for
+address [192.168.1.41] has changed while arping was running` every few seconds,
+with two macs in the line.
+
+**cause:** the host's address is on `eth0` and on the macvlan shim `mac0`, and
+by default linux answers an arp request for a local address on every interface
+that hears it. each answers with its own mac, and the gateway keeps relearning.
+
+**fix:** `net.ipv4.conf.all.arp_filter = 1` on every docker host, see
+[adguard](../apps/adguard.md#the-shim-answers-arp-only-for-its-own-path). the
+kernel then answers only on the interface that routes to the asker.
+
 ## a published port keeps answering after you remove it
 
 **symptom:** you remove a published port from a service. the spec no longer

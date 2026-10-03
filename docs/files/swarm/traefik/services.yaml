@@ -133,13 +133,6 @@ services:
       auth: "none"
       mfa: "none"
 
-  npm:
-    upstream: http://192.168.1.45:181
-    internal: open
-    native:
-      auth: "password (NPM's admin)"
-      mfa: "none"
-
   omni-tools:
     upstream: http://192.168.1.45:8090
     internal: open

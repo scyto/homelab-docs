@@ -15,6 +15,8 @@ a truenas custom app rather than a `docker run`, so truenas manages it with its 
 - [the arr stack](../../apps/arrstack.md)
 - [frigate](../../apps/frigate.md)
 - [dozzle agent](../../monitoring/dozzle.md) and [glances](../../monitoring/glances.md)
+- [unpoller](../../monitoring/unpoller.md) and [victorialogs](../../monitoring/victorialogs.md)
+- [nut](../../ups/smc.md), the NUT server for the smc closet UPS
 
 ## run by truenas, not portainer
 

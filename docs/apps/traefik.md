@@ -6,7 +6,7 @@ title: "Traefik"
 
 traefik is my reverse proxy for every web interface, inside the lan and
 outside. it runs as one replica on the swarm. i chose it over
-[nginx proxy manager](nginx-proxy-manager.md), which it replaced, so every
+[nginx proxy manager](retired/nginx-proxy-manager.md), which it replaced, so every
 route is a line in git, reviewed in a pull request and checked before it
 deploys.
 

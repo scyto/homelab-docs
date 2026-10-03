@@ -7,7 +7,8 @@ title: "VictoriaLogs"
 [VictoriaLogs](https://docs.victoriametrics.com/victorialogs/) is the log
 store. today it holds the UniFi controller's events, sent by syslog: a device
 going offline, why a client was disconnected, STP changes, threats blocked.
-it runs on truenas1. checked against VictoriaLogs 1.53.0 and UniFi Network
+since 2026-10-03 the three [UPS cards](../ups/index.md#what-watches-the-cards)
+send their logs too. it runs on truenas1. checked against VictoriaLogs 1.53.0 and UniFi Network
 10.6.
 
 i added it the day after [unpoller](unpoller.md). UnPoller records what
@@ -73,6 +74,21 @@ debug logs. **netconsole** can point at the same address and port; that is the
 devices' raw kernel output, not syslog, and it is stored as plain messages with
 no `cef` fields.
 
+## pointing the ups cards at it
+
+on each RMCARD205, **Log** > **Syslog**: facility code **Local 0**, then **Add
+Server** `192.168.1.86`, port `514`, UDP. **Send test** should land as `This
+is test message from <the card's address>`.
+
+- the card's own events, link, reboot, power, are then on record. on
+  2026-10-03 a card hung and its silence was all there was to go on
+- the card uses its own system name as the syslog hostname: `Bottom` for the
+  basement card, `Shelf` for the study card and `Small` for the smc closet
+  card, with `app_name` `UPS(192.168.1.72)`, `UPS(192.168.1.73)` and
+  `UPS(192.168.1.71)`
+- nothing else on the lan sends as `local0`, so `facility_keyword:local0` is
+  the cards alone
+
 ## check it works
 
 - the container's log starts with the flags, with `-httpAuth.password="secret"`:
@@ -102,7 +118,7 @@ no `cef` fields.
 ```
 
 that says the process is up and serving, not that events are arriving. whether
-UniFi is still sending is a query that needs the password.
+UniFi or the UPS cards are still sending is a query that needs the password.
 
 ## one thing to know when querying
 
@@ -126,6 +142,7 @@ the UI shows `_msg` first, so without this every row reads
 | one client's history, by MAC | `cef.extension.UNIFIclientMac:="d0:d2:b0:8d:b2:4d" \| fields _time, cef.name, cef.extension.msg` |
 | anything the gateway rated severe | `cef.severity:>=7 \| copy cef.extension.msg as _msg` |
 | a window around an outage | `_time:[2026-10-01T21:35:00-07:00, 2026-10-01T21:55:00-07:00] cef.name:* \| copy cef.extension.msg as _msg` |
+| everything the UPS cards said | `facility_keyword:local0` |
 
 ## retention
 

@@ -69,6 +69,8 @@ the checks are split by what they cover, one file each:
 
 --8<-- "blocks/swarm/gatus/config/60-hosts.yaml.md"
 
+--8<-- "blocks/swarm/gatus/config/80-ups.yaml.md"
+
 <!-- the sidecar moved to docker/config-from-git.md. the empty span keeps
 its old anchor working -->
 
@@ -92,6 +94,8 @@ each check asserts something only a working service returns, beyond a 200 from i
 | frigate cameras | each camera the check names reports `camera_fps > 0` in `/api/stats` |
 | glances, every host | `/api/4/quicklook` returns collected memory, `mem > 0` |
 | proxmox | an authenticated `cluster/status` says the cluster is quorate |
+| ups cards | each card's web server answers `/` itself, with its redirect not followed, see [below](#checking-the-ups-cards-and-nut) |
+| nut data, every NUT server | prometheus holds that server's `OL` flag at `1`, scraped from the NUT exporter within the last minute, see [below](#checking-the-ups-cards-and-nut) |
 
 ## checking the proxy
 
@@ -129,9 +133,93 @@ the databases are only on their own stack's network. gatus joins none of those n
 
 | database | checked through |
 | --- | --- |
-| npm's mariadb | NPM's `/api/`, which queries it on every call |
 | wordpress's mysql | `/wp-json/`, which reads the site's options table |
 | open webui's redis | open webui's `/ready`, which pings redis |
+
+## checking the UPS cards and NUT
+
+the [UPS](../ups/index.md) cards, the NUT servers that read them, and the data
+those servers hold each get a check of their own, because they fail
+separately:
+
+- each card's web server gets a GET to `/`. the card answers `303` to its login
+  page, and gatus follows redirects by default, so the check sets
+  `client.ignore-redirect: true` and asserts the card's own answer:
+
+    ```yaml title="swarm/gatus/config/80-ups.yaml"
+      - name: ups card study
+        group: ups
+        url: "http://192.168.1.73/"
+        client:
+          ignore-redirect: true
+        conditions:
+          - "[CONNECTED] == true"
+          - "[STATUS] < 400"
+    ```
+
+    - this is the check that catches a hung card. on 2026-10-03 the study card
+      hung with its switch port up, and nothing noticed for twenty minutes
+      because no check asked the card anything
+
+- the three NUT servers with readers, truenas1's, pve1's and the
+  [smc closet stack's](../ups/smc.md) on `3494`, get a TCP connect:
+
+    ```yaml title="swarm/gatus/config/80-ups.yaml"
+      - name: nut pve1
+        group: ups
+        url: "tcp://192.168.1.81:3493"
+        conditions: ["[CONNECTED] == true"]
+    ```
+
+    - a connect proves the server is up, not that its data is fresh. `upsd`
+      keeps accepting connections when its driver has lost the card, and says
+      so as `DATA-STALE` over the NUT protocol, which gatus can't speak. what
+      the connect is for is telling a server that is gone from a server with
+      nothing fresh to say
+
+- every NUT server's data is judged by what prometheus has from it, the way
+  [unpoller](unpoller.md#check-it-works) is. truenas1 runs the NUT exporter
+  from the [prometheus-exporters sysext](../truenas/sysexts.md), which reads a
+  NUT server over the NUT protocol on every scrape, and prometheus scrapes it
+  once a minute, [one job per server](../ups/proxmox.md#prometheus). the smc
+  closet's stack carries [its own exporter](../ups/smc.md#prometheus), because
+  the sysext's ignores the port it is given. the check
+  asks prometheus for that server's `OL` flag and wants exactly `1`:
+
+    ```yaml title="swarm/gatus/config/80-ups.yaml"
+      - name: nut data pve2
+        group: ups
+        url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == success"
+          - "[BODY].data.result[0].value[1] == 1"
+    ```
+
+    - the query is `network_ups_tools_ups_status{ups="ups-proxmox",node="pve2",flag="OL"}`
+      joined with `and (time() - timestamp(...)) < 150`, URL-encoded. the
+      exporter adds no label saying which server a series came from, so each
+      prometheus job adds `ups` and `node`. the age test is there for a
+      prometheus that has stopped scraping: a bare selector would keep
+      answering with its last sample for five minutes. a range function
+      would bound that too, but it ignores the staleness marker a failed
+      scrape writes, so the plain selector plus the age test is the shape
+      that catches both
+    - green proves three things at once: that server's driver has fresh data
+      from the card, the exporter reached the server, and prometheus scraped
+      the exporter
+    - a server whose driver has lost the card answers the exporter with
+      `DATA-STALE`, the exporter fails the scrape with a `500`, prometheus marks
+      the series stale on that first failed scrape, and the query returns an
+      empty result. `result[0]` doesn't exist, so the check goes red. tested on
+      2026-10-03 with a spare job pointed at a host that refuses `3493`: `up`
+      read `0` and the query emptied within one scrape
+    - on battery `OL` is `0` and the check goes red. that is wanted: a power
+      cut is the alert. the tooltip shows the value seen, so `0` is a power
+      cut and `(INVALID)` is nothing fresh to read
+    - every proxmox node gets one, not only pve1, because each node shuts
+      itself down from its own driver. a stale driver on pve2 alone would
+      leave pve2 without its warning while pve1 looked fine
 
 ## checking per node
 

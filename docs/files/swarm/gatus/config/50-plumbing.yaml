@@ -171,17 +171,6 @@ endpoints:
       resolve-successful-conditions: true
     conditions: ["[CONNECTED] == true"]
 
-  - name: npm database
-    group: plumbing
-    url: "http://192.168.1.45:181/api/"
-    interval: 120s
-    ui:
-      resolve-successful-conditions: true
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].status == OK"
-      - "[BODY].setup == true"
-
   - name: wordpress database
     group: plumbing
     url: "http://192.168.1.45:8180/wp-json/"

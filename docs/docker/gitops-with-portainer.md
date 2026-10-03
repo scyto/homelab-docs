@@ -31,7 +31,7 @@ this assumes you already have [portainer on a swarm](portainer.md).
 stacks/
   swarm/                      # the three node swarm
     adguard/compose.yml
-    npm/compose.yml
+    traefik/compose.yml
     gatus/compose.yml
   pi-zwave01/                 # a standalone pi with the radios on it
     ser2net/compose.yml
@@ -105,7 +105,7 @@ each stack points at its own branch instead:
 
 ```
 deploy/swarm/adguard
-deploy/swarm/npm
+deploy/swarm/traefik
 deploy/swarm/gatus
 deploy/pi-zwave01/ser2net
 deploy/pi-zwave01/zigbee2mqtt
@@ -114,7 +114,7 @@ deploy/pi-zwave01/zwave-js-ui
 
 there is one branch per stack directory, with the same name. nobody commits to
 them directly; the workflow in the next step moves them. a change to
-`stacks/swarm/npm/compose.yml` moves `deploy/swarm/npm` and redeploys npm, and
+`stacks/swarm/traefik/compose.yml` moves `deploy/swarm/traefik` and redeploys traefik, and
 the other five stacks stay as they are.
 
 the `pi-zwave01` branches above are for a standalone docker host, not the swarm:
@@ -218,12 +218,12 @@ is left stale.
 lands the others, so a commit touching two stacks gets half of itself into
 production. with it, every branch moves or none do.
 
-a commit that edits `stacks/swarm/npm/compose.yml`,
+a commit that edits `stacks/swarm/traefik/compose.yml`,
 `stacks/pi-zwave01/ser2net/compose.yml` and a readme prints:
 
 ```
   stacks/pi-zwave01/ser2net -> deploy/pi-zwave01/ser2net
-  stacks/swarm/npm -> deploy/swarm/npm
+  stacks/swarm/traefik -> deploy/swarm/traefik
 ```
 
 two branches move, the other four don't, and the readme moves nothing.
@@ -316,13 +316,13 @@ deploy branches are fast forward only, so a rollback is not a force push. its a
 revert on `main` that gets promoted forward like any other change:
 
 ```
-git checkout -b revert/npm-bad-change
+git checkout -b revert/traefik-bad-change
 git revert <bad-sha>              # or just edit the file back by hand
-git push origin revert/npm-bad-change
+git push origin revert/traefik-bad-change
 gh pr create --fill && gh pr merge --rebase
 ```
 
-promote moves `deploy/swarm/npm` forward to the revert, and portainer picks it
+promote moves `deploy/swarm/traefik` forward to the revert, and portainer picks it
 up on the next poll, under five minutes after the merge.
 
 a revert keeps the history, and the deploy branches only ever point at a commit

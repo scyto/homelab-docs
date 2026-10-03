@@ -179,7 +179,7 @@ it goes in the repo root. this is a cut down version of mine.
       "dependencyDashboardApproval": true
     },
     {
-      "matchPackageNames": ["adguard/adguardhome", "jc21/nginx-proxy-manager"],
+      "matchPackageNames": ["adguard/adguardhome"],
       "dependencyDashboardApproval": true
     },
     {
@@ -194,11 +194,11 @@ with the layout from the [gitops page](gitops-with-portainer.md) that gives PR
 titles like:
 
 ```
-Update jc21/nginx-proxy-manager Docker tag to v2.12.6 [stacks/swarm/npm]
-patch updates stacks/pi-zwave01/zwave-js-ui
+chore(deps): update amir20/dozzle docker tag to v11.1.3 [stacks/swarm/dozzle]
+chore(deps): update zwavejs/zwave-js-ui docker tag to v11.24.2 [stacks/pi-zwave01/zwave-js-ui]
 ```
 
-merging the first one moves `deploy/swarm/npm` and nothing else.
+merging the first one moves `deploy/swarm/dozzle` and nothing else.
 
 ![the open pull request list, each title carrying its stack directory](../assets/img/renovate-pr-titles.png)
 

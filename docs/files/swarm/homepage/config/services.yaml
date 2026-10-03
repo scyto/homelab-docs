@@ -53,32 +53,6 @@
           type: unifi
           url: https://192.168.1.1
           key: "{{HOMEPAGE_FILE_UNIFI_KEY}}"
-    - Nginx Proxy Manager:
-        href: https://npm.mydomain.com
-        server: swarm
-        container: npm_app
-        icon: nginx-proxy-manager.png
-        description: Reverse proxy and its certificates
-        widget:
-          type: customapi
-          url: http://192.168.1.45:8085/api/v1/endpoints/swarm_nginx-proxy-manager/statuses?page=1&pageSize=1
-          refreshInterval: 60000
-          mappings:
-            - field: results.0.success
-              label: Gatus
-              format: text
-              remap:
-                - value: true
-                  to: UP
-                - value: false
-                  to: DOWN
-                - any: true
-                  to: "?"
-            - field: results.0.duration
-              label: Response
-              format: float
-              scale: "1/1000000"
-              suffix: ms
     - Traefik:
         href: https://traefik.mydomain.com/
         server: swarm
@@ -221,29 +195,6 @@
           metric: info
 
 - Plumbing:
-    - NPM database:
-        icon: mariadb.png
-        description: MariaDB behind Nginx Proxy Manager
-        widget:
-          type: customapi
-          url: http://192.168.1.45:8085/api/v1/endpoints/plumbing_npm-database/statuses?page=1&pageSize=1
-          refreshInterval: 60000
-          mappings:
-            - field: results.0.success
-              label: Gatus
-              format: text
-              remap:
-                - value: true
-                  to: UP
-                - value: false
-                  to: DOWN
-                - any: true
-                  to: "?"
-            - field: results.0.duration
-              label: Response
-              format: float
-              scale: "1/1000000"
-              suffix: ms
     - WordPress database:
         icon: mariadb.png
         description: MariaDB behind wordpress2025

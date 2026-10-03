@@ -77,7 +77,7 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
 
     ---
 
-    Two CyberPower UPSes read by NUT over their network cards: what each one
+    Three CyberPower UPSes read by NUT over their network cards: what each one
     feeds, the UPS service on TrueNAS, NUT on the three Proxmox nodes with the
     scripts that shut the cluster down together, and the PeaNUT dashboard.
 
