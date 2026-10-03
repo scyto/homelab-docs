@@ -249,6 +249,8 @@ nav:
       - Glances: monitoring/glances.md
       - Dozzle: monitoring/dozzle.md
       - Homepage: monitoring/homepage.md
+      - UnPoller: monitoring/unpoller.md
+      - VictoriaLogs: monitoring/victorialogs.md
   - Auth:
       - auth/index.md
       - Entra ID: auth/entra.md
@@ -271,6 +273,11 @@ nav:
       - Boot Environments: truenas/boot-environments.md
       - S3 with Versity Gateway: truenas/s3-versity-gateway.md
       - "Deprecated: Virtualized on Proxmox": truenas/virtualized-on-proxmox.md
+  - UPS:
+      - ups/index.md
+      - truenas1: ups/truenas.md
+      - Proxmox Cluster: ups/proxmox.md
+      - PeaNUT: ups/peanut.md
   - Raspberry Pi:
       - raspberry-pi/index.md
       - Docker & Stacks: raspberry-pi/stacks.md

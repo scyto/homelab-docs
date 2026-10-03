@@ -65,7 +65,7 @@ services:
       resources:
         limits:
           cpus: "2"
-          memory: 4096M
+          memory: 8192M
         reservations:
           devices:
             - driver: nvidia

@@ -47,5 +47,7 @@ an NFS share.
 - a failed backup should tell me. the VM job mails on failure. the cephFS and pi
   jobs have nothing yet
 - each backup needs a restore test. the pi has one, see
-  [raspberry pi](pi-host-backup.md#5-prove-it-restores). the VMs, cephFS and
-  portainer are still to do
+  [raspberry pi](pi-host-backup.md#5-prove-it-restores). cephFS has
+  [a check](cephfs.md#checking-a-restore), and wordpress
+  [a whole-site restore](../apps/wordpress.md#restoring-the-whole-site). the
+  VMs and portainer are still to do

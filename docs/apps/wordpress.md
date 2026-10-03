@@ -194,6 +194,17 @@ VIP, where traefik serves the root site on its lan listener. outside, every
 path of the root site redirects, so these requests must not go out through the
 WAN: cron calls `/wp-cron.php` on its own name, and a redirect would stop it.
 
+## apache's header limit
+
+apache refuses a request with any single header over 8 KB, and an admin's
+browser can pass that. the [oauth2-proxy](oauth2-proxy.md) sign-in cookie is
+set on the whole domain, and it travels with wordpress's, wordfence's and the
+shop's own cookies. apache then answers every page with a 400 before wordpress
+runs. the stack mounts a config into apache's `conf-enabled` that raises the
+limit to 32 KB:
+
+--8<-- "blocks/swarm/wordpress2025/header-limits.conf.md"
+
 ## the hourly dump
 
 `db-dump` writes `wordpressdb.sql` to `/mnt/docker-cephFS/wordpress_dumps` when
@@ -235,6 +246,77 @@ two days of it (`--binlog-expire-logs-seconds=172800`).
   mysqldump 8.0.42 writes that comment as `CHANGE MASTER TO`; newer versions
   write `CHANGE REPLICATION SOURCE TO`
 - older logs are still in older PBS backups of the `wordpress_db` folder
+
+## restoring the whole site
+
+the `wordpress_html` folder and the dump from one backup are the whole site.
+all four sites share the folder, and the dump holds every site's tables.
+
+1. stop all three services, on any manager:
+
+    ```
+    docker service scale wordpress2025_wordpress=0 wordpress2025_db=0 wordpress2025_db-dump=0
+    ```
+
+    - moving a folder doesn't move a running container's mount. mysql would
+      keep writing the folder you moved aside, and redeploying an unchanged
+      stack restarts nothing
+
+2. copy `wordpressdb.sql` out of `wordpress_dumps`, to a folder the stack
+   doesn't mount
+
+    - `db-dump` dumps when it starts. started before the dump is loaded, it
+      would replace it with a dump of the new, empty database
+
+3. put `wordpress_html` back from the backup. move `wordpress_db` aside and
+   make an empty one in its place
+
+    - from a snapshot in `/mnt/docker-cephFS/.snap/` while cephFS is fine,
+      with `cp -a` to keep owners and modes
+    - from PBS when cephFS is gone. that isn't written up yet, see
+      [cephFS](../backups/cephfs.md#still-to-do)
+    - mysql sets itself up only in an empty folder. with files in it, it
+      starts on those and ignores its `MYSQL_*` variables
+
+4. start the database alone:
+
+    ```
+    docker service scale wordpress2025_db=1
+    ```
+
+    - mysql creates `wordpressdb` and the database user, with the passwords
+      from the stack's secrets
+
+5. load the dump, on the node running the `db` task:
+
+    ```
+    docker exec -i $(docker ps -q --filter 'name=^wordpress2025_db\.') \
+      sh -c 'MYSQL_PWD="$(cat /run/secrets/wordpress_mysql_root_password)" mysql -uroot' \
+      < wordpressdb.sql
+    ```
+
+    - the anchored name skips `wordpress2025_db-dump`, which a plain
+      `name=wordpress2025_db` also matches
+    - `MYSQL_PWD` keeps the password out of the command line
+    - the dump makes the database's tables. about 70 MB takes two minutes
+
+6. start the other two:
+
+    ```
+    docker service scale wordpress2025_wordpress=1 wordpress2025_db-dump=1
+    ```
+
+    - `db-dump` now dumps the restored database
+
+7. check every site, as in [checking it](#checking-it), with each site's name
+   in the `Host` header: `mydomain.com`, `blog.mydomain.com`,
+   `www.mydomain.com` and `mydomain1.com`
+
+    - each should print its own title
+
+8. to replay the changes made after the dump, see
+   [binary logs](#binary-logs-and-rewinding-to-a-minute). the logs are in the
+   `wordpress_db` folder you moved aside, or in its backup
 
 ## wpadmin.conf
 

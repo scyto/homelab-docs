@@ -97,6 +97,7 @@ iface eth0 inet static
   gateway 192.168.1.1
   post-up ip link add mac0 link eth0 type macvlan mode bridge 2>/dev/null || true
   post-up ip link set dev mac0 up
+  post-up ip addr add 192.168.1.41/32 dev mac0 2>/dev/null || true
   post-up ip route replace 192.168.1.5/32 dev mac0 src 192.168.1.41
   post-up ip route replace 192.168.1.6/32 dev mac0 src 192.168.1.41
   post-up iptables -N DOCKER-USER 2>/dev/null || true
@@ -105,13 +106,20 @@ iface eth0 inet static
   pre-down ip link del mac0 2>/dev/null || true
 ```
 
-- only `src` changes per host, to that host's own address
+- only the host's own address changes per host, in the `ip addr` line and both
+  `src`
 - it is in `eth0`'s stanza, not one of its own, because a macvlan child is
   deleted with its parent. `eth0` is `allow-hotplug`, so when its card comes
   back its stanza runs again and rebuilds `mac0`. a separate `auto mac0`
   stanza only runs at boot
-- the shim needs no address of its own, so nothing has to be reserved. the
-  route's `src` supplies the source address, and adguard sees the host
+- the shim carries the host's own address as a `/32`, the one `eth0` already
+  has, so nothing has to be reserved. without it, docker's masquerade borrows
+  the first address it finds in device order. that is `eth0`'s until the card
+  is re-plugged, which re-registers `eth0` after `docker0`. then containers
+  leave `mac0` as `172.16.0.1` and reach neither adguard, while the host still
+  does
+- an iptables SNAT rule instead does not survive a reboot. networking starts
+  before docker, and docker inserts its masquerade rule at the top
 - the `/32` routes are correct whether or not the adguard is local. `mac0` is on
   the same segment, so traffic to a resolver on another node just goes out the
   wire

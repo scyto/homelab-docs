@@ -145,15 +145,20 @@ rm -rf /root/go /root/.cache/go-build
 ## checking a restore
 
 a backup that ran is not a backup that restores. `verify-restore`, in the
-container, restores one top-level directory from the newest backup into `/tmp`
-and compares it with the snapshot that backup read: the contents, and the
-owner, group and mode of every entry. i run it before relying on a change to
-how the backup runs:
+container, restores one top-level directory from the newest backup into
+`/var/tmp` and compares it with the snapshot that backup read: the contents,
+and the owner, group and mode of every entry. i run it before relying on a
+change to how the backup runs:
 
 ```
 pct exec <ctid> -- /usr/local/sbin/verify-restore
 pct exec <ctid> -- /usr/local/sbin/verify-restore <directory>
 ```
+
+- not `/tmp`: on debian 13 that's a tmpfs, which counts against the
+  container's memory, so restoring a directory bigger than that gets the
+  restore killed. `/var/tmp` is on the container's disk, and the script stops
+  first if it lacks room
 
 --8<-- "blocks/pve/cephfs-backup/verify-restore.sh.md"
 
@@ -166,6 +171,8 @@ pct exec <ctid> -- /usr/local/sbin/verify-restore <directory>
 - the backups hold portainer's database, which has credentials in it. the copy
   that leaves the box is encrypted, see [backups](index.md#rules-i-am-working-to).
   the datastore on truenas isn't
+- putting a folder back on cephFS from PBS. the backup container mounts cephFS
+  read-only, so a restore has to land somewhere else and be copied back
 
 ## databases
 

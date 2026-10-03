@@ -73,6 +73,14 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
 
     TrueNAS: This augments the Proxmox cluster and is used for traditional NAS storage and VMs & containers that need the unique hardware.  Section covers ZFS pools and data sets, system extensions for GPU and AI accelerators, Proxmox Backup Server as a container, S3 with Versity Gateway.
 
+-   :material-battery-charging:{ .lg .middle } **[UPS](ups/index.md)**
+
+    ---
+
+    Two CyberPower UPSes read by NUT over their network cards: what each one
+    feeds, the UPS service on TrueNAS, NUT on the three Proxmox nodes with the
+    scripts that shut the cluster down together, and the PeaNUT dashboard.
+
 -   :material-raspberry-pi:{ .lg .middle } **[Raspberry Pi](raspberry-pi/index.md)**
 
     ---

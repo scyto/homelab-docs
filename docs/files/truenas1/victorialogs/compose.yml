@@ -1,0 +1,34 @@
+services:
+  victorialogs:
+    container_name: victorialogs
+    image: victoriametrics/victoria-logs:v1.53.0@sha256:251121fa882af99b95ba0c230a4a2f412ea602d2698c64a96c58dc9842bb755d
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+    command:
+      - -storageDataPath=/victoria-logs-data
+      - -httpListenAddr=:9428
+      - -retentionPeriod=30d
+      - -retention.maxDiskSpaceUsageBytes=50GiB
+      - -syslog.listenAddr.udp=:514
+      - -syslog.listenAddr.tcp=:514
+      - -syslog.timezone=America/Los_Angeles
+      - -loggerTimezone=America/Los_Angeles
+      - -httpAuth.username=logs
+      - -httpAuth.password=file:///run/secrets/victorialogs_http_password_v1
+    ports:
+      - 9428:9428
+      - 514:514/udp
+      - 514:514/tcp
+    volumes:
+      - type: bind
+        source: /mnt/fast/victorialogs
+        target: /victoria-logs-data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /mnt/fast/configs/victorialogs/http_password
+        target: /run/secrets/victorialogs_http_password_v1
+        read_only: true
+        bind:
+          create_host_path: false
