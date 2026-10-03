@@ -70,7 +70,7 @@ endpoints:
 
   - name: nut data truenas1
     group: ups
-    url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-truenas%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+    url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-truenas%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-truenas%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
     interval: 60s
     ui:
       resolve-successful-conditions: true
@@ -81,7 +81,7 @@ endpoints:
 
   - name: nut data pve1
     group: ups
-    url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve1%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+    url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve1%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve1%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
     interval: 60s
     ui:
       resolve-successful-conditions: true
@@ -92,7 +92,7 @@ endpoints:
 
   - name: nut data pve2
     group: ups
-    url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+    url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
     interval: 60s
     ui:
       resolve-successful-conditions: true
@@ -103,7 +103,7 @@ endpoints:
 
   - name: nut data pve3
     group: ups
-    url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve3%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+    url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve3%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve3%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
     interval: 60s
     ui:
       resolve-successful-conditions: true
@@ -114,7 +114,7 @@ endpoints:
 
   - name: nut data ups-smc
     group: ups
-    url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-smc%22%2Cnode%3D%22truenas1-nut%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+    url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-smc%22%2Cnode%3D%22truenas1-nut%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-smc%22%2Cnode%3D%22truenas1-nut%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
     interval: 60s
     ui:
       resolve-successful-conditions: true

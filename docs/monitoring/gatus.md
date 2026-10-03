@@ -189,16 +189,22 @@ separately:
     ```yaml title="swarm/gatus/config/80-ups.yaml"
       - name: nut data pve2
         group: ups
-        url: "http://192.168.1.86:30104/api/v1/query?query=last_over_time%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%5B150s%5D%29"
+        url: "http://192.168.1.86:30104/api/v1/query?query=network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%20and%20%28time%28%29%20-%20timestamp%28network_ups_tools_ups_status%7Bups%3D%22ups-proxmox%22%2Cnode%3D%22pve2%22%2Cflag%3D%22OL%22%7D%29%29%20%3C%20150"
         conditions:
           - "[STATUS] == 200"
           - "[BODY].status == success"
           - "[BODY].data.result[0].value[1] == 1"
     ```
 
-    - the query is `network_ups_tools_ups_status{ups="ups-proxmox",node="pve2",flag="OL"}`,
-      URL-encoded. the exporter adds no label saying which server a series
-      came from, so each prometheus job adds `ups` and `node`
+    - the query is `network_ups_tools_ups_status{ups="ups-proxmox",node="pve2",flag="OL"}`
+      joined with `and (time() - timestamp(...)) < 150`, URL-encoded. the
+      exporter adds no label saying which server a series came from, so each
+      prometheus job adds `ups` and `node`. the age test is there for a
+      prometheus that has stopped scraping: a bare selector would keep
+      answering with its last sample for five minutes. a range function
+      would bound that too, but it ignores the staleness marker a failed
+      scrape writes, so the plain selector plus the age test is the shape
+      that catches both
     - green proves three things at once: that server's driver has fresh data
       from the card, the exporter reached the server, and prometheus scraped
       the exporter
