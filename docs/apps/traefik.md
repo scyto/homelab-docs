@@ -185,6 +185,7 @@ certificates. traefik is for everything that lacks one or both.
 | `mfa` | with `own-mfa`, a line saying how the app enforces MFA, so a reviewer sees the claim |
 | `native` | the app's own login and MFA, and its own address when it differs from `upstream`. required |
 | `external_oauth_paths`, `external_oauth_headers` | oauth in front of part of an `own-mfa` or `public` name only |
+| `cross_site_paths` | refuses, with 403, every request another site started, except to these exact paths. browsers say who started a request in the `Sec-Fetch-Site` header, which a page can't set, so a link or redirect elsewhere can't reach the rest of the app |
 | `redirect` | the name only redirects, keeping the path |
 | `root_redirect` | the front page redirects, and every other path is served |
 | `external_redirect` | the name is served on the lan, and outside every path redirects, keeping the path |

@@ -19,6 +19,8 @@ Plus a section per major topic:
   should just use Docker secrets or set env vars by hand.
 - **[TrueNAS](docs/truenas/index.md)**: the NAS outside the cluster, PBS as a
   container and S3 with Versity Gateway.
+- **[UPS](docs/ups/index.md)**: two UPSes read by NUT, and how truenas1 and the
+  Proxmox cluster shut down in a power cut.
 - **[Backups](docs/backups/index.md)**: VMs and CephFS to PBS, Portainer to S3,
   and databases.
 - **[Raspberry Pi](docs/raspberry-pi/index.md)**: the home automation radio host,

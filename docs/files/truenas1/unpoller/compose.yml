@@ -1,0 +1,22 @@
+services:
+  unpoller:
+    container_name: unpoller
+    image: ghcr.io/unpoller/unpoller:v5.4.0@sha256:12fe74186f98a9bd52d69272b899f7ff273dcddb8e754e8c50b40aaf851215a5
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - UP_UNIFI_DEFAULT_URL=https://192.168.1.1
+      - UP_UNIFI_DEFAULT_USER=unpoller
+      - UP_UNIFI_DEFAULT_PASS=file:///run/secrets/unpoller_unifi_password_v1
+      - UP_UNIFI_DEFAULT_VERIFY_SSL=false
+      - UP_INFLUXDB_DISABLE=true
+      - UP_PROMETHEUS_HTTP_LISTEN=0.0.0.0:9130
+    ports:
+      - 9130:9130
+    volumes:
+      - type: bind
+        source: /mnt/fast/configs/unpoller/unifi_pass
+        target: /run/secrets/unpoller_unifi_password_v1
+        read_only: true
+        bind:
+          create_host_path: false

@@ -56,6 +56,41 @@ one consumer whole:
 nvidia-smi -L
 ```
 
+## the gpu is power capped
+
+the card may draw 600 W by default. i cap it at 350 W, so the box cannot exceed
+the UPS's power budget:
+
+```
+nvidia-smi -pm 1 ; nvidia-smi -pl 350
+```
+
+| what | power |
+| --- | --- |
+| the UPS | CyberPower OR1500LCDRTXL2U, 1500 VA / 1125 W |
+| other equipment on it | about 33% of that, roughly 370 W |
+| left for this box | roughly 750 W |
+
+- with the server and the card both at full load, and the card uncapped, the
+  UPS went over its limit in watts
+- the cap takes 250 W off the most the card can draw
+
+- the limit is not saved, the card is back at 600 W after every boot. so the
+  line runs as a POSTINIT command, see
+  [tasks and scripts](tasks-and-scripts.md#at-boot)
+- POSTINIT, not PREINIT: the driver is loaded by a PREINIT script, see
+  [sysexts](sysexts.md), and `nvidia-smi` needs it
+- `-pm 1` is persistence mode. it keeps the driver loaded when nothing is using
+  the card, so the limit stays set
+- the limit is for the whole card, not per MIG instance, and the card accepts
+  150 W to 600 W
+
+to check it:
+
+```
+nvidia-smi --query-gpu=persistence_mode,power.limit,power.default_limit --format=csv
+```
+
 ## disks and pools
 
 18 drives, three pools:

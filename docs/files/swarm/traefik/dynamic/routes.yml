@@ -176,6 +176,19 @@ http:
       entryPoints:
       - websecure
       service: pbs
+    pbs-restore:
+      rule: Host(`pbs-restore.mydomain.com`)
+      entryPoints:
+      - websecure
+      service: pbs-restore
+    pbs-restore-cross-site:
+      rule: Host(`pbs-restore.mydomain.com`) && HeaderRegexp(`Sec-Fetch-Site`, `^(cross-site|same-site)$`) && !(Path(`/`) || Path(`/login`) || Path(`/login/oidc/callback`))
+      entryPoints:
+      - websecure
+      service: noop@internal
+      middlewares:
+      - refuse
+      priority: 20159
     portainer:
       rule: Host(`portainer.mydomain.com`)
       entryPoints:
@@ -351,6 +364,10 @@ http:
         authResponseHeaders:
         - X-Auth-Request-User
         - X-Auth-Request-Email
+    refuse:
+      ipAllowList:
+        sourceRange:
+        - 192.0.2.1/32
   services:
     adguard1:
       loadBalancer:
@@ -470,6 +487,11 @@ http:
       loadBalancer:
         servers:
         - url: https://pbs1.mydomain.com:8007
+    pbs-restore:
+      loadBalancer:
+        servers:
+        - url: https://192.168.1.45:8008
+        serversTransport: insecure
     portainer:
       loadBalancer:
         servers:

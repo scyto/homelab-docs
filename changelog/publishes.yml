@@ -13,6 +13,24 @@
 
 - publish: next
   changes:
+    - added doc: "a [UPS](ups/index.md) section: [truenas1](ups/truenas.md), the [proxmox cluster](ups/proxmox.md) and [PeaNUT](ups/peanut.md)"
+    - added feature: "NUT on truenas1 and on all three proxmox nodes, reading both UPSes over their network cards, so each shuts down what it feeds before the battery runs out"
+    - added feature: "the proxmox cluster shuts down together in a power cut: Ceph flags set, guests stopped, a hold so no node leaves Ceph early, and the flags cleared on the next boot"
+    - changed feature: "the proxmox HA shutdown policy is `freeze`"
+    - added feature: "PeaNUT on truenas1, a dashboard for both UPSes"
+    - added doc: "[unpoller](monitoring/unpoller.md): UniFi metrics for prometheus, with the queries i use"
+    - added feature: "UnPoller on truenas1, scraped by prometheus, with a gatus check on what prometheus has from it"
+    - added doc: "[victorialogs](monitoring/victorialogs.md): the log store on truenas1, with UniFi's events arriving by syslog and the queries i use"
+    - added feature: "VictoriaLogs on truenas1, UniFi's SIEM target, with a gatus check on its health"
+    - added feature: "capped truenas1's GPU at 350 W, set again at every boot, to stay inside the UPS's power budget, see [hardware](truenas/hardware-and-base-install.md#the-gpu-is-power-capped)"
+    - changed feature: "raised [wordpress](apps/wordpress.md#apaches-header-limit)'s apache header limit to 32 KB, so a browser signed in to oauth2-proxy isn't refused with a 400"
+    - fix: "[verify-restore](backups/cephfs.md#checking-a-restore) restores to the container's disk, not its tmpfs `/tmp`, where a large directory got the restore killed for memory, and counts the backup's entries, which it counted as 0"
+    - changed doc: "[wordpress](apps/wordpress.md#restoring-the-whole-site): how to put the whole site back from one backup's files and dump, and why the dump has to be copied out first"
+    - added feature: "`pbs-restore`, a file-level restore portal for the VM and container backups, lan only, with proxmox's own sign-in, in the [access table](auth/index.md#every-app)"
+    - added feature: "[traefik](apps/traefik.md#the-fields) can refuse requests another site started, per name, except to listed paths (`cross_site_paths`)"
+
+- publish: 38
+  changes:
     - changed doc: "[wordpress](apps/wordpress.md#the-network-admin): open the network admin in a browser window that maps the root site's name to traefik, with the commands for chrome and edge, instead of a hosts file"
 
 - publish: 37

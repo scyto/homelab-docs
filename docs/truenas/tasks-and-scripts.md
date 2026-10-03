@@ -15,6 +15,7 @@ System → Advanced → Init/Shutdown Scripts
 | --- | --- | --- |
 | PREINIT | one per [system extension](sysexts.md), `/mnt/fast/.config/<name>/<name>-preinit.sh` | loads the extension before the apps start: hailo, coral, memryx, cli-tools, prometheus-exporters, the nvidia driver and the MIG setup |
 | POSTINIT | `register-dns.sh` | registers the box's IPv4 and IPv6 addresses in DNS with `nsupdate` |
+| POSTINIT | `nvidia-smi -pm 1 ; nvidia-smi -pl 350`, a command, not a script | caps the GPU at 350 W, to stay inside the UPS's power budget. the limit is lost at every boot, see [the gpu is power capped](hardware-and-base-install.md#the-gpu-is-power-capped) |
 
 ## cron jobs
 
