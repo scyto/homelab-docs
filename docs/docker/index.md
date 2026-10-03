@@ -33,7 +33,6 @@ Update as of 2026.09.24: the agent deploys from git now as well. portainer itsel
 
 - [adguard](../apps/adguard.md) - two dns resolvers, kept in sync
 - [traefik](../apps/traefik.md) - reverse proxy for every name, inside and out, its routes in git
-- [nginx proxy manager](../apps/nginx-proxy-manager.md) - the reverse proxy before traefik, now stopped
 - [oauth2-proxy](../apps/oauth2-proxy.md) - oauth with entra ID, in front of the names that have no login of their own
 - [cloudflare ddns](../apps/cloudflare-ddns.md) - keeps the external A record current
 - acme.sh for the [ASRock Rack BMC](../apps/acme-asrock-bmc.md) and [Synology DSM](../apps/acme-synology.md) - certificates
@@ -50,6 +49,7 @@ Update as of 2026.09.24: the agent deploys from git now as well. portainer itsel
 
 ## no longer used
 
+- [nginx proxy manager](../apps/retired/nginx-proxy-manager.md) - the reverse proxy before traefik, retired 2026-10-02
 - [watchtower](../apps/retired/watchtower.md)
 - [shepherd](../apps/retired/shepherd.md)
 - [portainer agent managed by portainer](../apps/retired/portainer-agent.md)

@@ -31,14 +31,6 @@ endpoints:
       resolve-successful-conditions: true
     conditions: ["[CONNECTED] == true"]
 
-  - name: nginx proxy manager
-    group: swarm
-    url: "http://192.168.1.45:181"
-    interval: 60s
-    ui:
-      resolve-successful-conditions: true
-    conditions: ["[STATUS] == 200"]
-
   - name: traefik
     group: swarm
     url: "http://traefik_traefik:8080/api/version"

@@ -9,8 +9,7 @@ database here has a copy that is consistent or checked, or doesn't need one.
 
 | database | lives on | how it's copied | restore |
 | --- | --- | --- | --- |
-| wordpress, MySQL 8.0 | cephFS | [a dump sidecar](#a-dump-sidecar-wordpress-and-nginx-proxy-manager), hourly | load the dump |
-| nginx proxy manager, MariaDB 10.11 | cephFS | [a dump sidecar](#a-dump-sidecar-wordpress-and-nginx-proxy-manager), hourly | load the dump |
+| wordpress, MySQL 8.0 | cephFS | [a dump sidecar](#a-dump-sidecar-wordpress), hourly | load the dump |
 | gatus, SQLite | cephFS | [gatus copies itself](#gatus-copies-itself), hourly | swap the copy in |
 | portainer, BoltDB | cephFS | [a checked copy in every cephFS backup](#portainer-a-checked-copy-in-every-cephfs-backup), hourly | put the file back |
 | adguard, bbolt | cephFS | [none needed](#adguard-none-needed) | delete a bad file |
@@ -18,9 +17,9 @@ database here has a copy that is consistent or checked, or doesn't need one.
 | zigbee2mqtt and zwave-js-ui | the pi | [the pi's backup](#zigbee2mqtt-and-zwave-js-ui-the-pis-backup), hourly, and zwave-js-ui's own backups | restore the files |
 | home assistant, the domain controllers | their VMs | the [VM backups](vm-backups-pbs.md), every two hours, with the guest agent freezing the filesystems | restore the VM |
 
-## a dump sidecar: wordpress and nginx proxy manager
+## a dump sidecar: wordpress
 
-each stack has a third service, `db-dump`, that asks the database for a
+the stack has a third service, `db-dump`, that asks the database for a
 consistent copy at start and at :50 every hour. ceph snapshots at :00 and the
 [cephFS backup](cephfs.md) ships the snapshot at :15, so every backup holds a
 whole dump next to the database's own files.
@@ -28,7 +27,11 @@ whole dump next to the database's own files.
 | stack | dump | options |
 | --- | --- | --- |
 | [wordpress](../apps/wordpress.md#the-hourly-dump) | `wordpress_dumps/wordpressdb.sql`, about 70 MB | `--single-transaction` reads the InnoDB tables at one point in time without locking them. `--source-data=2` records the binary log position |
-| [nginx proxy manager](../apps/nginx-proxy-manager.md) | `npm_dumps/npm.sql`, about 0.2 MB | `--lock-tables`, because the tables are Aria and `--single-transaction` only covers InnoDB. writers wait under a second. npm is stopped now, so its last dump is the one that stays |
+
+[nginx proxy manager](../apps/retired/nginx-proxy-manager.md) had the same
+sidecar, with `--lock-tables` because its tables were Aria, until it was
+retired on 2026-10-02. its directories are gone from cephFS, so its last dump
+is only in the [cephFS backups](cephfs.md) made before 2026-10-03.
 
 - the sidecar runs the database's own image, so `mysqldump` matches the server
 - it needs no docker socket, reads the password the database already has, and

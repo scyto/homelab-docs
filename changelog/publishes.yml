@@ -13,6 +13,18 @@
 
 - publish: next
   changes:
+    - added feature: "the [smc closet UPS](ups/smc.md) is live: its NUT server reads the card, PeaNUT and prometheus read it, and gatus has its three checks"
+    - added feature: "a third UPS, in the [smc closet](ups/smc.md), for the closet's network gear and syn02. a NUT server in a container on truenas1 reads it so PeaNUT shows it, with an exporter of its own for prometheus, and gatus checks its card"
+    - added feature: "[gatus](monitoring/gatus.md#checking-the-ups-cards-and-nut) judges each NUT server by what prometheus has from the NUT exporter, so stale UPS data goes red and not only a server that is down. prometheus scrapes the exporter once a minute for truenas1 and for each proxmox node"
+    - changed feature: "pve2 and pve3's NUT servers [listen on the lan](ups/proxmox.md#nut-on-each-node) too, for the exporter's reads"
+    - added feature: "[gatus](monitoring/gatus.md#checking-the-ups-cards-and-nut) checks both UPS cards and both NUT servers every minute, after a card hung for twenty minutes with nothing watching it"
+    - added feature: "both UPS cards send their logs to [victorialogs](monitoring/victorialogs.md#pointing-the-ups-cards-at-it), so a card's own events are on record"
+    - fix: "the docker hosts answer arp for their own address on one interface only, so the gateway no longer sees it flip between `eth0` and the [macvlan shim](apps/adguard.md#the-shim-answers-arp-only-for-its-own-path) and raise an ip conflict"
+    - removed feature: "nginx proxy manager is retired: its stack, its name on [traefik](apps/traefik.md), its gatus checks and its homepage tiles are gone, five days after traefik took every name"
+    - changed doc: "[nginx proxy manager](apps/retired/nginx-proxy-manager.md) moved to no longer used, without its stack file; the [databases](backups/databases.md#a-dump-sidecar-wordpress) page keeps the dump sidecar for wordpress alone"
+
+- publish: 39
+  changes:
     - added doc: "a [UPS](ups/index.md) section: [truenas1](ups/truenas.md), the [proxmox cluster](ups/proxmox.md) and [PeaNUT](ups/peanut.md)"
     - added feature: "NUT on truenas1 and on all three proxmox nodes, reading both UPSes over their network cards, so each shuts down what it feeds before the battery runs out"
     - added feature: "the proxmox cluster shuts down together in a power cut: Ceph flags set, guests stopped, a hold so no node leaves Ceph early, and the flags cleared on the next boot"
@@ -54,7 +66,7 @@
     - added doc: "[entra ID](auth/entra.md): every app registration, and the password logins for when entra is down"
     - changed doc: "[traefik](apps/traefik.md): the diagram is two, one for requests and one for config"
     - changed doc: "placeholders the site hid are shown on [entra ID auth](proxmox/extras/azure-ad-auth.md), [let's encrypt via cloudflare](proxmox/extras/lets-encrypt-cloudflare.md) and [installing debian as VM](docker/swarm/debian-vm-install.md). on the entra page, the rest of the list showed as a link"
-    - changed doc: "[nginx proxy manager](apps/nginx-proxy-manager.md) is stopped, replaced by traefik"
+    - changed doc: "[nginx proxy manager](apps/retired/nginx-proxy-manager.md) is stopped, replaced by traefik"
     - removed doc: "the old traefik template"
     - changed feature: "set up [wordpress](apps/wordpress.md#how-its-reached) on traefik. the root site's front page redirects to `www.`"
     - added doc: "signing in to [portainer](docker/portainer.md#signing-in-with-entra) with entra ID"
@@ -76,7 +88,7 @@
   changes:
     - added doc: "[databases](backups/databases.md): every database, how each is copied, and how to restore it"
     - added feature: "portainer's S3 backups keep 14 nights, and always the newest 14. a cron job on truenas deletes older ones, see [portainer to S3](backups/portainer-s3.md)"
-    - removed feature: "two anonymous accounts on [nginx proxy manager](apps/nginx-proxy-manager.md)'s database, which nothing used"
+    - removed feature: "two anonymous accounts on [nginx proxy manager](apps/retired/nginx-proxy-manager.md)'s database, which nothing used"
     - changed doc: "[backups](backups/index.md): portainer's database has no scheduled consistent copy, and truenas1's app databases have no copy off their pool"
 
 - publish: 32
@@ -89,7 +101,7 @@
 
 - publish: 30
   changes:
-    - added feature: "hourly consistent dumps of the [wordpress](apps/wordpress.md#the-hourly-dump) and [nginx proxy manager](apps/nginx-proxy-manager.md) databases, for the cephfs backup"
+    - added feature: "hourly consistent dumps of the [wordpress](apps/wordpress.md#the-hourly-dump) and [nginx proxy manager](apps/retired/nginx-proxy-manager.md) databases, for the cephfs backup"
     - added feature: "[gatus](monitoring/gatus.md#the-fork) copies its database every hour, through the fork"
     - changed feature: "wordpress keeps two days of binary logs, down from thirty"
     - changed doc: "[cephfs backups](backups/cephfs.md#databases): what runs for each database, and how to restore each copy"
@@ -111,7 +123,7 @@
 - publish: 27
   changes:
     - changed doc: "the [home page](index.md) cards, in my words"
-    - changed doc: "five pages that began as gists describe what runs now: [auto-label nodes](apps/auto-label-nodes.md), [cloudflare ddns](apps/cloudflare-ddns.md), [infinitude](apps/infinitude.md), [mosquitto](apps/mosquitto-mqtt.md) and [nginx proxy manager](apps/nginx-proxy-manager.md)"
+    - changed doc: "five pages that began as gists describe what runs now: [auto-label nodes](apps/auto-label-nodes.md), [cloudflare ddns](apps/cloudflare-ddns.md), [infinitude](apps/infinitude.md), [mosquitto](apps/mosquitto-mqtt.md) and [nginx proxy manager](apps/retired/nginx-proxy-manager.md)"
     - added doc: "a note on [acme asrock bmc](apps/acme-asrock-bmc.md), [acme synology](apps/acme-synology.md) and [dozzle](monitoring/dozzle.md): my secrets come from my own store, and the plain `docker secret create` commands work for anyone"
     - changed feature: "the [arr stack](apps/arrstack.md)'s download clients open their web UI to the lan only"
     - added feature: "[zigbee2mqtt](raspberry-pi/stacks.md) runs on the pi, pinned by digest"

@@ -63,6 +63,58 @@ printf 'LIST VAR ups-truenas\nLOGOUT\n' | nc -w 5 192.168.1.86 3493
 `ups.status` should be `OL` (on mains), and `ups.load` and `battery.runtime`
 should match the UPS's own display.
 
+[gatus](../monitoring/gatus.md#checking-the-ups-cards-and-nut) connects to the
+same port every minute as `nut truenas1`, asks the card's web server for `/`
+as `ups card basement`, and asks prometheus for this server's `OL` flag as
+`nut data truenas1`. the connect says `upsd` is up; the data check says it has
+fresh data from the card; the card check is the one that catches a hung card,
+see [what watches the cards](index.md#what-watches-the-cards).
+
+## prometheus
+
+the NUT exporter from the [prometheus-exporters sysext](../truenas/sysexts.md)
+listens on `9199` and reads this host's NUT server by default. add the job to
+`/mnt/fast/configs/prometheus/prometheus.yml`. prometheus reloads its config
+on its own:
+
+<!-- fragment: illustrative -->
+
+```yaml title="/mnt/fast/configs/prometheus/prometheus.yml"
+  - job_name: nut-truenas
+    metrics_path: /ups_metrics
+    scrape_interval: 60s
+    params:
+      ups: [ups-truenas]
+    static_configs:
+      - targets: ["192.168.1.86:9199"]
+        labels:
+          ups: ups-truenas
+          node: truenas1
+```
+
+- `ups` is the NUT name, as **Identifier** above. the exporter answers `500`
+  for a name the server doesn't list
+- the exporter puts no label on a series saying which UPS or server it came
+  from, so the job adds `ups` and `node`. gatus queries by them
+- `60s`, the same as [unpoller](../monitoring/unpoller.md#prometheus). gatus
+  asks once a minute, so a faster scrape buys nothing
+- check the file before prometheus picks it up:
+
+    ```bash
+    sudo docker exec ix-prometheus-prometheus-1 promtool check config /config/prometheus.yml
+    ```
+
+the `nut-truenas` target is **UP** on prometheus's targets page, and this
+returns one series with the value `1`:
+
+```text
+network_ups_tools_ups_status{ups="ups-truenas",flag="OL"}
+```
+
+a server the exporter can't read, because its driver has lost the card or
+because it is down, fails the scrape with a `500`, so the target reads
+**DOWN** and the query returns nothing. that is what the gatus check looks for.
+
 ## when it shuts down
 
 on battery, at 25% charge or 4 minutes of runtime, whichever comes first.

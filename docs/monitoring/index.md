@@ -13,7 +13,7 @@ how i know it all works. each tool does one job:
 | [dozzle](dozzle.md) | container logs from every host in one place |
 | [homepage](homepage.md) | the dashboard that shows all of it |
 | [unpoller](unpoller.md) | UniFi device and client metrics, for prometheus |
-| [victorialogs](victorialogs.md) | the log store: UniFi's events, by syslog |
+| [victorialogs](victorialogs.md) | the log store: UniFi's events and the UPS cards' logs, by syslog |
 
 gatus replaced uptime kuma because its config lives in git, and uptime kuma's can't.
 

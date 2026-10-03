@@ -145,11 +145,6 @@ http:
       entryPoints:
       - websecure
       service: jellyfin
-    npm:
-      rule: Host(`npm.mydomain.com`)
-      entryPoints:
-      - websecure
-      service: npm
     nvr:
       rule: Host(`nvr.mydomain.com`)
       entryPoints:
@@ -462,10 +457,6 @@ http:
       loadBalancer:
         servers:
         - url: http://192.168.1.86:8096
-    npm:
-      loadBalancer:
-        servers:
-        - url: http://192.168.1.45:181
     nvr:
       loadBalancer:
         servers:

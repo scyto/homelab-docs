@@ -1,6 +1,11 @@
 {
  "publishes": [
   {
+   "id": "39",
+   "link": "https://github.com/scyto/homelab-docs/pull/39",
+   "time": "2026-10-03T01:23:11Z"
+  },
+  {
    "id": "38",
    "link": "https://github.com/scyto/homelab-docs/pull/38",
    "time": "2026-09-28T20:32:09Z"
@@ -256,7 +261,11 @@
   },
   "2026-10-02": {
    "docs": 2,
-   "other": 3
+   "other": 4
+  },
+  "2026-10-03": {
+   "docs": 2,
+   "other": 5
   }
  }
 }

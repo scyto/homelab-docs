@@ -1,0 +1,51 @@
+services:
+  nut:
+    container_name: nut
+    image: instantlinux/nut-upsd:2.8.5-r1@sha256:a4a68e3c56081e3187621ee2a4bf9bce2936eaf0b628c01f81881f25cee0e667
+    restart: unless-stopped
+    init: true
+    environment:
+      - TZ=America/Los_Angeles
+    entrypoint: ["/bin/sh", "-e", "-c"]
+    command:
+      - |
+        cat /run/secrets/nut_smc_ups_conf_v1 > /etc/nut/ups.conf
+        printf 'LISTEN 0.0.0.0 3493\n' > /etc/nut/upsd.conf
+        : > /etc/nut/upsd.users
+        chgrp nut /etc/nut/*
+        chmod 640 /etc/nut/*
+        mkdir -p -m 2750 /dev/shm/nut
+        chown nut:nut /dev/shm/nut
+        [ -e /var/run/nut ] || ln -s /dev/shm/nut /var/run/nut
+        upsdrvctl -u nut start
+        exec upsd -u nut -F
+    healthcheck:
+      test: ["CMD", "upsc", "ups-smc@localhost", "ups.status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    ports:
+      - 3494:3493
+    volumes:
+      - type: bind
+        source: /mnt/fast/configs/nut/ups.conf
+        target: /run/secrets/nut_smc_ups_conf_v1
+        read_only: true
+        bind:
+          create_host_path: false
+
+  nut-exporter:
+    container_name: nut-exporter
+    image: ghcr.io/druggeri/nut_exporter:3.3.0@sha256:276460d141c732772f8b1fcd785a7de272473e6d39fd85c32b163efc2999cb9a
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+    command:
+      - --nut.server=nut
+      - --nut.serverport=3493
+      - --web.listen-address=:9199
+    ports:
+      - 9198:9199
+    depends_on:
+      - nut

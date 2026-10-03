@@ -94,15 +94,26 @@ maxretry = 3
 `/etc/nut/nut.conf`: `MODE=netserver` on pve1 and `MODE=standalone` on pve2 and
 pve3.
 
-`/etc/nut/upsd.conf`. pve1 is the one PeaNUT and Home Assistant read, so it
-also listens on the LAN:
+`/etc/nut/upsd.conf`. every node listens on its own LAN address as well as
+loopback, with its own address in the second line:
 
 ```text
 LISTEN 127.0.0.1 3493
 LISTEN 192.168.1.81 3493
 ```
 
-pve2 and pve3 have only the first line.
+- pve1 is the one PeaNUT and Home Assistant read
+- pve2 and pve3 listen on the LAN for the NUT exporter on truenas1, which
+  reads each node's own driver for [prometheus](#prometheus). nothing else
+  reads them. NUT has no login for reads, and a read can't change anything
+
+[gatus](../monitoring/gatus.md#checking-the-ups-cards-and-nut) connects to
+pve1's port every minute as `nut pve1`, asks the study card's web server for
+`/` as `ups card study`, and asks prometheus for each node's `OL` flag as
+`nut data pve1`, `nut data pve2` and `nut data pve3`. the connect says `upsd`
+is up; a data check says that node's driver has fresh data from the card; the
+card check is the one that catches a hung card, see
+[what watches the cards](index.md#what-watches-the-cards).
 
 `/etc/nut/upsd.users`, with a different password on each node:
 
@@ -146,6 +157,55 @@ can resolve to `::1` first.
 systemctl restart nut-driver-enumerator.service
 systemctl enable --now nut-server.service nut-monitor.service
 upsc ups-proxmox@127.0.0.1
+```
+
+## prometheus
+
+the NUT exporter from truenas1's
+[prometheus-exporters sysext](../truenas/sysexts.md) reads another server when
+the scrape names it with `server`. one job per node, in
+`/mnt/fast/configs/prometheus/prometheus.yml` on truenas1, prometheus reloads
+its config on its own:
+
+<!-- fragment: illustrative -->
+
+```yaml title="/mnt/fast/configs/prometheus/prometheus.yml"
+  - job_name: nut-pve1
+    metrics_path: /ups_metrics
+    scrape_interval: 60s
+    params:
+      ups: [ups-proxmox]
+      server: ["192.168.1.81"]
+    static_configs:
+      - targets: ["192.168.1.86:9199"]
+        labels:
+          ups: ups-proxmox
+          node: pve1
+```
+
+- `nut-pve2` and `nut-pve3` are the same job with `192.168.1.82` and
+  `192.168.1.83` as `server`, and `pve2` and `pve3` as `node`
+- one job per node, not one for the cluster, because each node shuts itself
+  down from its own driver. three nodes read one card, so three green checks
+  also say the card answers SNMP to all three
+- the exporter puts no label on a series saying which server it came from, so
+  each job adds `ups` and `node`. gatus queries by both
+- the target is always the exporter on truenas1. `server` is a query
+  parameter the exporter reads, and it needs no port: every node listens on
+  `3493`. the exporter's `serverport` parameter is in its README but, as of
+  3.3.0, the exporter never applies it, so a server on another port needs a
+  second exporter started with `--nut.serverport`
+- check the file before prometheus picks it up:
+
+    ```bash
+    sudo docker exec ix-prometheus-prometheus-1 promtool check config /config/prometheus.yml
+    ```
+
+all three targets are **UP** on prometheus's targets page, and this returns
+three series, one per node, each with the value `1`:
+
+```text
+network_ups_tools_ups_status{ups="ups-proxmox",flag="OL"}
 ```
 
 ## the shutdown scripts

@@ -78,7 +78,7 @@ plugins:
         docker-swarm/stacks/cloudflare-ddns.md: apps/cloudflare-ddns.md
         docker-swarm/stacks/infinitude.md: apps/infinitude.md
         docker-swarm/stacks/mosquitto-mqtt.md: apps/mosquitto-mqtt.md
-        docker-swarm/stacks/nginx-proxy-manager.md: apps/nginx-proxy-manager.md
+        docker-swarm/stacks/nginx-proxy-manager.md: apps/retired/nginx-proxy-manager.md
         docker-swarm/stacks/oauth2-proxy.md: apps/oauth2-proxy.md
         docker-swarm/stacks/omni-tools.md: apps/omni-tools.md
         docker-swarm/stacks/portainer-agent.md: apps/retired/portainer-agent.md
@@ -86,6 +86,7 @@ plugins:
         docker-swarm/stacks/shepherd.md: apps/retired/shepherd.md
         docker-swarm/stacks/traefik.md: apps/traefik.md
         apps/retired/traefik.md: apps/traefik.md
+        apps/nginx-proxy-manager.md: apps/retired/nginx-proxy-manager.md
         docker-swarm/stacks/unifi-poller.md: apps/index.md
         docker-swarm/stacks/watchtower.md: apps/retired/watchtower.md
         docker-swarm/troubleshooting.md: docker/troubleshooting.md
@@ -222,7 +223,6 @@ nav:
           - AdGuard: apps/adguard.md
           - Cloudflare DDNS: apps/cloudflare-ddns.md
           - Traefik: apps/traefik.md
-          - Nginx Proxy Manager: apps/nginx-proxy-manager.md
           - oauth2-proxy: apps/oauth2-proxy.md
       - Certificates:
           - "acme.sh: ASRock Rack BMC": apps/acme-asrock-bmc.md
@@ -239,6 +239,7 @@ nav:
       - Swarm Plumbing:
           - Auto-label Nodes: apps/auto-label-nodes.md
       - No Longer Used:
+          - Nginx Proxy Manager: apps/retired/nginx-proxy-manager.md
           - Watchtower: apps/retired/watchtower.md
           - Shepherd: apps/retired/shepherd.md
           - Portainer Agent Managed by Portainer: apps/retired/portainer-agent.md
@@ -277,6 +278,7 @@ nav:
       - ups/index.md
       - truenas1: ups/truenas.md
       - Proxmox Cluster: ups/proxmox.md
+      - SMC Closet: ups/smc.md
       - PeaNUT: ups/peanut.md
   - Raspberry Pi:
       - raspberry-pi/index.md

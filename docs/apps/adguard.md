@@ -129,6 +129,67 @@ iface eth0 inet static
 - `DOCKER-USER` is created first because networking starts before docker at
   boot. docker keeps an existing chain and its rules
 
+### the shim answers arp only for its own path
+
+`eth0` and `mac0` both carry the host's address, and both hear the lan's arp
+requests. by default linux answers for a local address on every interface that
+hears the request, so each replied with its own mac and the gateway saw the
+host's address, and a keepalived vip on it, flip between two macs every few
+seconds. unifi logs `netlink: L3 entry for address [192.168.1.41] has changed
+while arping was running` for each flip, about 9,600 a day per address here,
+and the controller raises an "IP Address Conflict" alert for the host. one
+sysctl on every docker host stops it, `/etc/sysctl.d/50-macvlan-shim-arp.conf`:
+
+```
+# eth0 and mac0 both carry this host's address and both hear the lan's arp.
+# answer only on the interface that routes to the asker: eth0 for the lan,
+# mac0 for the adguard macvlan addresses. without it the gateway sees the
+# address flip between two macs and reports an ip conflict.
+net.ipv4.conf.all.arp_filter = 1
+```
+
+apply it without a reboot, and check the value:
+
+```
+sudo sysctl --system
+sudo sysctl net.ipv4.conf.all.arp_filter
+```
+
+- `arp_filter` answers an arp request only on the interface a route lookup for
+  the asker would use. the lan routes out `eth0`, the two adguard addresses
+  route out `mac0` by the `/32` routes above, so each asker gets one answer and
+  the shim still works
+- `arp_ignore` would not do. it ignores requests for an address that is not on
+  the receiving interface, and this address is on both
+- `all` is combined with the per-interface value by or, so it covers `mac0`
+  after `allow-hotplug` rebuilds it
+- the arp round in flight when the value changes can still log one flip per
+  address. nothing after that
+
+check it from another host on the lan, which must see `eth0`'s mac. flush the
+entry and ping first: `ip neigh show` only prints what is cached and sends no
+request, so without the flush it shows whichever interface won last, or nothing
+
+```
+sudo ip -4 neigh flush to 192.168.1.41
+ping -c 3 192.168.1.41
+ip -4 neigh show to 192.168.1.41
+```
+
+and from inside an adguard container on that host, which must see `mac0`'s, the
+same way:
+
+```
+sudo nsenter -t $(docker inspect --format '{{.State.Pid}}' <container>) -n sh -c 'ip -4 neigh flush to 192.168.1.41; ping -c 3 192.168.1.41; ip -4 neigh show to 192.168.1.41'
+```
+
+if the gateway logs to [victorialogs](../monitoring/victorialogs.md), this
+counts the flips per address in the last 10 minutes and must return nothing:
+
+```bash
+curl -s -u logs --data-urlencode 'query=_time:10m hostname:Home "has changed while arping" | extract "address [<address>]" | stats by (address) count() as n' http://192.168.1.86:9428/select/logsql/query
+```
+
 Check it from the host and from a container. If swarm services depend on it,
 check from a container on an overlay network as well:
 

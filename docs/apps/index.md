@@ -21,7 +21,7 @@ fragment only where something is unusual enough to need one.
 
 | group | apps |
 | --- | --- |
-| dns and network | [adguard](adguard.md), [cloudflare ddns](cloudflare-ddns.md), [traefik](traefik.md), [nginx proxy manager](nginx-proxy-manager.md), [oauth2-proxy](oauth2-proxy.md) |
+| dns and network | [adguard](adguard.md), [cloudflare ddns](cloudflare-ddns.md), [traefik](traefik.md), [oauth2-proxy](oauth2-proxy.md) |
 | certificates | acme.sh for the [ASRock Rack BMC](acme-asrock-bmc.md) and [Synology DSM](acme-synology.md) |
 | media and home | [the arr stack](arrstack.md), [frigate](frigate.md), [infinitude](infinitude.md), [mosquitto](mosquitto-mqtt.md) |
 | web and tools | [wordpress](wordpress.md), [omni-tools](omni-tools.md), [bentopdf](bentopdf.md) |
