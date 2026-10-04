@@ -17,6 +17,16 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].mem > 0"
 
+  - name: glances processes syn02
+    group: hosts
+    url: "http://192.168.1.31:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"
+
   - name: pi-zwave01
     group: hosts
     url: "icmp://192.168.1.96"
@@ -34,6 +44,16 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[BODY].mem > 0"
+
+  - name: glances processes pi-zwave01
+    group: hosts
+    url: "http://192.168.1.96:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"
 
   - name: zwave-js-ui
     group: hosts

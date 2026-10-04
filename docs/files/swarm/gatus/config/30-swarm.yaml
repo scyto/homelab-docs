@@ -137,3 +137,33 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[BODY].mem > 0"
+
+  - name: glances processes docker01
+    group: swarm
+    url: "http://192.168.1.41:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"
+
+  - name: glances processes docker02
+    group: swarm
+    url: "http://192.168.1.42:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"
+
+  - name: glances processes docker03
+    group: swarm
+    url: "http://192.168.1.43:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"

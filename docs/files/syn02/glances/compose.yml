@@ -6,7 +6,15 @@ services:
     environment:
       - GLANCES_OPT=--webserver --port 61208
       - TZ=America/Los_Angeles
+      - LOGNAME=nobody
     network_mode: host
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
     entrypoint:
       - /bin/sh
       - -c
@@ -16,16 +24,50 @@ services:
         printf "NAME=\"Synology DSM\"\nID=dsm\nVERSION_ID=\"%s\"\nPRETTY_NAME=\"Synology DSM %s-%s\"\n" "$$(v productversion)" "$$(v productversion)" "$$(v buildnumber)" > /etc/os-release
         /venv/bin/python3 - <<'PY'
         import configparser
-        p = "/etc/glances/glances.conf"
         c = configparser.ConfigParser(interpolation=None)
-        c.read(p)
+        c.read("/etc/glances/glances.conf")
         c["network"]["hide"] = "veth.*,docker.*,br-.*,lo"
         c["fs"]["show"] = "/host/.*"
         c["fs"]["allow"] = "virtiofs"
-        c.write(open(p, "w"))
+        c.write(open("/tmp/glances.conf", "w"))
         PY
-        exec /venv/bin/python$${PYTHON_VERSION} -m glances $${GLANCES_OPT}
+        cat > /tmp/glances-host.py <<'PY'
+        # Glances on the host's processes, through the host's /proc. The same
+        # launcher as stacks/swarm/glances/compose.yml, whose header explains it.
+        import runpy, sys, psutil
+        # As `python -m` would: the working directory first on the path. The
+        # image keeps glances in /app, its WORKDIR; a script would put /tmp.
+        sys.path.insert(0, "")
+        from psutil import _pslinux
+        psutil.PROCFS_PATH = "/host/proc"
+        # nice from /proc/<pid>/stat (field 19), not getpriority(): the
+        # syscall resolves the pid in this container's namespace.
+        def nice_get(self):
+            with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
+                return int(f.read().rsplit(b")", 1)[1].split()[16])
+        _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
+        runpy.run_module("glances", run_name="__main__", alter_sys=True)
+        PY
+        # The heredoc is quoted, so nothing in it is expanded by the shell: the
+        # interpreter path is spelled out, not built from PYTHON_VERSION.
+        exec /venv/bin/python3 - <<'PY'
+        import os
+        os.setgroups([]); os.setgid(65534); os.setuid(65534)
+        os.execv("/venv/bin/python3", ["python3", "/tmp/glances-host.py", "-C", "/tmp/glances.conf", *os.environ["GLANCES_OPT"].split()])
+        PY
     volumes:
+      - type: bind
+        source: /proc
+        target: /host/proc
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /etc/passwd
+        target: /etc/passwd
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: /etc/VERSION
         target: /dsm/VERSION

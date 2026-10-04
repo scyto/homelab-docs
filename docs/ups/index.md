@@ -46,9 +46,8 @@ over the network, as an SNMPv3 user.
 
 ## what watches the cards
 
-on 2026-10-03 at 11:15 the study card hung. its switch port stayed up, so the
-network saw nothing wrong, and no check asked the card anything. twenty minutes
-passed before anyone noticed. two things changed that day.
+a card can hang with its switch port up, so the network sees nothing wrong.
+two things watch them.
 
 **gatus checks each card, the NUT servers, and whether each server's data is
 fresh**, every minute, in
@@ -74,9 +73,8 @@ fresh**, every minute, in
   fine
 
 **each card sends its log to [victorialogs](../monitoring/victorialogs.md)**,
-so the card's own events, link, reboot, power, are on record, and the next hang
-is read from what the card said last instead of inferred from silence. on each
-card, **Log** > **Syslog**:
+so a card's own events, link, reboot, power, are on record. on each card,
+**Log** > **Syslog**:
 
 1. facility code **Local 0**
 2. **Add Server**: `192.168.1.86`, port `514`, UDP

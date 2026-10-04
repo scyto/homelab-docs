@@ -29,9 +29,8 @@ whole dump next to the database's own files.
 | [wordpress](../apps/wordpress.md#the-hourly-dump) | `wordpress_dumps/wordpressdb.sql`, about 70 MB | `--single-transaction` reads the InnoDB tables at one point in time without locking them. `--source-data=2` records the binary log position |
 
 [nginx proxy manager](../apps/retired/nginx-proxy-manager.md) had the same
-sidecar, with `--lock-tables` because its tables were Aria, until it was
-retired on 2026-10-02. its directories are gone from cephFS, so its last dump
-is only in the [cephFS backups](cephfs.md) made before 2026-10-03.
+sidecar until it was retired. its last dump is in the [cephFS backups](cephfs.md)
+made before 2026-10-03.
 
 - the sidecar runs the database's own image, so `mysqldump` matches the server
 - it needs no docker socket, reads the password the database already has, and
@@ -106,9 +105,10 @@ delete it and adguard starts a new one.
 these keep SQLite databases under `/mnt/fast/configs`: sonarr, radarr,
 prowlarr, bazarr, profilarr, seerr, sabnzbd's history, jellyfin, frigate,
 open webui and grafana. `fast/configs` has a recursive snapshot every hour,
-kept for two weeks, see [storage and snapshots](../truenas/storage.md#3-snapshot-the-config).
+kept for three days, and one every midnight, kept for two weeks, see
+[storage and snapshots](../truenas/storage.md#3-snapshot-the-config).
 a replication task copies each snapshot to `rust/replicas/fast-configs` on the
-rust pool, read-only, and keeps the same two weeks there. that covers losing the
+rust pool, read-only, and keeps the same retention there. that covers losing the
 fast pool. every night at 04:00, the newest snapshot is also backed up to PBS,
 one archive per dataset, and the 05:00 copy takes it to azure, encrypted. that
 covers losing truenas1.

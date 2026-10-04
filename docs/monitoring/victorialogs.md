@@ -7,7 +7,7 @@ title: "VictoriaLogs"
 [VictoriaLogs](https://docs.victoriametrics.com/victorialogs/) is the log
 store. today it holds the UniFi controller's events, sent by syslog: a device
 going offline, why a client was disconnected, STP changes, threats blocked.
-since 2026-10-03 the three [UPS cards](../ups/index.md#what-watches-the-cards)
+the three [UPS cards](../ups/index.md#what-watches-the-cards)
 send their logs too. it runs on truenas1. checked against VictoriaLogs 1.53.0 and UniFi Network
 10.6.
 
@@ -80,8 +80,7 @@ on each RMCARD205, **Log** > **Syslog**: facility code **Local 0**, then **Add
 Server** `192.168.1.86`, port `514`, UDP. **Send test** should land as `This
 is test message from <the card's address>`.
 
-- the card's own events, link, reboot, power, are then on record. on
-  2026-10-03 a card hung and its silence was all there was to go on
+- the card's own events, link, reboot, power, are then on record
 - the card uses its own system name as the syslog hostname: `Bottom` for the
   basement card, `Shelf` for the study card and `Small` for the smc closet
   card, with `app_name` `UPS(192.168.1.72)`, `UPS(192.168.1.73)` and

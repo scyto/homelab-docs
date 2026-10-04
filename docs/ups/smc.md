@@ -4,7 +4,7 @@ title: "UPS in the SMC closet"
 
 # ups in the smc closet
 
-the third UPS, added 2026-10-03. a CyberPower with an RMCARD205 at
+the third UPS, a CyberPower with an RMCARD205 at
 `192.168.1.71`, in the basement SMC network closet. it feeds the closet's
 network equipment, the distribution 10G PoE and 2.5GbE PoE switches and their
 siblings, and syn02, and exists to take that load off the
@@ -39,9 +39,9 @@ gets a second, independent `upsd` in a container on the same host, on port
 - the second service is the same NUT exporter the
   [prometheus-exporters sysext](../truenas/sysexts.md) runs, started with
   `--nut.server=nut` so it reads this `upsd` over the stack's own network, and
-  published on `9198`. the host's exporter on `9199` can't read it: its
-  `serverport` parameter is ignored as of 3.3.0, so it only reaches servers on
-  `3493`, and this one is on `3494`. the exporter keeps the image's own
+  published on `9198`. the host's exporter on `9199` can't read it:
+  3.3.0 ignores its `serverport` parameter, so it only reaches servers on
+  `3493`. the exporter keeps the image's own
   healthcheck, which says its HTTP side is up; a UPS the server doesn't list,
   or a driver that has lost the card, fails the scrape with a `500`
 
@@ -141,8 +141,7 @@ prometheus reloads its config on its own:
           node: truenas1-nut
 ```
 
-- `9198`, this stack's exporter. the sysext's exporter on `9199` would need
-  `server` and a port, and it ignores the port, see above
+- `9198`, this stack's exporter, see above
 - the exporter puts no label on a series saying which UPS or server it came
   from, so the job adds `ups` and `node`. `node` is `truenas1-nut`, not
   `truenas1`: that name is the host's own UPS service, on the

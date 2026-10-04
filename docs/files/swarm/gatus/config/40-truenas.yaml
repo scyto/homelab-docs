@@ -106,6 +106,16 @@ endpoints:
       - "[STATUS] == 200"
       - "[BODY].mem > 0"
 
+  - name: glances processes
+    group: truenas
+    url: "http://192.168.1.86:61208/api/4/processcount"
+    interval: 300s
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].total > 20"
+
   - name: prometheus
     group: truenas
     url: "http://192.168.1.86:30104/-/healthy"
