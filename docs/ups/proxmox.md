@@ -192,9 +192,8 @@ its config on its own:
   each job adds `ups` and `node`. gatus queries by both
 - the target is always the exporter on truenas1. `server` is a query
   parameter the exporter reads, and it needs no port: every node listens on
-  `3493`. the exporter's `serverport` parameter is in its README but, as of
-  3.3.0, the exporter never applies it, so a server on another port needs a
-  second exporter started with `--nut.serverport`
+  `3493`. a server on another port needs an exporter of its own: 3.3.0
+  ignores its `serverport` parameter
 - check the file before prometheus picks it up:
 
     ```bash

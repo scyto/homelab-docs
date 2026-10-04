@@ -6,7 +6,16 @@ services:
     environment:
       - GLANCES_OPT=--webserver --port 61208
       - TZ=America/Los_Angeles
+      - LOGNAME=nobody
     network_mode: host
+    pid: host
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
     entrypoint:
       - /bin/sh
       - -c
@@ -16,16 +25,27 @@ services:
         printf "NAME=\"Synology DSM\"\nID=dsm\nVERSION_ID=\"%s\"\nPRETTY_NAME=\"Synology DSM %s-%s\"\n" "$$(v productversion)" "$$(v productversion)" "$$(v buildnumber)" > /etc/os-release
         /venv/bin/python3 - <<'PY'
         import configparser
-        p = "/etc/glances/glances.conf"
         c = configparser.ConfigParser(interpolation=None)
-        c.read(p)
+        c.read("/etc/glances/glances.conf")
         c["network"]["hide"] = "veth.*,docker.*,br-.*,lo"
         c["fs"]["show"] = "/host/.*"
         c["fs"]["allow"] = "virtiofs"
-        c.write(open(p, "w"))
+        c.write(open("/tmp/glances.conf", "w"))
         PY
-        exec /venv/bin/python$${PYTHON_VERSION} -m glances $${GLANCES_OPT}
+        # The heredoc is quoted, so nothing in it is expanded by the shell: the
+        # interpreter path is spelled out, not built from PYTHON_VERSION.
+        exec /venv/bin/python3 - <<'PY'
+        import os
+        os.setgroups([]); os.setgid(65534); os.setuid(65534)
+        os.execv("/venv/bin/python3", ["python3", "-m", "glances", "-C", "/tmp/glances.conf", *os.environ["GLANCES_OPT"].split()])
+        PY
     volumes:
+      - type: bind
+        source: /etc/passwd
+        target: /etc/passwd
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: /etc/VERSION
         target: /dsm/VERSION

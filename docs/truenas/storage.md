@@ -121,19 +121,27 @@ zpool get -H -o property,value freeing,allocated,capacity <pool>
 
 ## 3. snapshot the config
 
-Data Protection → Periodic Snapshot Tasks → Add:
+Data Protection → Periodic Snapshot Tasks → Add, twice:
 
-| field | value |
-| --- | --- |
-| Dataset | `fast/configs` |
-| Recursive | yes |
-| Schedule | hourly |
-| Snapshot Lifetime | 2 weeks |
+| field | hourly task | daily task |
+| --- | --- | --- |
+| Dataset | `fast/configs` | `fast/configs` |
+| Recursive | yes | yes |
+| Schedule | hourly | daily at 00:00 |
+| Snapshot Lifetime | 3 days | 2 weeks |
+| Naming Schema | `auto-%Y-%m-%d_%H-%M` | `daily-%Y-%m-%d_%H-%M` |
 
 - recursive on the parent covers a new app the day you create its dataset, with
   nothing to remember
 - hourly is cheap here because config barely changes. mine comes to 0 to 76 KB
   per dataset per snapshot, and the cost is metadata, not data
+- two tiers: every hour for the last three days, every day for two weeks. that
+  is 86 snapshots per dataset, and the replica below doubles every count.
+  TrueNAS warns above 10,000 snapshots that performance may suffer
+- the two tasks must have different naming schemas. retention prunes by name
+  and age, so two tasks sharing a schema delete each other's snapshots, and
+  two tasks firing at the same minute with the same schema fail with
+  `dataset already exists`
 - this is only safe because these datasets do not delete their own data. the
   same schedule on media or cache is the mistake above
 
@@ -161,7 +169,9 @@ the PBS datastore is also copied to azure every day, encrypted, see
 [tasks and scripts](tasks-and-scripts.md#cron-jobs). S3 has no copy off the box.
 
 `fast/configs` is replicated to the rust pool: a local replication task copies
-each hourly snapshot to `rust/replicas/fast-configs`, read-only, and keeps the
-same two weeks there. it covers losing the fast pool. `configs-backup.sh` backs
+every snapshot of both tasks to `rust/replicas/fast-configs`, read-only, and
+keeps the same retention there. the replication task lists the snapshot tasks
+it follows, so a new snapshot task has to be added to it or its snapshots never
+leave the fast pool. it covers losing the fast pool. `configs-backup.sh` backs
 the newest snapshot up to PBS every night, which the 05:00 job copies to azure,
 encrypted, see [tasks and scripts](tasks-and-scripts.md#cron-jobs).

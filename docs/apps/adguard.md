@@ -136,8 +136,7 @@ requests. by default linux answers for a local address on every interface that
 hears the request, so each replied with its own mac and the gateway saw the
 host's address, and a keepalived vip on it, flip between two macs every few
 seconds. unifi logs `netlink: L3 entry for address [192.168.1.41] has changed
-while arping was running` for each flip, about 9,600 a day per address here,
-and the controller raises an "IP Address Conflict" alert for the host. one
+while arping was running` for each flip, and the controller raises an "IP Address Conflict" alert for the host. one
 sysctl on every docker host stops it, `/etc/sysctl.d/50-macvlan-shim-arp.conf`:
 
 ```
@@ -159,12 +158,8 @@ sudo sysctl net.ipv4.conf.all.arp_filter
   the asker would use. the lan routes out `eth0`, the two adguard addresses
   route out `mac0` by the `/32` routes above, so each asker gets one answer and
   the shim still works
-- `arp_ignore` would not do. it ignores requests for an address that is not on
-  the receiving interface, and this address is on both
 - `all` is combined with the per-interface value by or, so it covers `mac0`
   after `allow-hotplug` rebuilds it
-- the arp round in flight when the value changes can still log one flip per
-  address. nothing after that
 
 check it from another host on the lan, which must see `eth0`'s mac. flush the
 entry and ping first: `ip neigh show` only prints what is cached and sends no

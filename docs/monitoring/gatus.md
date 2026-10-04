@@ -157,9 +157,8 @@ separately:
           - "[STATUS] < 400"
     ```
 
-    - this is the check that catches a hung card. on 2026-10-03 the study card
-      hung with its switch port up, and nothing noticed for twenty minutes
-      because no check asked the card anything
+    - this is the check that catches a hung card. a card can hang with its
+      switch port up, so nothing on the network notices
 
 - the three NUT servers with readers, truenas1's, pve1's and the
   [smc closet stack's](../ups/smc.md) on `3494`, get a TCP connect:
@@ -199,21 +198,16 @@ separately:
     - the query is `network_ups_tools_ups_status{ups="ups-proxmox",node="pve2",flag="OL"}`
       joined with `and (time() - timestamp(...)) < 150`, URL-encoded. the
       exporter adds no label saying which server a series came from, so each
-      prometheus job adds `ups` and `node`. the age test is there for a
-      prometheus that has stopped scraping: a bare selector would keep
-      answering with its last sample for five minutes. a range function
-      would bound that too, but it ignores the staleness marker a failed
-      scrape writes, so the plain selector plus the age test is the shape
-      that catches both
+      prometheus job adds `ups` and `node`. the age test turns a prometheus
+      that has stopped scraping red: a bare selector keeps answering with its
+      last sample for five minutes
     - green proves three things at once: that server's driver has fresh data
       from the card, the exporter reached the server, and prometheus scraped
       the exporter
     - a server whose driver has lost the card answers the exporter with
       `DATA-STALE`, the exporter fails the scrape with a `500`, prometheus marks
       the series stale on that first failed scrape, and the query returns an
-      empty result. `result[0]` doesn't exist, so the check goes red. tested on
-      2026-10-03 with a spare job pointed at a host that refuses `3493`: `up`
-      read `0` and the query emptied within one scrape
+      empty result. `result[0]` doesn't exist, so the check goes red
     - on battery `OL` is `0` and the check goes red. that is wanted: a power
       cut is the alert. the tooltip shows the value seen, so `0` is a power
       cut and `(INVALID)` is nothing fresh to read

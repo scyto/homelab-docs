@@ -144,8 +144,8 @@ once a day, so:
 snapshots of files that only get added cost almost nothing, because a snapshot
 only holds blocks that later change or get deleted. a backup the
 [retention job](tasks-and-scripts.md#cron-jobs) deletes stays on disk until the
-last snapshot holding it expires, up to 12 weeks. add a daily one on
-`fast/configs/versitygw` too. it is tiny.
+last snapshot holding it expires, up to 12 weeks. `fast/configs/versitygw` is
+covered by the [two tasks on `fast/configs`](storage.md#3-snapshot-the-config).
 
 ## notes
 

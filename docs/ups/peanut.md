@@ -33,7 +33,7 @@ the gear icon > **Manage Servers**. one entry per NUT server:
   to shut down, so do not give it to a dashboard
 
 the second entry is pve1, the proxmox node PeaNUT reads; pve2 and pve3 listen
-on the LAN too since 2026-10-03, but only for prometheus. the third is the [`nut` container](smc.md) on truenas1, on its own port
+on the LAN too, but only for prometheus. the third is the [`nut` container](smc.md) on truenas1, on its own port
 beside the host's own NUT server, which is the first entry.
 
 [gatus](../monitoring/gatus.md#checking-the-ups-cards-and-nut) connects to the

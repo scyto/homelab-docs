@@ -37,13 +37,14 @@ Data Protection → Periodic Snapshot Tasks
 
 | dataset | when | kept |
 | --- | --- | --- |
-| `fast/configs`, recursive | hourly | 2 weeks |
-| `fast/configs/versitygw` | daily | 30 days |
+| `fast/configs`, recursive | hourly | 3 days |
+| `fast/configs`, recursive | daily 00:00 | 2 weeks |
 | `rust/S3` | daily, and sunday | 30 days, and 12 weeks |
 | `rust/cloud-backups`, recursive | daily 05:00 | 2 weeks |
 
-`fast/configs` holds every app's config, so one recursive task covers them all,
-see [storage and snapshots](storage.md).
+`fast/configs` holds every app's config, so two recursive tasks cover them all,
+each with its own naming schema, see
+[storage and snapshots](storage.md#3-snapshot-the-config).
 
 ## scrubs
 

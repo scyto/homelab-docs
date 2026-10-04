@@ -13,15 +13,18 @@
 
 - publish: next
   changes:
-    - added feature: "the [smc closet UPS](ups/smc.md) is live: its NUT server reads the card, PeaNUT and prometheus read it, and gatus has its three checks"
-    - added feature: "a third UPS, in the [smc closet](ups/smc.md), for the closet's network gear and syn02. a NUT server in a container on truenas1 reads it so PeaNUT shows it, with an exporter of its own for prometheus, and gatus checks its card"
-    - added feature: "[gatus](monitoring/gatus.md#checking-the-ups-cards-and-nut) judges each NUT server by what prometheus has from the NUT exporter, so stale UPS data goes red and not only a server that is down. prometheus scrapes the exporter once a minute for truenas1 and for each proxmox node"
-    - changed feature: "pve2 and pve3's NUT servers [listen on the lan](ups/proxmox.md#nut-on-each-node) too, for the exporter's reads"
-    - added feature: "[gatus](monitoring/gatus.md#checking-the-ups-cards-and-nut) checks both UPS cards and both NUT servers every minute, after a card hung for twenty minutes with nothing watching it"
-    - added feature: "both UPS cards send their logs to [victorialogs](monitoring/victorialogs.md#pointing-the-ups-cards-at-it), so a card's own events are on record"
+    - changed feature: "[glances](monitoring/glances.md) lists each host's processes, through `pid: host` on the standalone hosts and the host's `/proc` on the swarm"
+    - changed feature: "truenas1's app configs are snapshotted [hourly for three days and daily for two weeks](truenas/storage.md#3-snapshot-the-config), to stay under TrueNAS's 10,000-snapshot warning"
+
+- publish: 40
+  changes:
+    - added feature: "a third UPS, in the [smc closet](ups/smc.md), for the closet's network gear and syn02. a NUT server in a container on truenas1 reads it, for PeaNUT and prometheus"
+    - added feature: "[gatus](monitoring/gatus.md#checking-the-ups-cards-and-nut) checks each UPS card, each NUT server, and whether each server's data is fresh, judged by what prometheus has from the NUT exporter"
+    - changed feature: "pve2 and pve3's NUT servers [listen on the lan](ups/proxmox.md#nut-on-each-node) too, for the exporter"
+    - added feature: "the UPS cards send their logs to [victorialogs](monitoring/victorialogs.md#pointing-the-ups-cards-at-it)"
     - fix: "the docker hosts answer arp for their own address on one interface only, so the gateway no longer sees it flip between `eth0` and the [macvlan shim](apps/adguard.md#the-shim-answers-arp-only-for-its-own-path) and raise an ip conflict"
-    - removed feature: "nginx proxy manager is retired: its stack, its name on [traefik](apps/traefik.md), its gatus checks and its homepage tiles are gone, five days after traefik took every name"
-    - changed doc: "[nginx proxy manager](apps/retired/nginx-proxy-manager.md) moved to no longer used, without its stack file; the [databases](backups/databases.md#a-dump-sidecar-wordpress) page keeps the dump sidecar for wordpress alone"
+    - removed feature: "nginx proxy manager is retired: its stack, its name on [traefik](apps/traefik.md), its gatus checks and its homepage tiles are gone"
+    - changed doc: "[nginx proxy manager](apps/retired/nginx-proxy-manager.md) moved to no longer used, without its stack file"
 
 - publish: 39
   changes:
