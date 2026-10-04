@@ -6,6 +6,7 @@ services:
     environment:
       - GLANCES_OPT=--webserver --port 61208
       - TZ=America/Los_Angeles
+      - GLANCES_DOCKER_PROXY=http://127.0.0.1:2375
     network_mode: host
     user: "65534:65534"
     cap_drop:
@@ -29,7 +30,8 @@ services:
         cat > /tmp/glances-host.py <<'PY'
         # Glances on the host's processes, through the host's /proc. The same
         # launcher as stacks/swarm/glances/compose.yml, whose header explains it.
-        import runpy, sys, psutil
+        import json, os, re, runpy, sys, time, urllib.request
+        import psutil
         # As `python -m` would: the working directory first on the path. The
         # image keeps glances in /app, its WORKDIR; a script would put /tmp.
         sys.path.insert(0, "")
@@ -41,6 +43,67 @@ services:
             with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
                 return int(f.read().rsplit(b")", 1)[1].split()[16])
         _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
+        # Command lines with secret-looking values masked: the value after a
+        # flag like --secret, a secret-named key=value, a URL's password, and
+        # any long token. Some programs take a password as an argument, and
+        # this API answers anyone on the LAN.
+        WORD = r"pass(?:word|wd|phrase)?|secret|token|api[-_]?key|apikey|auth|credential|private[-_]?key|bearer|access[-_]?key"
+        FLAG = re.compile(r"-{1,2}[\w.-]*(?:" + WORD + r")[\w.-]*", re.I)
+        PAIR = re.compile(r"([\w.-]*(?:" + WORD + r")[\w.-]*\s*[=:]\s*)([^\s,;&]+)", re.I)
+        URL = re.compile(r"(://[^/:@\s]+:)[^@\s]+@")
+        SCHEME = re.compile(r"(?i)\b(bearer|basic)\s+\S+")
+        TOKEN_RE = re.compile(r"(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9+/_=-]{20,}")
+        HEX64 = re.compile(r"[0-9a-f]{64}")
+        def token(a):
+            if not TOKEN_RE.fullmatch(a) or HEX64.fullmatch(a) or a[0] in "/-.":
+                return False
+            # A slash makes it a path, not a token, unless the case is mixed.
+            return "/" not in a or bool(re.search("[a-z]", a) and re.search("[A-Z]", a))
+        def mask(argv):
+            out, hide = [], False
+            for a in argv:
+                if hide and a and not a.startswith("-"):
+                    out.append("***")
+                    hide = False
+                    continue
+                hide = bool(FLAG.fullmatch(a))
+                b = PAIR.sub(lambda m: m.group(1) + "***", URL.sub(r"\1***@", SCHEME.sub(r"\1 ***", a)))
+                if b == a and token(a):
+                    b = "***"
+                out.append(b)
+            return out
+        # The container a process belongs to, right after the program: the id
+        # is in the process's cgroup, and its name comes from the read-only
+        # Docker API in GLANCES_DOCKER_PROXY when there is one, else the short
+        # id, as `docker ps` shows it.
+        PROXY = os.environ.get("GLANCES_DOCKER_PROXY", "")
+        names, names_at = {}, 0.0
+        def container(self):
+            global names, names_at
+            try:
+                with open(f"{self._procfs_path}/{self.pid}/cgroup") as f:
+                    m = HEX64.search(f.read())
+            except OSError:
+                return None
+            if not m:
+                return None
+            if PROXY and time.monotonic() - names_at > 30:
+                names_at = time.monotonic()
+                try:
+                    with urllib.request.urlopen(PROXY + "/containers/json", timeout=3) as r:
+                        names = {c["Id"]: c["Names"][0].lstrip("/") for c in json.load(r)}
+                except Exception:
+                    pass
+            return names.get(m.group(0), m.group(0)[:12])
+        _cmdline = _pslinux.Process.cmdline
+        def cmdline(self):
+            argv = _cmdline(self)
+            if not argv:
+                return argv
+            tag = container(self)
+            argv = mask(argv)
+            return argv[:1] + ([f"[{tag}]"] if tag else []) + argv[1:]
+        _pslinux.Process.cmdline = cmdline
         runpy.run_module("glances", run_name="__main__", alter_sys=True)
         PY
         exec /venv/bin/python$${PYTHON_VERSION} /tmp/glances-host.py -C /tmp/glances.conf $${GLANCES_OPT}

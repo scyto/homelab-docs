@@ -56,13 +56,16 @@ allow fe80::/10
 - `allow` turns chrony from a client into an NTP server for those ranges.
   without any `allow` line it serves nobody
 
-`/etc/systemd/system/chrony.service.d/override.conf` starts chrony after gpsd:
+`/etc/systemd/system/chrony.service.d/override.conf` makes chrony start gpsd:
 
 ```ini
 [Unit]
-After=gpsd.service
 Wants=gpsd.service
 ```
+
+- no `After=gpsd.service`. Debian's gpsd unit already orders itself after
+  chrony, and ordering them both ways is a loop that systemd breaks at boot by
+  dropping chrony's start, and nothing sets the pi's clock
 
 clients use it as `ntp.mydomain.com`, a DNS CNAME to the pi. check the CNAME
 target carefully. a typo in the domain points your clocks at someone else's
@@ -71,9 +74,10 @@ domain, which goes unnoticed until somebody registers the name.
 ## checking it
 
 ```
-chronyc sources         # #* PPS means the pulse is the source, #? means no usable samples
-gpspipe -w | grep TPV   # "mode":3 is a 3D fix, 2 is 2D, 1 is no fix
-sudo ppstest /dev/pps0  # prints a line per second when pulses arrive
+chronyc sources                        # #* PPS means the pulse is the source, #? means no usable samples
+gpspipe -w | grep TPV                  # "mode":3 is a 3D fix, 2 is 2D, 1 is no fix
+sudo ppstest /dev/pps0                 # prints a line per second when pulses arrive
+systemd-analyze verify chrony.service  # prints nothing when the boot order has no loop
 ```
 
 most GPS modules only pulse once they have a fix. with no fix there are no
