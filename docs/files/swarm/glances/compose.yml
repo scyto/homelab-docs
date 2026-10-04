@@ -33,13 +33,14 @@ services:
             with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
                 return int(f.read().rsplit(b")", 1)[1].split()[16])
         _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
-        # Command lines with secret-looking values masked: the value after a
-        # flag like --secret, a secret-named key=value, a URL's password, and
-        # any long token. Some programs take a password as an argument, and
-        # this API answers anyone on the LAN.
+        # Command lines with secret-looking values masked: the argument after a
+        # flag like --secret, whatever it starts with; a secret-named key=value
+        # to the end of its argument, as a quoted value can hold spaces or commas;
+        # a URL's password; and any long token. Some programs take a password as
+        # an argument, and this API answers anyone on the LAN.
         WORD = r"pass(?:word|wd|phrase)?|secret|token|api[-_]?key|apikey|auth|credential|private[-_]?key|bearer|access[-_]?key"
         FLAG = re.compile(r"-{1,2}[\w.-]*(?:" + WORD + r")[\w.-]*", re.I)
-        PAIR = re.compile(r"([\w.-]*(?:" + WORD + r")[\w.-]*\s*[=:]\s*)([^\s,;&]+)", re.I)
+        PAIR = re.compile(r"([\w.-]*(?:" + WORD + r")[\w.-]*\s*[=:]\s*)(.+)", re.I | re.S)
         URL = re.compile(r"(://[^/:@\s]+:)[^@\s]+@")
         SCHEME = re.compile(r"(?i)\b(bearer|basic)\s+\S+")
         TOKEN_RE = re.compile(r"(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9+/_=-]{20,}")
@@ -52,9 +53,9 @@ services:
         def mask(argv):
             out, hide = [], False
             for a in argv:
-                if hide and a and not a.startswith("-"):
-                    out.append("***")
-                    hide = False
+                if hide:
+                    out.append("***" if a else a)
+                    hide = bool(FLAG.fullmatch(a))
                     continue
                 hide = bool(FLAG.fullmatch(a))
                 b = PAIR.sub(lambda m: m.group(1) + "***", URL.sub(r"\1***@", SCHEME.sub(r"\1 ***", a)))
