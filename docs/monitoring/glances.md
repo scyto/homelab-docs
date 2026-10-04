@@ -80,7 +80,7 @@ networks:
 
 syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
 
-**three settings** are edited into the image's own config at start on every host: hide docker's veths and bridges, show only the `/host/` probes, and allow `virtiofs`. cephfs reaches the VMs over virtiofs, and glances hides it by default. the swarm's copy also writes a small launcher and starts glances through it, for the process list below:
+**three settings** are edited into the image's own config at start on every host: hide docker's veths and bridges, show only the `/host/` probes, and allow `virtiofs`. cephfs reaches the VMs over virtiofs, and glances hides it by default. every copy also writes a small launcher and starts glances through it, for the process list below:
 
 ```yaml title="swarm/glances/compose.yml"
     entrypoint:
@@ -117,23 +117,23 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
 ```
 
 - configparser reads `/etc/glances/glances.conf`, keeps every other default, and writes the result to `/tmp/glances.conf`, which `-C` hands to glances. `/etc/glances` belongs to root and the container runs as nobody. `set -e` stops the container if the edit fails
-- it runs as `65534:65534` with every capability dropped. nothing it reads needs root, and on the standalone hosts it shares the host's pid namespace, where root could signal any host process; these pages have no login. syn02 gets there differently: its wrapper writes `/etc/os-release`, which needs root, so it starts as root with only `SETUID` and `SETGID`, writes the file, and drops to 65534 in python before glances starts. it also sets `LOGNAME=nobody`, because DSM's `/etc/passwd` has no uid 65534 and glances needs a user name to start
+- it runs as `65534:65534` with every capability dropped. nothing it reads needs root, and these pages have no login. syn02 gets there differently: its wrapper writes `/etc/os-release`, which needs root, so it starts as root with only `SETUID` and `SETGID`, writes the file, and drops to 65534 in python before glances starts. it also sets `LOGNAME=nobody`, because DSM's `/etc/passwd` has no uid 65534 and glances needs a user name to start
 - every host edits its config in the entrypoint like this, because a standalone host can't mount a config file from the stack: a relative bind resolves inside portainer's git clone, not on the host.
 - `$$` is compose's escape for `$`, so the shell expands `GLANCES_OPT` and compose leaves it alone
 - it has no docker socket, so it shows no container list. [dozzle](dozzle.md) and portainer cover containers
-- the process list is the host's. a swarm service can't use `pid: host`, so on the swarm:
+- the process list is the host's, on every host:
     - the host's `/proc` is bound read-only at `/host/proc`, and the host's `/etc/passwd` for user names
     - a launcher, `/tmp/glances-host.py`, points psutil at `/host/proc` and runs glances as `python -m glances` would
     - the launcher reads `nice` from `/proc/<pid>/stat`. psutil's `nice` is a `getpriority()` call, which the kernel resolves in the container's own pid namespace, so it fails for every host process
-- the container keeps its own pid namespace: it reads the host's process files but can't signal a host process
-- gatus checks the process count on each node. a glances update that reads another attribute by system call would shrink the list to a few rows and leave every other number right
+- the container keeps its own pid namespace, so it reads the host's process files but can't signal a host process, even one running as the same uid. a swarm service couldn't share the host's namespace anyway
+- gatus checks the process count on each host. a glances update that reads another attribute by system call would shrink the list to a few rows and leave every other number right
 
 ## on the standalone hosts
 
 truenas1, syn02 and pi-zwave01 are not in the swarm, so each runs the container as a stack of its own. four things differ from the swarm's file:
 
 - `network_mode: host`, in place of the `host` network
-- `pid: host`, `no-new-privileges`, and the host's `/etc/passwd` read-only: the host's process list, with its user names. a swarm service takes neither option. a uid the host's file doesn't name shows as a number
+- `no-new-privileges`, which a swarm service can't take
 - each bind is the long form with `create_host_path: false`, so a missing source keeps the container from starting. with the short form, docker would create a directory in its place, even at `/etc/os-release`
 - a healthcheck, which asserts collected memory as [gatus](gatus.md) does. docker never acts on a standalone container's health, so it only reports it. the swarm's file has none: swarm replaces an unhealthy task, so a failing check there would restart glances
 

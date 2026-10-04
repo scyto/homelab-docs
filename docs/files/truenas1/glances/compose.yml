@@ -7,7 +7,6 @@ services:
       - GLANCES_OPT=--webserver --port 61208
       - TZ=America/Los_Angeles
     network_mode: host
-    pid: host
     user: "65534:65534"
     cap_drop:
       - ALL
@@ -27,8 +26,31 @@ services:
         c["fs"]["allow"] = "virtiofs"
         c.write(open("/tmp/glances.conf", "w"))
         PY
-        exec /venv/bin/python$${PYTHON_VERSION} -m glances -C /tmp/glances.conf $${GLANCES_OPT}
+        cat > /tmp/glances-host.py <<'PY'
+        # Glances on the host's processes, through the host's /proc. The same
+        # launcher as stacks/swarm/glances/compose.yml, whose header explains it.
+        import runpy, sys, psutil
+        # As `python -m` would: the working directory first on the path. The
+        # image keeps glances in /app, its WORKDIR; a script would put /tmp.
+        sys.path.insert(0, "")
+        from psutil import _pslinux
+        psutil.PROCFS_PATH = "/host/proc"
+        # nice from /proc/<pid>/stat (field 19), not getpriority(): the
+        # syscall resolves the pid in this container's namespace.
+        def nice_get(self):
+            with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
+                return int(f.read().rsplit(b")", 1)[1].split()[16])
+        _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
+        runpy.run_module("glances", run_name="__main__", alter_sys=True)
+        PY
+        exec /venv/bin/python$${PYTHON_VERSION} /tmp/glances-host.py -C /tmp/glances.conf $${GLANCES_OPT}
     volumes:
+      - type: bind
+        source: /proc
+        target: /host/proc
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: /etc/passwd
         target: /etc/passwd
