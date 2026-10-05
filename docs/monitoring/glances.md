@@ -115,33 +115,36 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
         # Command lines with secret-looking values masked: the argument after a
         # flag like --secret, whatever it starts with; a secret-named key=value
         # to the end of its argument, as a quoted value can hold spaces or commas;
-        # a URL's password; a JWT anywhere; and any long token. Some programs
-        # take a password as an argument, and this API answers anyone on the LAN.
+        # a URL's whole user part; a JWT anywhere; and any long token, including
+        # 64 hex characters unless it follows -id, where containerd's shim puts
+        # its container id. Some programs take a password as an argument, and
+        # this API answers anyone on the LAN.
         WORD = r"pass(?:word|wd|phrase)?|secret|token|api[-_]?key|apikey|auth|credential|private[-_]?key|bearer|access[-_]?key|jwt"
         FLAG = re.compile(r"-{1,2}[\w.-]*(?:" + WORD + r")[\w.-]*", re.I)
         PAIR = re.compile(r"([\w.-]*(?:" + WORD + r")[\w.-]*\s*[=:]\s*)(.+)", re.I | re.S)
-        URL = re.compile(r"(://[^/:@\s]+:)[^@\s]+@")
+        URL = re.compile(r"(://)[^/?#@\s]+@")
         SCHEME = re.compile(r"(?i)\b(bearer|basic)\s+\S+")
         JWT = re.compile(r"eyJ[\w-]+(?:\.[\w-]*){2,4}")
         TOKEN_RE = re.compile(r"(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9+/_=-]{20,}")
         HEX64 = re.compile(r"[0-9a-f]{64}")
         def token(a):
-            if not TOKEN_RE.fullmatch(a) or HEX64.fullmatch(a) or a[0] in "/-.":
+            if not TOKEN_RE.fullmatch(a) or a[0] in "/-.":
                 return False
             # A slash makes it a path, not a token, unless the case is mixed.
             return "/" not in a or bool(re.search("[a-z]", a) and re.search("[A-Z]", a))
         def mask(argv):
-            out, hide = [], False
+            out, hide, prev = [], False, ""
             for a in argv:
                 if hide:
                     out.append("***" if a else a)
-                    hide = bool(FLAG.fullmatch(a))
+                    hide, prev = bool(FLAG.fullmatch(a)), a
                     continue
                 hide = bool(FLAG.fullmatch(a))
                 b = PAIR.sub(lambda m: m.group(1) + "***", URL.sub(r"\1***@", SCHEME.sub(r"\1 ***", JWT.sub("***", a))))
-                if b == a and token(a):
+                if b == a and token(a) and not (prev == "-id" and HEX64.fullmatch(a)):
                     b = "***"
                 out.append(b)
+                prev = a
             return out
         # The container a process belongs to, right after the program: the id
         # is in the process's cgroup, and its name comes from the read-only
@@ -189,7 +192,7 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
     - the host's `/proc` is bound read-only at `/host/proc`, and the host's `/etc/passwd` for user names
     - a launcher, `/tmp/glances-host.py`, points psutil at `/host/proc` and runs glances as `python -m glances` would
     - the launcher reads `nice` from `/proc/<pid>/stat`. psutil's `nice` is a `getpriority()` call, which the kernel resolves in the container's own pid namespace, so it fails for every host process
-- the launcher masks command-line values that look secret: the argument after a flag like `--secret` or `--password`, whatever it starts with, a secret-named `key=value` to the end of its argument, a url's password, a JWT anywhere in an argument, and any long token. some programs take a password as an argument, and this API answers anyone on the lan without a login
+- the launcher masks command-line values that look secret: the argument after a flag like `--secret` or `--password`, whatever it starts with, a secret-named `key=value` to the end of its argument, a url's whole user part, a JWT anywhere in an argument, and any long token, including 64 hex characters unless they follow `-id`, where containerd's shim puts its container id. some programs take a password as an argument, and this API answers anyone on the lan without a login
 - it also names the container each process belongs to, right after the program: `/usr/local/bin/versitygw [ix-versitygw-versity-1] --port :30157 …`. the container's id is in the process's cgroup, and its name comes from a read-only docker api on the same host, named in `GLANCES_DOCKER_PROXY`: truenas1's docker proxy app, and a [loopback-only proxy](#the-docker-proxy-on-syn02-and-pi-zwave01) on syn02 and pi-zwave01. the swarm nodes have no api glances can reach, so they show the short id, as `docker ps` does
 - the container keeps its own pid namespace, so it reads the host's process files but can't signal a host process, even one running as the same uid. a swarm service couldn't share the host's namespace anyway
 - gatus checks the process count on each host. a glances update that reads another attribute by system call would shrink the list to a few rows and leave every other number right
