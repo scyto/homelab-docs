@@ -19,7 +19,7 @@ This changes the previous file design thanks to @NRGNet and @tisayama to make th
 Notable changes from original version [here](openfabric-mesh-legacy.md)
 
 - ~~move IP address configuration from `interfaces.d/thundebolt` to frr configuration~~ i reverted this on 2025.04.27 and improved settings  in interfaces.d/thunderbolt based on recommendations from chatGPT to solve issues i hit it my routed network setup (coming soon)
-- new approach to remove dependecy on post-up with new scripts in if-up.d that logs to systemlog
+- ~~new approach to remove dependecy on post-up with new scripts in if-up.d that logs to systemlog~~ removed on 2026.10.04, [frr needs no scripts](#no-if-upd-scripts-for-frr)
 - reminder to copy frr.conf > frr.conf.local to prevent breakage if you enable Proxmox SDN
 - dependent on the changes to the udev link scripts [here](cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions)
 
@@ -92,70 +92,17 @@ iface lo inet loopback
 2. save the file
 3. restart the service with `systemctl restart frr`
 
-### Mitigate FRR Timing Issues (I need someone with an MS-101 to confirm if helps solve their IPv4 issues)
+### no if-up.d scripts for frr
 
-#### create script that is automatically processed when en05/en06 are brougt up to restart frr
-
-> **notes**
->
-> - this should make IPv4 more stable for all users (i ended up seeing IPv4 issues too, just less commonly than MS-101 users)
-> - i found the chnages i introduced in 2.5 version of this gist make this less needed, occasionally ifreload / ifupdown2 may cause enough changes that frr gets restarted too often and the service will need to be unblocked with systemctl.
-
-
-1. create a new file with `nano /etc/network/if-up.d/en0x`
-2. add to file the following
-
-    ```
-    #!/bin/bash
-    # note the logger entries log to the system journal in the pve UI etc
-
-    INTERFACE=$IFACE
-
-    if [ "$INTERFACE" = "en05" ] || [ "$INTERFACE" = "en06" ]; then
-        logger "Checking if frr.service is running for $INTERFACE"
-    
-        if ! systemctl is-active --quiet frr.service; then
-            logger -t SCYTO "   [SCYTO SCRIPT ] frr.service not running. Starting service."
-            if systemctl start frr.service; then
-                logger -t SCYTO "   [SCYTO SCRIPT ] Successfully started frr.service"
-            else
-                logger -t SCYTO "   [SCYTO SCRIPT ] Failed to start frr.service"
-            fi
-            exit 0
-        fi
-
-        logger "Attempting to reload frr.service for $INTERFACE"
-        if systemctl reload frr.service; then
-            logger -t SCYTO "   [SCYTO SCRIPT ] Successfully reloaded frr.service for $INTERFACE"
-        else
-            logger -t SCYTO "   [SCYTO SCRIPT ] Failed to reload frr.service for $INTERFACE"
-        fi
-    fi
-    ```
-
-3. make it executable with `chmod +x /etc/network/if-up.d/en0x`
-
-### mitgigate issues cause by things that reset the loopback
-#### create script that is automatically processed when lo is reprocessed by ifreload, ifupdown2, pve set, etc
-
-1. create a new file with `nano /etc/network/if-up.d/lo`
-2. add to file the following
+Update as of 2026.10.04: earlier versions of this gist added two scripts to `/etc/network/if-up.d/`, `en0x` to start or reload frr when en05 or en06 came up, and `lo` to restart frr when the loopback was reprocessed. i no longer use either. if you added them, remove them on each node:
 
 ```
-#!/bin/bash
-
-INTERFACE=$IFACE
-
-if [ "$INTERFACE" = "lo" ]  ; then
-    logger "Attempting to restart frr.service for $INTERFACE"
-    if systemctl restart frr.service; then
-        logger -t SCYTO "   [SCYTO SCRIPT ] Successfully restart frr.service for $INTERFACE"
-    else
-        logger -t SCYTO "   [SCYTO SCRIPT ] Failed to restart frr.service for $INTERFACE"
-    fi
-fi
+rm /etc/network/if-up.d/en0x /etc/network/if-up.d/lo
 ```
-make it executable with `chmod +x /etc/network/if-up.d/lo`
+
+- frr picks up en05 and en06 by itself when they come up, at boot or when a cable is plugged in later. openfabric syncs within seconds with no reload
+- restarting frr from an if-up.d script during boot hangs networking on proxmox 9, as the restart never returns
+- the [udev rule](cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions) is still needed: it is what brings en05 and en06 up
 
 ### Configure OpenFabric (perforn on all nodes)
 

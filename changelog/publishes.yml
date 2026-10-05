@@ -13,6 +13,12 @@
 
 - publish: next
   changes:
+    - fix: "pve1 is back on the [thunderbolt mesh](proxmox/thunderbolt/cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions). its udev rule had been off since the proxmox 9 upgrade, so en05 and en06 never came up and its ceph traffic went the long way, through the router"
+    - changed doc: "[openfabric mesh](proxmox/thunderbolt/openfabric-mesh.md#no-if-upd-scripts-for-frr): no if-up.d scripts for frr. frr picks up the links by itself, and restarting it from one hangs boot on proxmox 9"
+    - changed doc: "[thunderbolt networking](proxmox/thunderbolt/cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions): the udev rule is needed, because networking runs before en05 and en06 exist"
+
+- publish: 42
+  changes:
     - changed feature: "each process in [glances](monitoring/glances.md) shows its full command line with secret-looking values masked, tagged with the container it runs in"
     - added feature: "a loopback-only [docker proxy](monitoring/glances.md#the-docker-proxy-on-syn02-and-pi-zwave01) on syn02 and pi-zwave01, so glances can name containers"
     - fix: "chrony on pi-zwave01 starts at boot again. the [gps time](raspberry-pi/gps-time.md) override no longer orders it after gpsd, which made a loop that systemd broke by dropping chrony"

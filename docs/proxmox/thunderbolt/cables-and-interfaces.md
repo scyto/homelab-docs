@@ -73,7 +73,9 @@ This is needed as proxmox doesn't recognize the thunderbolt interface name.  The
     ```
 
 ## Set Interfaces to UP on reboots and cable insertions
-This section en sure that the interfaces will be brought up at boot or cable insertion with whatever settings are in /etc/network/interfaces  - this shouldn't need to be done, it seems like a bug in the way thunderbolt networking is handled (i assume this is debian wide but haven't checked).
+This section en sure that the interfaces will be brought up at boot or cable insertion with whatever settings are in /etc/network/interfaces  - ~~this shouldn't need to be done, it seems like a bug in the way thunderbolt networking is handled (i assume this is debian wide but haven't checked).~~
+
+Update as of 2026.10.04: this is needed. at boot, networking runs a few seconds before en05 and en06 exist, so `auto en05` and `auto en06` find nothing to bring up. the interfaces only appear once the thunderbolt link to the next node is up, and each cable insertion creates them again. this udev rule brings them up each time they appear.
 
 Huge thanks to @corvy for figuring out a script that should make this much much more reliable for most
 
