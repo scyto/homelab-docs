@@ -91,6 +91,12 @@ to check it:
 nvidia-smi --query-gpu=persistence_mode,power.limit,power.default_limit --format=csv
 ```
 
+## fans
+
+each fan follows the sensor that matches what it cools, quiet at idle, and the
+60 mm fan over the PCIe slots runs at full speed. the sensors, the curves and
+what the box does under load are in [fan tuning](fan-tuning.md).
+
 ## disks and pools
 
 18 drives, three pools:

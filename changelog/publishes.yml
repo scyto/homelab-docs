@@ -13,6 +13,14 @@
 
 - publish: next
   changes:
+    - added doc: "[fan tuning](truenas/fan-tuning.md): where truenas1's fans started and ended, the BMC's sensors and curves, what the box does under load, and how claude tested it"
+    - changed feature: "truenas1's [fans](truenas/fan-tuning.md) each follow the sensor that matches what they cool, rather than one index for the whole box, which is much quieter at idle"
+    - added feature: "[gatus](monitoring/gatus.md) also watches the fan on truenas1's asus m.2 card, which cools the fast pool, and fails below 1,200 RPM"
+    - added feature: "[gatus](monitoring/gatus.md) watches the 60 mm fan over truenas1's pcie slots through the BMC's redfish api, and fails below 1,500 RPM. the fan keeps the m.2 cards there alive"
+    - changed feature: "truenas1's [glances](monitoring/glances.md) names each sensor by the slot its chip sits in, which survives the kernel renumbering drives between boots. the boot drives' second sensor, which runs near 80°C, has its own thresholds, so it no longer shows red"
+
+- publish: 43
+  changes:
     - fix: "pve1 is back on the [thunderbolt mesh](proxmox/thunderbolt/cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions). its udev rule had been off since the proxmox 9 upgrade, so en05 and en06 never came up and its ceph traffic went the long way, through the router"
     - changed doc: "[openfabric mesh](proxmox/thunderbolt/openfabric-mesh.md#no-if-upd-scripts-for-frr): no if-up.d scripts for frr. frr picks up the links by itself, and restarting it from one hangs boot on proxmox 9"
     - changed doc: "[thunderbolt networking](proxmox/thunderbolt/cables-and-interfaces.md#set-interfaces-to-up-on-reboots-and-cable-insertions): the udev rule is needed, because networking runs before en05 and en06 exist"

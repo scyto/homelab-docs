@@ -89,17 +89,23 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
       - |
         set -e
         /venv/bin/python3 - <<'PY'
-        import configparser
+        import configparser, os
         c = configparser.ConfigParser(interpolation=None)
         c.read("/etc/glances/glances.conf")
         c["network"]["hide"] = "veth.*,docker.*,br-.*,lo"
         c["fs"]["show"] = "/host/.*"
         c["fs"]["allow"] = "virtiofs"
+        # Per-sensor thresholds from GLANCES_SENSOR_NAMES (the launcher below
+        # explains it): careful/warning/critical after an "@".
+        for item in os.environ.get("GLANCES_SENSOR_NAMES", "").split(";"):
+            name, _, limits = item.partition("=")[2].partition("@")
+            for level, value in zip(("careful", "warning", "critical"), limits.split("/") if limits else ()):
+                c["sensors"][f"temperature_core_{name.strip().lower()}_{level}"] = value.strip()
         c.write(open("/tmp/glances.conf", "w"))
         PY
         cat > /tmp/glances-host.py <<'PY'
         # Glances on the host's processes, through the host's /proc (header).
-        import json, os, re, runpy, sys, time, urllib.request
+        import collections, glob, json, os, re, runpy, sys, time, urllib.request
         import psutil
         # As `python -m` would: the working directory first on the path. The
         # image keeps glances in /app, its WORKDIR; a script would put /tmp.
@@ -112,6 +118,51 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
             with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
                 return int(f.read().rsplit(b")", 1)[1].split()[16])
         _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
+        # Sensors named by the slot each chip sits in, from GLANCES_SENSOR_NAMES,
+        # set per host: "<slot> <label>=<name>[@careful/warning/critical]" entries
+        # with ";" between them. <slot> is the chip's PCI address, plus "/<port>"
+        # for a SATA disk; <label> is the chip's own, or tempN where it has none; a
+        # name of "-" hides the sensor. Glances's own aliases match the displayed
+        # label, which follows the kernel's numbering of drives, and that changes
+        # between boots; a slot does not. Unset, psutil's reading is used as is.
+        NAMES = {}
+        for item in os.environ.get("GLANCES_SENSOR_NAMES", "").split(";"):
+            key, sep, name = item.partition("=")
+            if sep:
+                NAMES[" ".join(key.split())] = name.split("@")[0].strip()
+        Temp = collections.namedtuple("shwtemp", "label current high critical")
+        def read(path):
+            try:
+                with open(path) as f:
+                    return f.read().strip()
+            except OSError:
+                return None
+        def milli(path):
+            try:
+                return int(read(path)) / 1000
+            except (TypeError, ValueError):
+                return None
+        def slot(hwmon):
+            dev = os.path.realpath(hwmon + "/device")
+            pci = re.findall(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}[.][0-7]", dev)
+            ata = re.findall(r"/(ata[0-9]+)/", dev)
+            port = read(f"/sys/class/ata_port/{ata[-1]}/port_no") if ata else None
+            return (pci[-1] if pci else "") + (f"/{port}" if port else "")
+        _temps = psutil.sensors_temperatures
+        def sensors_temperatures(fahrenheit=False):
+            if not NAMES:
+                return _temps(fahrenheit)
+            out = {}
+            for base in sorted({p[:-6] for p in glob.glob("/sys/class/hwmon/hwmon*/temp*_input")}):
+                hwmon, current = os.path.dirname(base), milli(base + "_input")
+                chip, label = read(hwmon + "/name"), read(base + "_label") or ""
+                if current is None or chip is None:
+                    continue
+                name = NAMES.get(f"{slot(hwmon)} {label or os.path.basename(base)}", label)
+                if name != "-":
+                    out.setdefault(chip, []).append(Temp(name, current, milli(base + "_max"), milli(base + "_crit")))
+            return out
+        psutil.sensors_temperatures = sensors_temperatures
         # Command lines with secret-looking values masked: the argument after a
         # flag like --secret, whatever it starts with; a secret-named key=value
         # to the end of its argument, as a quoted value can hold spaces or commas;
@@ -205,6 +256,7 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
     - the launcher reads `nice` from `/proc/<pid>/stat`. psutil's `nice` is a `getpriority()` call, which the kernel resolves in the container's own pid namespace, so it fails for every host process
 - the launcher masks command-line values that look secret: the argument after a flag like `--secret` or `--password`, whatever it starts with, a secret-named `key=value` to the end of its argument, a url's whole user part, a JWT anywhere in an argument, and any long token, including 64 hex characters unless they follow `-id`, where containerd's shim puts its container id. it also knows the credential options of curl, the mysql and mariadb tools, sshpass, redis-cli and the mosquitto clients, whose names carry no secret word. it is best effort: a short credential passed to any other program under an option like that still shows some programs take a password as an argument, and this API answers anyone on the lan without a login
 - it also names the container each process belongs to, right after the program: `/usr/local/bin/versitygw [ix-versitygw-versity-1] --port :30157 …`. the container's id is in the process's cgroup, and its name comes from a read-only docker api on the same host, named in `GLANCES_DOCKER_PROXY`: truenas1's docker proxy app, and a [loopback-only proxy](#the-docker-proxy-on-syn02-and-pi-zwave01) on syn02 and pi-zwave01. the swarm nodes have no api glances can reach, so they show the short id, as `docker ps` does
+- a host can name its sensors with `GLANCES_SENSOR_NAMES`, entries of `<slot> <label>=<name>` keyed by the slot each chip sits in: its PCI address, plus the port for a SATA disk. glances's own aliases match the label it shows, which follows the kernel's numbering of drives, and that changes between boots. an entry can end in `@careful/warning/critical` to give that sensor its own thresholds, which the config step writes in, and a name of `-` hides it. truenas1 names all of its sensors, and its boot drives' second sensor, which sits near 80°C, gets its own line at 80/85/90
 - the container keeps its own pid namespace, so it reads the host's process files but can't signal a host process, even one running as the same uid. a swarm service couldn't share the host's namespace anyway
 - gatus checks the process count on each host. a glances update that reads another attribute by system call would shrink the list to a few rows and leave every other number right
 
