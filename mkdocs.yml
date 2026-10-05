@@ -266,6 +266,7 @@ nav:
   - TrueNAS:
       - truenas/index.md
       - Hardware & Base Install: truenas/hardware-and-base-install.md
+      - Fan Tuning: truenas/fan-tuning.md
       - System Extensions: truenas/sysexts.md
       - Storage & Snapshots: truenas/storage.md
       - Tasks & Scripts: truenas/tasks-and-scripts.md

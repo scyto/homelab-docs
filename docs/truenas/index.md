@@ -39,6 +39,8 @@ the box.
 
 - [hardware and base install](hardware-and-base-install.md): the board, the
   accelerators, the pools and how the network and identity are set up
+- [fan tuning](fan-tuning.md): each fan on the sensor that matches what it
+  cools, and what the box does under load
 - [system extensions](sysexts.md): how drivers the base image does not ship
   get added, and survive a reboot
 - [storage and snapshots](storage.md): dataset layout, and the rule that stopped

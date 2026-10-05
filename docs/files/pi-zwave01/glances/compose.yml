@@ -19,18 +19,24 @@ services:
       - |
         set -e
         /venv/bin/python3 - <<'PY'
-        import configparser
+        import configparser, os
         c = configparser.ConfigParser(interpolation=None)
         c.read("/etc/glances/glances.conf")
         c["network"]["hide"] = "veth.*,docker.*,br-.*,lo"
         c["fs"]["show"] = "/host/.*"
         c["fs"]["allow"] = "virtiofs"
+        # Per-sensor thresholds from GLANCES_SENSOR_NAMES (the launcher below
+        # explains it): careful/warning/critical after an "@".
+        for item in os.environ.get("GLANCES_SENSOR_NAMES", "").split(";"):
+            name, _, limits = item.partition("=")[2].partition("@")
+            for level, value in zip(("careful", "warning", "critical"), limits.split("/") if limits else ()):
+                c["sensors"][f"temperature_core_{name.strip().lower()}_{level}"] = value.strip()
         c.write(open("/tmp/glances.conf", "w"))
         PY
         cat > /tmp/glances-host.py <<'PY'
         # Glances on the host's processes, through the host's /proc. The same
         # launcher as stacks/swarm/glances/compose.yml, whose header explains it.
-        import json, os, re, runpy, sys, time, urllib.request
+        import collections, glob, json, os, re, runpy, sys, time, urllib.request
         import psutil
         # As `python -m` would: the working directory first on the path. The
         # image keeps glances in /app, its WORKDIR; a script would put /tmp.
@@ -43,6 +49,51 @@ services:
             with open(f"{self._procfs_path}/{self.pid}/stat", "rb") as f:
                 return int(f.read().rsplit(b")", 1)[1].split()[16])
         _pslinux.Process.nice_get = _pslinux.wrap_exceptions(nice_get)
+        # Sensors named by the slot each chip sits in, from GLANCES_SENSOR_NAMES,
+        # set per host: "<slot> <label>=<name>[@careful/warning/critical]" entries
+        # with ";" between them. <slot> is the chip's PCI address, plus "/<port>"
+        # for a SATA disk; <label> is the chip's own, or tempN where it has none; a
+        # name of "-" hides the sensor. Glances's own aliases match the displayed
+        # label, which follows the kernel's numbering of drives, and that changes
+        # between boots; a slot does not. Unset, psutil's reading is used as is.
+        NAMES = {}
+        for item in os.environ.get("GLANCES_SENSOR_NAMES", "").split(";"):
+            key, sep, name = item.partition("=")
+            if sep:
+                NAMES[" ".join(key.split())] = name.split("@")[0].strip()
+        Temp = collections.namedtuple("shwtemp", "label current high critical")
+        def read(path):
+            try:
+                with open(path) as f:
+                    return f.read().strip()
+            except OSError:
+                return None
+        def milli(path):
+            try:
+                return int(read(path)) / 1000
+            except (TypeError, ValueError):
+                return None
+        def slot(hwmon):
+            dev = os.path.realpath(hwmon + "/device")
+            pci = re.findall(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}[.][0-7]", dev)
+            ata = re.findall(r"/(ata[0-9]+)/", dev)
+            port = read(f"/sys/class/ata_port/{ata[-1]}/port_no") if ata else None
+            return (pci[-1] if pci else "") + (f"/{port}" if port else "")
+        _temps = psutil.sensors_temperatures
+        def sensors_temperatures(fahrenheit=False):
+            if not NAMES:
+                return _temps(fahrenheit)
+            out = {}
+            for base in sorted({p[:-6] for p in glob.glob("/sys/class/hwmon/hwmon*/temp*_input")}):
+                hwmon, current = os.path.dirname(base), milli(base + "_input")
+                chip, label = read(hwmon + "/name"), read(base + "_label") or ""
+                if current is None or chip is None:
+                    continue
+                name = NAMES.get(f"{slot(hwmon)} {label or os.path.basename(base)}", label)
+                if name != "-":
+                    out.setdefault(chip, []).append(Temp(name, current, milli(base + "_max"), milli(base + "_crit")))
+            return out
+        psutil.sensors_temperatures = sensors_temperatures
         # Command lines with secret-looking values masked: the argument after a
         # flag like --secret, whatever it starts with; a secret-named key=value
         # to the end of its argument, as a quoted value can hold spaces or commas;

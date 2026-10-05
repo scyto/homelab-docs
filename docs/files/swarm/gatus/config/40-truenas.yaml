@@ -142,3 +142,29 @@ endpoints:
     ui:
       resolve-successful-conditions: true
     conditions: ["[STATUS] == 200"]
+
+  - name: pcie slot fan
+    group: truenas
+    url: "https://asrock-bmc.mydomain.com/redfish/v1/Chassis/Self/ThermalSubsystem/Fans/20"
+    interval: 60s
+    headers:
+      Authorization: "Basic <base64 of user:password>"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].Name == FAN4"
+      - "[BODY].SpeedPercent.SpeedRPM > 1500"
+
+  - name: asus m.2 card fan
+    group: truenas
+    url: "https://asrock-bmc.mydomain.com/redfish/v1/Chassis/Self/ThermalSubsystem/Fans/22"
+    interval: 60s
+    headers:
+      Authorization: "Basic <base64 of user:password>"
+    ui:
+      resolve-successful-conditions: true
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].Name == FAN6"
+      - "[BODY].SpeedPercent.SpeedRPM > 1200"
