@@ -59,9 +59,11 @@ services:
         TOKEN_RE = re.compile(r"(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9+/_=-]{20,}")
         HEX64 = re.compile(r"[0-9a-f]{64}")
         # Options whose names carry no secret word but take a credential, per
-        # program: the argument after one, or the rest of an attached short form.
+        # program: the argument after one, and the attached form where the program's
+        # parser takes one (redis-cli and mosquitto don't). The mysql tools' bare -p
+        # prompts, so only its attached form is listed.
         CRED_NEXT = {"curl": {"-u", "--user", "-U", "--proxy-user"}, "sshpass": {"-p"}, "redis-cli": {"-a"}, "mosquitto_pub": {"-P"}, "mosquitto_sub": {"-P"}}
-        CRED_ATTACHED = {"curl": "-u", **{p: "-p" for p in ("mysql", "mysqldump", "mysqladmin", "mysqlcheck", "mariadb", "mariadb-dump", "mariadb-admin", "mariadb-check")}}
+        CRED_ATTACHED = {"curl": ("-u", "-U"), "sshpass": ("-p",), **{p: ("-p",) for p in ("mysql", "mysqldump", "mysqladmin", "mysqlcheck", "mariadb", "mariadb-dump", "mariadb-admin", "mariadb-check")}}
         def token(a):
             if not TOKEN_RE.fullmatch(a) or a[0] in "/-.":
                 return False
@@ -70,7 +72,7 @@ services:
         def mask(argv):
             out, hide, prev = [], False, ""
             prog = argv[0].rsplit("/", 1)[-1] if argv else ""
-            after, attached = CRED_NEXT.get(prog, ()), CRED_ATTACHED.get(prog)
+            after, attached = CRED_NEXT.get(prog, ()), CRED_ATTACHED.get(prog, ())
             for a in argv:
                 if hide:
                     out.append("***" if a else a)
@@ -78,8 +80,9 @@ services:
                     continue
                 hide = bool(FLAG.fullmatch(a)) or a in after
                 b = PAIR.sub(lambda m: m.group(1) + "***", URL.sub(r"\1***@", SCHEME.sub(r"\1 ***", JWT.sub("***", a))))
-                if attached and len(a) > len(attached) and a.startswith(attached) and not a.startswith("--"):
-                    b = attached + "***"
+                short = next((o for o in attached if len(a) > 2 and a.startswith(o) and not a.startswith("--")), None)
+                if short:
+                    b = short + "***"
                 elif b == a and token(a) and not (prev == "-id" and HEX64.fullmatch(a)):
                     b = "***"
                 out.append(b)
