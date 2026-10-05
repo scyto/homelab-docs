@@ -127,6 +127,10 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
         JWT = re.compile(r"eyJ[\w-]+(?:\.[\w-]*){2,4}")
         TOKEN_RE = re.compile(r"(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9+/_=-]{20,}")
         HEX64 = re.compile(r"[0-9a-f]{64}")
+        # Options whose names carry no secret word but take a credential, per
+        # program: the argument after one, or the rest of an attached short form.
+        CRED_NEXT = {"curl": {"-u", "--user", "-U", "--proxy-user"}, "sshpass": {"-p"}, "redis-cli": {"-a"}, "mosquitto_pub": {"-P"}, "mosquitto_sub": {"-P"}}
+        CRED_ATTACHED = {"curl": "-u", **{p: "-p" for p in ("mysql", "mysqldump", "mysqladmin", "mysqlcheck", "mariadb", "mariadb-dump", "mariadb-admin", "mariadb-check")}}
         def token(a):
             if not TOKEN_RE.fullmatch(a) or a[0] in "/-.":
                 return False
@@ -134,14 +138,18 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
             return "/" not in a or bool(re.search("[a-z]", a) and re.search("[A-Z]", a))
         def mask(argv):
             out, hide, prev = [], False, ""
+            prog = argv[0].rsplit("/", 1)[-1] if argv else ""
+            after, attached = CRED_NEXT.get(prog, ()), CRED_ATTACHED.get(prog)
             for a in argv:
                 if hide:
                     out.append("***" if a else a)
-                    hide, prev = bool(FLAG.fullmatch(a)), a
+                    hide, prev = bool(FLAG.fullmatch(a)) or a in after, a
                     continue
-                hide = bool(FLAG.fullmatch(a))
+                hide = bool(FLAG.fullmatch(a)) or a in after
                 b = PAIR.sub(lambda m: m.group(1) + "***", URL.sub(r"\1***@", SCHEME.sub(r"\1 ***", JWT.sub("***", a))))
-                if b == a and token(a) and not (prev == "-id" and HEX64.fullmatch(a)):
+                if attached and len(a) > len(attached) and a.startswith(attached) and not a.startswith("--"):
+                    b = attached + "***"
+                elif b == a and token(a) and not (prev == "-id" and HEX64.fullmatch(a)):
                     b = "***"
                 out.append(b)
                 prev = a
@@ -192,7 +200,7 @@ syn02 binds root and `/volume1`, pi-zwave01 root only, and truenas1 none.
     - the host's `/proc` is bound read-only at `/host/proc`, and the host's `/etc/passwd` for user names
     - a launcher, `/tmp/glances-host.py`, points psutil at `/host/proc` and runs glances as `python -m glances` would
     - the launcher reads `nice` from `/proc/<pid>/stat`. psutil's `nice` is a `getpriority()` call, which the kernel resolves in the container's own pid namespace, so it fails for every host process
-- the launcher masks command-line values that look secret: the argument after a flag like `--secret` or `--password`, whatever it starts with, a secret-named `key=value` to the end of its argument, a url's whole user part, a JWT anywhere in an argument, and any long token, including 64 hex characters unless they follow `-id`, where containerd's shim puts its container id. some programs take a password as an argument, and this API answers anyone on the lan without a login
+- the launcher masks command-line values that look secret: the argument after a flag like `--secret` or `--password`, whatever it starts with, a secret-named `key=value` to the end of its argument, a url's whole user part, a JWT anywhere in an argument, and any long token, including 64 hex characters unless they follow `-id`, where containerd's shim puts its container id. it also knows the credential options of curl, the mysql and mariadb tools, sshpass, redis-cli and the mosquitto clients, whose names carry no secret word. it is best effort: a short credential passed to any other program under an option like that still shows some programs take a password as an argument, and this API answers anyone on the lan without a login
 - it also names the container each process belongs to, right after the program: `/usr/local/bin/versitygw [ix-versitygw-versity-1] --port :30157 …`. the container's id is in the process's cgroup, and its name comes from a read-only docker api on the same host, named in `GLANCES_DOCKER_PROXY`: truenas1's docker proxy app, and a [loopback-only proxy](#the-docker-proxy-on-syn02-and-pi-zwave01) on syn02 and pi-zwave01. the swarm nodes have no api glances can reach, so they show the short id, as `docker ps` does
 - the container keeps its own pid namespace, so it reads the host's process files but can't signal a host process, even one running as the same uid. a swarm service couldn't share the host's namespace anyway
 - gatus checks the process count on each host. a glances update that reads another attribute by system call would shrink the list to a few rows and leave every other number right
