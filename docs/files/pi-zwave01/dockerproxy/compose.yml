@@ -1,0 +1,42 @@
+services:
+  dockerproxy:
+    container_name: dockerproxy
+    image: ghcr.io/wollomatic/socket-proxy:1.13.1@sha256:e78e68ba3ea4a6bf8ee47865ac1d1f98d525c3660df948554e766283c40d3f4b
+    restart: unless-stopped
+    network_mode: host
+    user: "0:0"
+    command:
+      - -listenip=127.0.0.1
+      - -proxyport=2375
+      - -allowfrom=127.0.0.1/32
+      - '-allowGET=(/v1\.[0-9]+)?/containers/json'
+      - -allowhealthcheck
+      - -watchdoginterval=60
+      - -stoponwatchdog
+      - -shutdowngracetime=5
+    environment:
+      - TZ=America/Los_Angeles
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /usr/share/zoneinfo
+        target: /usr/share/zoneinfo
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "./healthcheck"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

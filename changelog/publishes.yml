@@ -13,6 +13,12 @@
 
 - publish: next
   changes:
+    - changed feature: "each process in [glances](monitoring/glances.md) shows its full command line with secret-looking values masked, tagged with the container it runs in"
+    - added feature: "a loopback-only [docker proxy](monitoring/glances.md#the-docker-proxy-on-syn02-and-pi-zwave01) on syn02 and pi-zwave01, so glances can name containers"
+    - fix: "chrony on pi-zwave01 starts at boot again. the [gps time](raspberry-pi/gps-time.md) override no longer orders it after gpsd, which made a loop that systemd broke by dropping chrony"
+
+- publish: 41
+  changes:
     - changed feature: "[glances](monitoring/glances.md) lists each host's processes, read from the host's `/proc`, as nobody with no capabilities"
     - changed feature: "truenas1's app configs are snapshotted [hourly for three days and daily for two weeks](truenas/storage.md#3-snapshot-the-config), to stay under TrueNAS's 10,000-snapshot warning"
 
