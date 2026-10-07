@@ -15,7 +15,7 @@ where entra sends them back to.
 | oauth2-proxy, for every name behind oauth | oauth2-proxy's `entra-id` provider | `https://auth.mydomain.com/oauth2/callback` | [oauth2-proxy](../apps/oauth2-proxy.md#signing-in-with-entra) |
 | portainer | portainer's oauth setting | `https://portainer.mydomain.com` | [portainer](../docker/portainer.md#signing-in-with-entra) |
 | proxmox | an OpenID Connect realm | every name you open proxmox on, each node's with `:8006` | [entra ID auth](../proxmox/extras/azure-ad-auth.md) |
-| PBS | an OpenID Connect realm | to be written | [PBS](../truenas/containers.md#signing-in-with-entra) |
+| PBS | an OpenID Connect realm | to be written | [PBS](../backups/pbs-server.md#signing-in-with-entra) |
 | grafana | grafana's azure AD setting | to be written | [grafana](../truenas/apps.md#grafana-signing-in-with-entra) |
 
 ## on every registration

@@ -81,6 +81,13 @@ Thunderbolt with Ceph on top and the **Docker Swarm** that runs on it, plus the
     feeds, the UPS service on TrueNAS, NUT on the three Proxmox nodes with the
     scripts that shut the cluster down together, and the PeaNUT dashboard.
 
+-   :material-home-assistant:{ .lg .middle } **[Home Assistant](home-assistant/index.md)**
+
+    ---
+
+    What runs the house: the HAOS VM, its yaml, every integration and add-on,
+    the dashboards and custom cards, and the esphome devices i build.
+
 -   :material-raspberry-pi:{ .lg .middle } **[Raspberry Pi](raspberry-pi/index.md)**
 
     ---

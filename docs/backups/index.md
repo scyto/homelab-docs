@@ -6,7 +6,7 @@ title: "Backups"
 
 how everything gets off the cluster. this section is being written as i rework
 it, so parts describe a plan and say so. the [PBS page](pbs-server.md) covers
-the backup server itself: retention, verification and users.
+the backup server itself: setting it up, retention, verification and users.
 
 ## what goes where
 

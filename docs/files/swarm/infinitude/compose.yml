@@ -18,11 +18,20 @@ services:
         source: /usr/share/zoneinfo
         target: /usr/share/zoneinfo
         read_only: true
+      - state:/infinitude/state
     ports:
       - 4000:3000
     restart: always
     secrets:
       - infinitude_app_secret_v2
+
+volumes:
+  state:
+    driver: local
+    driver_opts:
+      type: none
+      device: "/mnt/docker-cephFS/infinitude_state"
+      o: bind
 
 secrets:
   infinitude_app_secret_v2:

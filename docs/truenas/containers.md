@@ -8,9 +8,8 @@ TrueNAS containers are not the same thing as [apps](apps.md). an app is a
 docker compose project. a container here is a full system container with its
 own init, distro userland and address on the LAN.
 
-the one i run is pbs1, a Proxmox Backup Server. it lives here so the box holding
-the backups does not depend on the proxmox cluster it is backing up. the PBS
-side is in [backups](../backups/pbs-server.md).
+the first two sections are about containers on TrueNAS in general. the rest of
+the page is [pbs1](#pbs1), the one i run.
 
 ## what the feature is, in 26.0
 
@@ -32,7 +31,28 @@ midclt call container.get_instance <id>
 
 anything written for 25.x uses a different namespace and backend.
 
-## why a container and not an app
+## what i would check after an upgrade
+
+containers are the newest part of this release, and their backend changed in
+it. list them:
+
+```
+midclt call container.query | python3 -m json.tool | grep -E '"name"|"state"'
+```
+
+confirm each is `RUNNING` and that autostart survived. then check that the
+service inside answers: pbs1 can be running while PBS's datastore is not.
+
+## pbs1
+
+pbs1 runs Proxmox Backup Server. it lives here so the box holding the backups
+does not depend on the proxmox cluster it is backing up.
+
+this section is the container: what it is set to, and how to build it up to an
+installed PBS. PBS's own setup, from its datastore to who can sign in, is on
+[proxmox backup server](../backups/pbs-server.md).
+
+### why a container and not an app
 
 PBS runs several daemons, expects its own `/etc`, manages its own users and
 wants a stable address other hosts connect to. that does not fit in a compose
@@ -41,7 +61,7 @@ file.
 a system container gives it an init and a userland on the host's kernel, for a
 fraction of a VM's overhead.
 
-## how pbs1 is configured
+### how pbs1 is configured
 
 | setting | value | why |
 | --- | --- | --- |
@@ -57,17 +77,7 @@ with the idmap, root in the container is not root on the NAS. a process that
 breaks out lands as an unprivileged uid that owns nothing, and that is the main
 reason i am comfortable running it.
 
-## signing in with entra
-
-users sign in to PBS with their entra ID accounts through an OpenID Connect
-realm, set up the same way as proxmox's, see
-[entra ID auth](../proxmox/extras/azure-ad-auth.md). PBS keeps its `pam` and
-`pbs` password realms beside it.
-
-!!! note "to be written"
-    PBS's own realm settings, and its app registration in entra.
-
-## storage
+### storage
 
 the container's own storage and the backups are kept apart:
 
@@ -86,7 +96,7 @@ the container's own storage and the backups are kept apart:
 midclt call container.device.query '[["container","=",<id>]]'
 ```
 
-## networking
+### networking
 
 pbs1 has a VIRTIO NIC attached to the physical interface with its own MAC
 address, and a static address, `192.168.1.80`, which its name resolves to. it
@@ -107,14 +117,17 @@ that matters for a backup server:
 - its certificate is issued for that name
 - it is reachable when the NAS's own web UI is busy or restarting
 
-## building pbs1
+### building pbs1
 
 the container is made through the TrueNAS API, from a root shell on the NAS
 (`sudo -i`), and PBS is then installed inside it. these steps are a first
-build. replacing the container around the backups it already has is
+build, and end with PBS installed and on the network. its datastore,
+certificate and users come next, in
+[setting it up](../backups/pbs-server.md#setting-it-up). replacing the
+container around the backups it already has is
 [rebuilding pbs1](#rebuilding-pbs1), below.
 
-### on the NAS
+#### on the NAS
 
 1. make the dataset the backups go in:
 
@@ -200,7 +213,7 @@ build. replacing the container around the backups it already has is
     the state should be `RUNNING`. `pid` is the container's init, which the
     next part uses.
 
-### inside the container
+#### inside the container
 
 1. open a shell in the container, from the NAS:
 
@@ -314,74 +327,8 @@ build. replacing the container around the backups it already has is
       `/etc/pve/priv/storage/pbs1-vms.pw`
     - `@pam` means the container's own `/etc/shadow`, not PBS's configuration
 
-8. create the datastore:
-
-    ```
-    proxmox-backup-manager datastore create mnt-pbs /mnt/pbs --gc-schedule 02:00
-    ```
-
-    - on a rebuild add `--reuse-datastore true`. without it PBS refuses a
-      directory that has files in it, with `datastore path not empty`
-    - keep the name `mnt-pbs`. every client's repository names it
-    - users, tokens, ACLs and the prune and verify jobs live in the container's
-      `/etc/proxmox-backup`, not in the datastore. set them up as in
-      [backups](../backups/pbs-server.md)
-
-9. get the certificate. it comes from Let's Encrypt over a DNS challenge
-   through Cloudflare, so pbs1 does not have to be reachable from the internet.
-   first put the Cloudflare API token in a file, as one line,
-   `CF_Token=<token>`:
-
-    ```
-    install -m 600 /dev/null /root/cf.env
-    nano /root/cf.env
-    ```
-
-    then register, add the plugin and order:
-
-    ```
-    proxmox-backup-manager acme account register <account> <email>
-    proxmox-backup-manager acme plugin add dns 1 --api cf --data /root/cf.env
-    rm /root/cf.env
-    proxmox-backup-manager node update --acme account=<account>
-    proxmox-backup-manager node update --acmedomain0 pbs1.mydomain.com,plugin=1
-    proxmox-backup-manager acme cert order
-    ```
-
-    - the token needs Cloudflare's DNS edit permission on the zone
-    - `register` asks for a directory, and `0` is Let's Encrypt's production
-      one. then it asks you to accept their terms
-    - `cf` is acme.sh's Cloudflare plugin, and `1` is the id i gave the plugin
-      in PBS. `plugin=1` makes the domain use it
-    - PBS keeps its own copy of the token in
-      `/etc/proxmox-backup/acme/plugins.cfg`, readable by root only, so the
-      file can go
-    - PBS renews the certificate itself. its daily update job orders a new one
-      once the current one is within 30 days of expiring
-
-10. check it:
-
-    ```
-    proxmox-backup-manager datastore list
-    proxmox-backup-manager cert info
-    ```
-
-    the datastore shows as `mnt-pbs` on `/mnt/pbs`, and the certificate's
-    issuer is Let's Encrypt. clients connect by name, so `pbs1.mydomain.com`
-    needs a DNS record pointing at pbs1. the web UI is then on
-    `https://pbs1.mydomain.com:8007`.
-
-    those checks don't cover logins, permissions or writes. once the users,
-    tokens and ACLs from [backups](../backups/pbs-server.md) exist, check both
-    kinds of login before relying on it. on a proxmox node, the VM storage
-    logs in as `root@pam` and should show `active`:
-
-    ```
-    pvesm status --storage pbs1-vms
-    ```
-
-    then run one token client's backup, such as the
-    [cephFS backup](../backups/cephfs.md).
+that leaves PBS installed with no datastore. go on to
+[setting it up](../backups/pbs-server.md#setting-it-up).
 
 ### rebuilding pbs1
 
@@ -421,7 +368,8 @@ the datastore on its own dataset is all that survives.
 
 3. inside the new container, follow [inside the container](#inside-the-container)
    steps 1 to 7, to install PBS, set up its network and set root's password.
-   then restore the configuration from the NAS instead of steps 8 and 9:
+   then restore the configuration from the NAS, instead of steps 1 to 3 of
+   [setting it up](../backups/pbs-server.md#setting-it-up):
 
     ```
     pid=$(midclt call container.query '[["name","=","pbs1"]]' | jq -r '.[0].status.pid')
@@ -434,17 +382,6 @@ the datastore on its own dataset is all that survives.
       container's `/etc/shadow`, so step 7 has to set it to the one the proxmox
       PBS storage already uses, or that storage stops authenticating
 
-4. check it the same way as step 10, including `pvesm status` and one client
-   backup, then delete `/root/pbs1-config.tgz`
-
-## what i would check after an upgrade
-
-containers are the newest part of this release, and their backend changed in
-it. list them:
-
-```
-midclt call container.query | python3 -m json.tool | grep -E '"name"|"state"'
-```
-
-confirm it is `RUNNING` and that autostart survived. then check that PBS itself
-answers: the container can be running while the datastore is not.
+4. check it as in step 4 of
+   [setting it up](../backups/pbs-server.md#setting-it-up), including
+   `pvesm status` and one client backup, then delete `/root/pbs1-config.tgz`

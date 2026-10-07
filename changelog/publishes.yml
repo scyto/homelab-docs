@@ -13,6 +13,13 @@
 
 - publish: next
   changes:
+    - added doc: "[home assistant](home-assistant/index.md): what is installed, the yaml, integrations, add-ons, dashboards and custom cards, and the esphome devices"
+    - changed feature: "[infinitude](apps/infinitude.md) keeps the thermostat's state on cephfs, so it survives the task moving node"
+    - changed doc: "[proxmox backup server](backups/pbs-server.md) has all of PBS's own setup, from creating the datastore to its certificate and signing in with entra, and links to building pbs1 at the top"
+    - changed doc: "[containers](truenas/containers.md) keeps truenas containers in general apart from [pbs1](truenas/containers.md#pbs1), which covers the container and building it up to an installed PBS"
+
+- publish: 44
+  changes:
     - added doc: "[fan tuning](truenas/fan-tuning.md): where truenas1's fans started and ended, the BMC's sensors and curves, what the box does under load, and how claude tested it"
     - changed feature: "truenas1's [fans](truenas/fan-tuning.md) each follow the sensor that matches what they cool, rather than one index for the whole box, which is much quieter at idle"
     - added feature: "[gatus](monitoring/gatus.md) also watches the fan on truenas1's asus m.2 card, which cools the fast pool, and fails below 1,200 RPM"

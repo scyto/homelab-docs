@@ -281,6 +281,13 @@ nav:
       - Proxmox Cluster: ups/proxmox.md
       - SMC Closet: ups/smc.md
       - PeaNUT: ups/peanut.md
+  - Home Assistant:
+      - home-assistant/index.md
+      - Configuration: home-assistant/configuration.md
+      - Integrations: home-assistant/integrations.md
+      - Add-ons: home-assistant/add-ons.md
+      - Frontend: home-assistant/frontend.md
+      - ESPHome: home-assistant/esphome.md
   - Raspberry Pi:
       - raspberry-pi/index.md
       - Docker & Stacks: raspberry-pi/stacks.md
